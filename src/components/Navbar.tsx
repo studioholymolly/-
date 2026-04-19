@@ -1,23 +1,60 @@
-'use client';
+import Link from 'next/link'
+import { signOut } from '@/lib/actions/auth'
 
-import Link from 'next/link';
-import { Camera } from 'lucide-react';
+interface NavbarProps {
+  unreadCount?: number
+}
 
-export default function Navbar() {
+export default function Navbar({ unreadCount = 0 }: NavbarProps) {
   return (
-    <header className="border-b border-white/5 bg-[#0f0f17]/80 backdrop-blur sticky top-0 z-20">
-      <div className="mx-auto max-w-6xl px-6 h-14 flex items-center justify-between">
-        <Link href="/dashboard" className="flex items-center gap-2 text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-blue-500">
-            <Camera className="h-4 w-4 text-white" />
-          </span>
-          <span className="font-semibold">사진 스튜디오</span>
-        </Link>
-        <div className="flex items-center gap-3 text-sm text-white/60">
-          <span>스튜디오님</span>
-          <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-500 to-blue-500" />
+    <nav style={{
+      background: 'var(--s1)',
+      borderBottom: '1px solid var(--bd)',
+      padding: '0 24px',
+      height: 56,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      position: 'sticky', top: 0, zIndex: 50,
+    }}>
+      <Link href="/dashboard" style={{ textDecoration: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 20 }}>📷</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--tx)' }}>홀리몰리</span>
         </div>
+      </Link>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Link href="/projects/new" style={{
+          background: 'var(--vio)',
+          color: '#fff', padding: '7px 14px',
+          borderRadius: 8, fontSize: 13, fontWeight: 700,
+          textDecoration: 'none',
+        }}>
+          + 새 프로젝트
+        </Link>
+
+        {unreadCount > 0 && (
+          <div style={{ position: 'relative' }}>
+            <span style={{ fontSize: 20 }}>🔔</span>
+            <span style={{
+              position: 'absolute', top: -6, right: -6,
+              background: 'var(--red)', color: '#fff',
+              fontSize: 9, fontWeight: 800,
+              padding: '1px 5px', borderRadius: 10,
+              minWidth: 16, textAlign: 'center',
+            }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+          </div>
+        )}
+
+        <form action={signOut}>
+          <button type="submit" style={{
+            background: 'none', border: '1px solid var(--bd2)',
+            color: 'var(--mu)', padding: '6px 12px',
+            borderRadius: 7, fontSize: 12, cursor: 'pointer',
+          }}>로그아웃</button>
+        </form>
       </div>
-    </header>
-  );
+    </nav>
+  )
 }

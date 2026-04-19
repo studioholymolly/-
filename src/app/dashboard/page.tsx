@@ -1,78 +1,128 @@
-'use client';
+import { redirect } from 'next/navigation'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { getUnreadCount } from '@/lib/actions/notifications'
+import Navbar from '@/components/Navbar'
+import StatusBadge from '@/components/StatusBadge'
+import { formatDate } from '@/lib/utils'
+import { Project } from '@/lib/types'
 
-import Link from 'next/link';
-import { Plus, FolderKanban, Package, Clock, Calendar, Image as ImageIcon } from 'lucide-react';
-import Navbar from '@/components/Navbar';
-import StatusBadge from '@/components/StatusBadge';
-import { projects, stats } from '@/lib/mock-data';
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/')
 
-export default function DashboardPage() {
+  const { data: projects } = await supabase
+    .from('projects')
+    .select('*')
+    .eq('studio_id', user.id)
+    .order('created_at', { ascending: false })
+
+  const unreadCount = await getUnreadCount()
+  const projectList: Project[] = projects || []
+
+  const stats = {
+    total: projectList.length,
+    active: projectList.filter(p => p.status !== 'completed' && p.status !== 'draft').length,
+    selecting: projectList.filter(p => p.status === 'selecting').length,
+    completed: projectList.filter(p => p.status === 'completed').length,
+  }
+
   return (
-    <>
-      <Navbar />
-      <main className="flex-1 mx-auto w-full max-w-6xl px-6 py-8">
-        <div className="flex items-center justify-between mb-8">
+    <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <Navbar unreadCount={unreadCount} />
+
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px' }}>
+        {/* Header */}
+        <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <h1 className="text-2xl font-semibold">안녕하세요, 스튜디오님</h1>
-            <p className="mt-1 text-sm text-white/50">오늘도 멋진 사진 부탁드려요</p>
+            <h1 style={{ fontSize: 24, fontWeight: 800, marginBottom: 4 }}>프로젝트</h1>
+            <p style={{ fontSize: 13, color: 'var(--mu)' }}>전체 {stats.total}개 프로젝트</p>
           </div>
-          <button className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-violet-500 to-blue-500 px-4 py-2 text-sm font-medium hover:opacity-90 transition">
-            <Plus className="h-4 w-4" /> 새 프로젝트
-          </button>
+          <Link href="/projects/new" style={{
+            background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+            color: '#fff', padding: '10px 20px',
+            borderRadius: 8, fontSize: 14, fontWeight: 700,
+            textDecoration: 'none',
+          }}>+ 새 프로젝트 만들기</Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mb-8">
-          <StatCard icon={<FolderKanban className="h-5 w-5" />} label="활성 프로젝트" value={stats.active} tint="violet" />
-          <StatCard icon={<Package className="h-5 w-5" />} label="이번달 납품" value={stats.monthlyDelivered} tint="blue" />
-          <StatCard icon={<Clock className="h-5 w-5" />} label="셀렉 대기중" value={stats.pendingSelection} tint="emerald" />
-        </div>
-
-        <h2 className="text-sm font-medium text-white/60 mb-3">프로젝트</h2>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((p) => (
-            <Link
-              key={p.id}
-              href={`/projects/${p.id}`}
-              className="group rounded-2xl border border-white/5 bg-[#1a1a2e] p-5 hover:border-violet-500/40 transition"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <p className="text-xs text-white/40 mb-1">{p.client}</p>
-                  <h3 className="font-medium group-hover:text-violet-300 transition">{p.name}</h3>
-                </div>
-                <StatusBadge status={p.status} />
-              </div>
-              <div className="flex items-center gap-4 text-xs text-white/50">
-                <span className="inline-flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" /> {p.shootDate}
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <ImageIcon className="h-3.5 w-3.5" /> {p.photoCount}장
-                </span>
-              </div>
-            </Link>
+        {/* Stats */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12,
+          marginBottom: 28,
+        }}>
+          {[
+            { label: '전체', value: stats.total, color: '#a78bfa' },
+            { label: '진행 중', value: stats.active, color: '#60a5fa' },
+            { label: '셀렉 중', value: stats.selecting, color: '#34d399' },
+            { label: '완료', value: stats.completed, color: '#6b7280' },
+          ].map(s => (
+            <div key={s.label} style={{
+              background: 'var(--s1)', border: '1px solid var(--bd)',
+              borderRadius: 12, padding: '16px 20px',
+            }}>
+              <div style={{ fontSize: 24, fontWeight: 800, color: s.color }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: 'var(--mu)', marginTop: 2 }}>{s.label}</div>
+            </div>
           ))}
         </div>
-      </main>
-    </>
-  );
-}
 
-function StatCard({
-  icon, label, value, tint,
-}: { icon: React.ReactNode; label: string; value: number; tint: 'violet' | 'blue' | 'emerald' }) {
-  const tints = {
-    violet: 'bg-violet-500/15 text-violet-400',
-    blue: 'bg-blue-500/15 text-blue-400',
-    emerald: 'bg-emerald-500/15 text-emerald-400',
-  };
-  return (
-    <div className="rounded-2xl border border-white/5 bg-[#1a1a2e] p-5">
-      <div className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${tints[tint]} mb-3`}>
-        {icon}
+        {/* Project list */}
+        {projectList.length === 0 ? (
+          <div style={{
+            textAlign: 'center', padding: '80px 20px',
+            background: 'var(--s1)', border: '1px solid var(--bd)',
+            borderRadius: 16,
+          }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
+            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>프로젝트가 없습니다</h3>
+            <p style={{ fontSize: 13, color: 'var(--mu)', marginBottom: 20 }}>첫 프로젝트를 만들어 클라이언트와 협업을 시작하세요</p>
+            <Link href="/projects/new" style={{
+              background: 'var(--vio)', color: '#fff',
+              padding: '10px 20px', borderRadius: 8,
+              fontSize: 14, fontWeight: 700, textDecoration: 'none',
+            }}>+ 새 프로젝트 만들기</Link>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {projectList.map(project => (
+              <Link key={project.id} href={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
+                <div style={{
+                  background: 'var(--s1)', border: `1px solid ${project.unread_for_studio ? 'var(--vio)' : 'var(--bd)'}`,
+                  borderRadius: 12, padding: '16px 20px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  transition: 'border-color 0.15s',
+                  cursor: 'pointer',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    {project.unread_for_studio && (
+                      <span style={{
+                        width: 8, height: 8, borderRadius: '50%',
+                        background: 'var(--vio)', flexShrink: 0,
+                        display: 'inline-block',
+                      }} />
+                    )}
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', marginBottom: 3 }}>
+                        {project.name}
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--mu)' }}>
+                        {project.client_name} · {project.client_email}
+                        {project.deadline ? ` · 마감 ${formatDate(project.deadline)}` : ''}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                    <StatusBadge status={project.status} />
+                    <span style={{ fontSize: 12, color: 'var(--mu)' }}>{formatDate(project.created_at)}</span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
-      <p className="text-xs text-white/50">{label}</p>
-      <p className="mt-1 text-2xl font-semibold">{value}</p>
     </div>
-  );
+  )
 }

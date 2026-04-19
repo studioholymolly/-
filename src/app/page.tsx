@@ -1,63 +1,104 @@
-'use client';
+'use client'
 
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { Camera } from 'lucide-react';
+import { useState } from 'react'
+import { signIn } from '@/lib/actions/auth'
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [email, setEmail] = useState('demo@studio.kr');
-  const [password, setPassword] = useState('demo1234');
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const onSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    router.push('/dashboard');
-  };
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    const formData = new FormData(e.currentTarget)
+    const result = await signIn(formData)
+    if (result?.error) {
+      setError(result.error)
+      setLoading(false)
+    }
+  }
 
   return (
-    <main className="flex-1 flex items-center justify-center px-6">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center gap-3 mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-blue-500 shadow-lg shadow-violet-500/20">
-            <Camera className="h-7 w-7 text-white" />
-          </div>
-          <h1 className="text-2xl font-semibold">사진 스튜디오</h1>
-          <p className="text-sm text-white/50">클라이언트 협업 플랫폼</p>
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        background: 'var(--s1)',
+        border: '1px solid var(--bd)',
+        borderRadius: 16,
+        padding: '40px 36px',
+        width: '100%',
+        maxWidth: 400,
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
+          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--tx)', marginBottom: 4 }}>
+            스튜디오 홀리몰리
+          </h1>
+          <p style={{ fontSize: 13, color: 'var(--mu)' }}>스튜디오 관리자 로그인</p>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-3 rounded-2xl border border-white/5 bg-[#1a1a2e] p-6">
-          <div>
-            <label className="mb-1.5 block text-xs text-white/60">이메일</label>
+        <form onSubmit={handleSubmit}>
+          <div style={{ marginBottom: 14 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>이메일</label>
             <input
+              name="email"
               type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0f0f17] px-3 py-2.5 text-sm outline-none focus:border-violet-500"
-              placeholder="email@studio.kr"
+              required
+              placeholder="studio@example.com"
+              style={{
+                width: '100%', padding: '10px 13px',
+                background: 'var(--s2)', border: '1px solid var(--bd)',
+                borderRadius: 8, color: 'var(--tx)', fontSize: 14,
+                outline: 'none',
+              }}
             />
           </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-white/60">비밀번호</label>
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', display: 'block', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>비밀번호</label>
             <input
+              name="password"
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-white/10 bg-[#0f0f17] px-3 py-2.5 text-sm outline-none focus:border-violet-500"
+              required
               placeholder="••••••••"
+              style={{
+                width: '100%', padding: '10px 13px',
+                background: 'var(--s2)', border: '1px solid var(--bd)',
+                borderRadius: 8, color: 'var(--tx)', fontSize: 14,
+                outline: 'none',
+              }}
             />
           </div>
+
+          {error && (
+            <div style={{
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              borderRadius: 8, padding: '10px 13px', marginBottom: 16,
+              color: '#ef4444', fontSize: 13,
+            }}>{error}</div>
+          )}
+
           <button
             type="submit"
-            className="mt-2 w-full rounded-lg bg-gradient-to-r from-violet-500 to-blue-500 py-2.5 text-sm font-medium text-white hover:opacity-90 transition"
+            disabled={loading}
+            style={{
+              width: '100%', padding: '12px',
+              background: loading ? '#5b21b6' : 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+              border: 'none', borderRadius: 8,
+              color: '#fff', fontSize: 14, fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              transition: 'all 0.2s',
+            }}
           >
-            로그인
+            {loading ? '로그인 중...' : '로그인'}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-xs text-white/40">
-          데모 계정: demo@studio.kr / demo1234
-        </p>
       </div>
-    </main>
-  );
+    </div>
+  )
 }
