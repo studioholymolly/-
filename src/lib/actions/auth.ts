@@ -11,7 +11,7 @@ export async function signIn(formData: FormData) {
   const { error } = await supabase.auth.signInWithPassword({ email, password })
 
   if (error) {
-    return { error: '이메일 또는 비밀번호가 올바르지 않습니다.' }
+    return { error: `[디버그] ${error.message} (code: ${error.status})` }
   }
 
   redirect('/dashboard')
