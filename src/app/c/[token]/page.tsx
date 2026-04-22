@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Project, PhotoWithUrl, RetouchedPhotoWithUrl } from '@/lib/types'
+import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, AnnotationPin } from '@/lib/types'
 import ClientGallery from '@/components/client/ClientGallery'
 
 export default async function ClientPage({ params }: { params: Promise<{ token: string }> }) {
@@ -15,44 +15,64 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
 
   if (error || !project) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0a0a0c', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f0f0f4' }}>
+      <div style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a0c' }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>🔍</div>
           <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>링크를 찾을 수 없습니다</h2>
-          <p style={{ fontSize: 13, color: '#7070a0' }}>유효하지 않은 링크이거나 만료된 링크입니다</p>
+          <p style={{ fontSize: 13, color: '#6b6b80' }}>유효하지 않은 링크이거나 만료된 링크입니다</p>
         </div>
       </div>
     )
   }
 
-  // Get photos with signed URLs
-  const { data: photos = [] } = await supabase
-    .from('photos')
-    .select('*')
-    .eq('project_id', project.id)
-    .order('sort_order')
+  // Fetch photos, retouched, prior selections/annotations (for re-submission) in parallel
+  const [
+    photosRes, retouchedRes, selectionsRes, annotationsRes, submissionsRes,
+  ] = await Promise.all([
+    supabase.from('photos').select('*').eq('project_id', project.id).order('sort_order'),
+    supabase.from('retouched_photos').select('*').eq('project_id', project.id).order('sort_order'),
+    supabase.from('selections').select('*').eq('project_id', project.id),
+    supabase.from('annotations').select('*').eq('project_id', project.id),
+    supabase.from('submissions').select('*').eq('project_id', project.id).order('created_at', { ascending: false }),
+  ])
 
-  const { data: retouchedPhotos = [] } = await supabase
-    .from('retouched_photos')
-    .select('*')
-    .eq('project_id', project.id)
-    .order('sort_order')
+  const photos = (photosRes.data ?? []) as PhotoWithUrl[]
+  const retouchedPhotos = (retouchedRes.data ?? []) as RetouchedPhotoWithUrl[]
 
-  // Generate signed URLs for originals
-  const photoUrls: PhotoWithUrl[] = await Promise.all(
-    (photos ?? []).map(async (p: any) => {
-      const { data } = await supabase.storage.from('originals').createSignedUrl(p.storage_path, 3600)
-      return { ...p, signedUrl: data?.signedUrl || '' }
+  // Batch signed URLs
+  const [origSigned, retSigned] = await Promise.all([
+    photos.length
+      ? supabase.storage.from('originals').createSignedUrls(photos.map(p => p.storage_path), 3600)
+      : Promise.resolve({ data: [] as Array<{ signedUrl: string; path?: string | null }> }),
+    retouchedPhotos.length
+      ? supabase.storage.from('retouched').createSignedUrls(retouchedPhotos.map(p => p.storage_path), 3600)
+      : Promise.resolve({ data: [] as Array<{ signedUrl: string; path?: string | null }> }),
+  ])
+  const photoUrls: PhotoWithUrl[] = photos.map((p, i) => ({ ...p, signedUrl: origSigned.data?.[i]?.signedUrl || '' }))
+  const retouchedUrls: RetouchedPhotoWithUrl[] = retouchedPhotos.map((p, i) => ({ ...p, signedUrl: retSigned.data?.[i]?.signedUrl || '' }))
+
+  // Precompute previous selections + annotations so the client can edit them
+  const selections = (selectionsRes.data ?? []) as Selection[]
+  const annotations = (annotationsRes.data ?? []) as Annotation[]
+  const initialSelectedIds = selections.filter(s => s.status === 'selected').map(s => s.photo_id)
+  const initialAnnotations: Record<string, AnnotationPin[]> = {}
+  for (const a of annotations) {
+    if (!initialAnnotations[a.photo_id]) initialAnnotations[a.photo_id] = []
+    initialAnnotations[a.photo_id].push({
+      pin_number: a.pin_number,
+      x_pct: a.x_pct,
+      y_pct: a.y_pct,
+      comment: a.comment ?? '',
     })
-  )
+  }
+  // Sort each photo's pins and renumber starting from 1
+  for (const photoId of Object.keys(initialAnnotations)) {
+    initialAnnotations[photoId] = initialAnnotations[photoId]
+      .sort((a, b) => a.pin_number - b.pin_number)
+      .map((p, i) => ({ ...p, pin_number: i + 1 }))
+  }
 
-  // Generate signed URLs for retouched
-  const retouchedUrls: RetouchedPhotoWithUrl[] = await Promise.all(
-    (retouchedPhotos ?? []).map(async (p: any) => {
-      const { data } = await supabase.storage.from('retouched').createSignedUrl(p.storage_path, 3600)
-      return { ...p, signedUrl: data?.signedUrl || '' }
-    })
-  )
+  const submissionCount = submissionsRes.data?.length ?? 0
 
   return (
     <ClientGallery
@@ -60,6 +80,9 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
       photos={photoUrls}
       retouchedPhotos={retouchedUrls}
       shareToken={token}
+      initialSelectedIds={initialSelectedIds}
+      initialAnnotations={initialAnnotations}
+      submissionCount={submissionCount}
     />
   )
 }

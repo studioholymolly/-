@@ -1,4 +1,4 @@
-export type ProjectStatus = 'draft' | 'selecting' | 'studio_editing' | 'client_reviewing' | 'completed'
+export type ProjectStatus = 'draft' | 'selecting' | 'selection_done' | 'studio_editing' | 'client_reviewing' | 'completed'
 export type SelectionStatus = 'selected' | 'pending'
 
 export interface Project {
@@ -12,6 +12,7 @@ export interface Project {
   status: ProjectStatus
   share_token: string
   drive_link: string | null
+  drive_link_originals: string | null
   revision_used: boolean
   unread_for_studio: boolean
   created_at: string
@@ -62,6 +63,15 @@ export interface RevisionRequest {
   id: string
   project_id: string
   message: string
+  created_at: string
+}
+
+export interface Submission {
+  id: string
+  project_id: string
+  selected_count: number
+  total_count: number
+  pin_count: number
   created_at: string
 }
 

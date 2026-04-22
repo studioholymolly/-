@@ -21,6 +21,7 @@ create table if not exists projects (
   status             text not null default 'draft',
   share_token        text not null unique default encode(gen_random_bytes(24), 'hex'),
   drive_link         text,
+  drive_link_originals text,
   revision_used      boolean not null default false,
   unread_for_studio  boolean not null default false,
   created_at         timestamptz not null default now(),

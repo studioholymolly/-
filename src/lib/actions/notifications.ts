@@ -33,9 +33,6 @@ export async function markProjectNotificationsRead(projectId: string) {
     .update({ unread_for_studio: false })
     .eq('id', projectId)
     .eq('studio_id', user.id)
-
-  revalidatePath('/dashboard')
-  revalidatePath(`/projects/${projectId}`)
 }
 
 export async function markAllNotificationsRead() {

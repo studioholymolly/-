@@ -25,16 +25,16 @@ export default function RevisionForm({ shareToken }: { shareToken: string }) {
 
   if (done) {
     return (
-      <div style={{ textAlign: 'center', padding: 24, background: 'rgba(20,83,45,0.3)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 12 }}>
+      <div style={{ textAlign: 'center', padding: 24, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.4)', borderRadius: 12 }}>
         <div style={{ fontSize: 28, marginBottom: 8 }}>✅</div>
-        <p style={{ fontSize: 13, color: '#4ade80', fontWeight: 700 }}>수정 요청을 전달했습니다</p>
-        <p style={{ fontSize: 12, color: '#7070a0', marginTop: 4 }}>스튜디오에서 확인 후 업데이트됩니다.</p>
+        <p style={{ fontSize: 13, color: '#15803d', fontWeight: 700 }}>수정 요청을 전달했습니다</p>
+        <p style={{ fontSize: 12, color: '#6b6b80', marginTop: 4 }}>스튜디오에서 확인 후 업데이트됩니다.</p>
       </div>
     )
   }
 
   return (
-    <div style={{ padding: 20, background: '#111115', border: '1px solid #28282e', borderRadius: 12 }}>
+    <div style={{ padding: 20, background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 12 }}>
       <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>수정 요청</h3>
       <p style={{ fontSize: 12, color: '#ef4444', marginBottom: 12 }}>⚠️ 수정 요청은 1회만 가능합니다</p>
       <form onSubmit={handleSubmit}>
@@ -44,8 +44,8 @@ export default function RevisionForm({ shareToken }: { shareToken: string }) {
           placeholder="전체적인 수정 요청 사항을 입력해 주세요"
           rows={4}
           style={{
-            width: '100%', background: '#18181e', border: '1px solid #28282e',
-            color: '#f0f0f4', padding: '10px 12px',
+            width: '100%', background: '#f3f3f5', border: '1px solid #e0e0e5',
+            color: '#0a0a0c', padding: '10px 12px',
             borderRadius: 8, fontSize: 13, resize: 'vertical',
             fontFamily: 'inherit', outline: 'none', marginBottom: 10,
             boxSizing: 'border-box',

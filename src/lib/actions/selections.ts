@@ -21,13 +21,24 @@ export async function submitSelections(
     return { error: '프로젝트를 찾을 수 없습니다.' }
   }
 
-  if (project.status !== 'selecting') {
-    return { error: '셀렉 기간이 아닙니다.' }
+  // Allow re-submission while the project is still in selecting, selection_done, or studio_editing
+  // (anytime before the retouched photos are released to the client)
+  const editableStatuses = ['selecting', 'selection_done', 'studio_editing']
+  if (!editableStatuses.includes(project.status)) {
+    return { error: '지금은 셀렉을 수정할 수 없습니다. 스튜디오에 문의해 주세요.' }
   }
 
   const projectId = project.id
 
-  // Upsert selections
+  // Count total photos for the history log
+  const { count: totalCount } = await supabase
+    .from('photos').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
+
+  // Replace-all strategy: wipe previous selections/annotations and insert fresh set.
+  // (Using DELETE + INSERT instead of upsert so deselections are persisted too.)
+  await supabase.from('selections').delete().eq('project_id', projectId)
+  await supabase.from('annotations').delete().eq('project_id', projectId)
+
   if (selectedPhotoIds.length > 0) {
     const selectionRows = selectedPhotoIds.map(photoId => ({
       project_id: projectId,
@@ -36,17 +47,14 @@ export async function submitSelections(
       submitted_at: new Date().toISOString(),
     }))
 
-    const { error: selError } = await supabase
-      .from('selections')
-      .upsert(selectionRows, { onConflict: 'project_id,photo_id' })
-
+    const { error: selError } = await supabase.from('selections').insert(selectionRows)
     if (selError) {
-      console.error('selections upsert error:', selError)
+      console.error('selections insert error:', selError)
       return { error: selError.message }
     }
   }
 
-  // Insert annotations
+  // Flatten + insert annotations
   const annotationRows: Array<{
     project_id: string
     photo_id: string
@@ -55,7 +63,6 @@ export async function submitSelections(
     y_pct: number
     comment: string
   }> = []
-
   for (const [photoId, pins] of Object.entries(annotations)) {
     for (const pin of pins) {
       annotationRows.push({
@@ -68,27 +75,40 @@ export async function submitSelections(
       })
     }
   }
-
   if (annotationRows.length > 0) {
     await supabase.from('annotations').insert(annotationRows)
   }
 
-  // Update project status
+  // Record this submission in history
+  await supabase.from('submissions').insert({
+    project_id: projectId,
+    selected_count: selectedPhotoIds.length,
+    total_count: totalCount ?? 0,
+    pin_count: annotationRows.length,
+  })
+
+  // Count how many submissions existed before this one — to label notification accurately
+  const { count: submissionCount } = await supabase
+    .from('submissions').select('*', { count: 'exact', head: true }).eq('project_id', projectId)
+  const isResubmission = (submissionCount ?? 0) > 1
+
+  // Update project status (stays at selection_done on re-submit) and raise the unread flag again
   await supabase
     .from('projects')
-    .update({ status: 'studio_editing', unread_for_studio: true })
+    .update({ status: 'selection_done', unread_for_studio: true })
     .eq('id', projectId)
 
-  // Insert notification
+  // Notification
+  const label = isResubmission ? '셀렉을 재제출했습니다' : '셀렉을 완료했습니다'
   await supabase.from('notifications').insert({
     studio_id: project.studio_id,
     project_id: projectId,
     type: 'selection_submitted',
-    message: `${project.client_name}님이 셀렉을 완료했습니다. (${selectedPhotoIds.length}장 선택)`,
+    message: `${project.client_name}님이 ${label}. (${selectedPhotoIds.length}장 선택, 메모 ${annotationRows.length}개)`,
     is_read: false,
   })
 
-  return { ok: true }
+  return { ok: true, isResubmission }
 }
 
 export async function submitRevision(shareToken: string, message: string) {

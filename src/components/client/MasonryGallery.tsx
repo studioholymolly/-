@@ -1,108 +1,235 @@
 'use client'
 
+import { useRef } from 'react'
 import { PhotoWithUrl, AnnotationPin } from '@/lib/types'
 
 interface Props {
   photos: PhotoWithUrl[]
   selections: Set<string>
   annotations: Record<string, AnnotationPin[]>
+  comments: Record<string, string>
   onToggle: (photoId: string) => void
-  onAnnotate: (photo: PhotoWithUrl) => void
+  onCommentChange: (photoId: string, value: string) => void
+  onOpenLightbox: (index: number) => void
+  onOpenAnnotate: (index: number) => void
 }
 
-export default function MasonryGallery({ photos, selections, annotations, onToggle, onAnnotate }: Props) {
+export default function MasonryGallery({
+  photos, selections, annotations, comments,
+  onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
+}: Props) {
   return (
-    <div style={{ padding: '20px 16px 140px', maxWidth: 1400, margin: '0 auto' }}>
+    <div style={{ padding: '20px 16px 140px', maxWidth: 1500, margin: '0 auto' }}>
       <style>{`
-        .photo-col { columns: 4; column-gap: 10px; }
-        @media(max-width:1100px) { .photo-col { columns: 3; } }
-        @media(max-width:750px) { .photo-col { columns: 2; } }
-        @media(max-width:420px) { .photo-col { columns: 1; } }
+        .photo-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
+        }
+        @media (max-width: 1100px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 750px)  { .photo-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 450px)  { .photo-grid { grid-template-columns: 1fr; } }
+
+        .pc {
+          border-radius: 12px; overflow: hidden;
+          background: #fafafa; border: 2.5px solid transparent;
+          transition: border-color .15s, transform .25s ease, box-shadow .25s ease;
+          position: relative;
+          display: flex; flex-direction: column;
+        }
+        .pc:hover { box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+        .pc.sel { border-color: #22c55e; }
+        .pc.has-ann { outline: 2px solid rgba(239,68,68,.4); outline-offset: 1px; }
+
+        /* IMAGE WRAPPER — uniform aspect ratio so every thumbnail is the exact same size */
+        .pc-img-wrap {
+          position: relative;
+          aspect-ratio: 3 / 4;
+          overflow: hidden;
+          cursor: zoom-in;
+        }
+        .pc-img-wrap img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          display: block;
+          transform: scale(1.0);
+          transition: transform .35s ease;
+          will-change: transform;
+          pointer-events: none;
+          user-select: none;
+        }
+        /* Zoom the image slightly on hover so the pan/drag effect has headroom */
+        .pc-img-wrap:hover img { transform: scale(1.12); }
+
+        /* Overlay used for: click → lightbox, hover darkening */
+        .ov {
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0);
+          transition: background .2s;
+          display: flex; align-items: center; justify-content: center;
+          cursor: zoom-in;
+        }
+        .pc-img-wrap:hover .ov { background: rgba(0,0,0,.22); }
+
+        /* Check circle — its own clickable button for toggling selection */
+        .cc {
+          width: 42px; height: 42px; border-radius: 50%;
+          background: rgba(0,0,0,.55); border: 2px solid rgba(255,255,255,.6);
+          display: flex; align-items: center; justify-content: center;
+          opacity: 0; transition: all .2s; backdrop-filter: blur(4px);
+          color: #fff; font-weight: 900; font-size: 18px;
+          cursor: pointer;
+          position: relative; z-index: 3;
+        }
+        .pc-img-wrap:hover .cc, .pc.sel .cc { opacity: 1; }
+        .pc.sel .cc { background: #22c55e; border-color: #22c55e; }
+
+        .sb {
+          position: absolute; top: 8px; right: 8px; z-index: 2;
+          background: #22c55e; color: #fff;
+          font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 10px;
+          opacity: 0; transform: scale(.8); transition: all .15s;
+          pointer-events: none;
+        }
+        .pc.sel .sb { opacity: 1; transform: scale(1); }
+
+        .pn {
+          position: absolute; bottom: 8px; left: 10px; z-index: 2;
+          font-size: 10px; font-weight: 700;
+          color: rgba(255,255,255,.7); text-shadow: 0 1px 2px rgba(0,0,0,.8);
+          pointer-events: none;
+        }
+
+        .ann-badge {
+          position: absolute; top: 8px; left: 8px; z-index: 2;
+          background: #ef4444; color: #fff;
+          font-size: 10px; font-weight: 800; padding: 3px 9px; border-radius: 10px;
+          pointer-events: none;
+        }
+
+        .pc-btns { display: flex; border-top: 1px solid #e0e0e5; flex-shrink: 0; }
+        .pc-btn {
+          flex: 1; background: none; border: none; color: #6b6b80;
+          padding: 10px 6px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+          display: flex; align-items: center; justify-content: center; gap: 4px;
+          transition: all .15s;
+        }
+        .pc-btn:hover { background: #f3f3f5; color: #0a0a0c; }
+        .pc-btn.ann-on { color: #ef4444; }
+        .pc-btn + .pc-btn { border-left: 1px solid #e0e0e5; }
+
+        .cmtbox {
+          display: none;
+          padding: 10px; background: #f3f3f5; border-top: 1px solid #e0e0e5;
+        }
+        .pc.sel .cmtbox { display: block; }
+        .cmtbox textarea {
+          width: 100%; background: #ebebef; border: 1px solid #c4c4cc;
+          color: #0a0a0c; border-radius: 6px; padding: 8px 10px;
+          font-size: 12px; font-family: inherit; resize: vertical; min-height: 56px;
+          outline: none; line-height: 1.5;
+        }
+        .cmtbox textarea:focus { border-color: #22c55e; }
+        .cmtbox textarea::placeholder { color: #8a8a95; }
       `}</style>
-      <div className="photo-col">
-        {photos.map((photo, idx) => {
-          const isSelected = selections.has(photo.id)
-          const pins = annotations[photo.id] || []
-          const hasAnnotations = pins.length > 0
+      <div className="photo-grid">
+        {photos.map((photo, idx) => (
+          <PhotoCard
+            key={photo.id}
+            photo={photo}
+            idx={idx}
+            isSelected={selections.has(photo.id)}
+            pins={annotations[photo.id] || []}
+            comment={comments[photo.id] || ''}
+            onToggle={() => onToggle(photo.id)}
+            onCommentChange={(v) => onCommentChange(photo.id, v)}
+            onOpenLightbox={() => onOpenLightbox(idx)}
+            onOpenAnnotate={() => onOpenAnnotate(idx)}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
-          return (
-            <div
-              key={photo.id}
-              style={{
-                breakInside: 'avoid',
-                marginBottom: 10,
-                borderRadius: 12,
-                overflow: 'visible',
-                position: 'relative',
-                background: '#111115',
-                border: `2.5px solid ${isSelected ? '#22c55e' : hasAnnotations ? 'rgba(239,68,68,0.5)' : 'transparent'}`,
-                transition: 'border-color 0.15s, transform 0.15s',
-                transform: 'translateY(0)',
-                cursor: 'pointer',
-              }}
-              onClick={() => onToggle(photo.id)}
-            >
-              <div style={{ borderRadius: 10, overflow: 'hidden', position: 'relative' }}>
-                <img
-                  src={photo.signedUrl}
-                  alt={photo.filename}
-                  style={{ display: 'block', width: '100%', height: 'auto' }}
-                  loading="lazy"
-                />
-                {/* Hover overlay */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'rgba(0,0,0,0)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'background 0.2s',
-                }}>
-                  {/* Checkmark circle */}
-                  <div style={{
-                    width: 36, height: 36, borderRadius: '50%',
-                    background: isSelected ? '#22c55e' : 'rgba(0,0,0,0.55)',
-                    border: `2px solid ${isSelected ? '#22c55e' : 'rgba(255,255,255,0.5)'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backdropFilter: 'blur(4px)',
-                  }}>
-                    <span style={{ color: '#fff', fontWeight: 900, fontSize: 16 }}>✓</span>
-                  </div>
-                </div>
-                {/* Selected badge */}
-                {isSelected && (
-                  <div style={{ position: 'absolute', top: 7, right: 7, background: '#22c55e', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 9 }}>
-                    선택됨
-                  </div>
-                )}
-                {/* Annotation badge */}
-                {hasAnnotations && (
-                  <div style={{ position: 'absolute', top: 7, left: 7, background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 9 }}>
-                    메모 {pins.length}
-                  </div>
-                )}
-                {/* Photo number */}
-                <div style={{ position: 'absolute', bottom: 7, left: 8, fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
-                  #{idx + 1}
-                </div>
-              </div>
+/**
+ * Photo card:
+ *  - Uniform aspect ratio thumbnail (3:4 portrait), same size for every photo.
+ *  - The image is scaled up slightly on hover, and the INNER image pans toward the cursor
+ *    so moving/dragging the mouse over the card produces a "follow the cursor" effect.
+ *  - Click anywhere on the image itself → lightbox (크게 보기).
+ *  - Click the check circle (✓) → toggle selection. (stopPropagation so it doesn't open lightbox.)
+ */
+function PhotoCard({
+  photo, idx, isSelected, pins, comment,
+  onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
+}: {
+  photo: PhotoWithUrl
+  idx: number
+  isSelected: boolean
+  pins: AnnotationPin[]
+  comment: string
+  onToggle: () => void
+  onCommentChange: (v: string) => void
+  onOpenLightbox: () => void
+  onOpenAnnotate: () => void
+}) {
+  const imgRef = useRef<HTMLImageElement>(null)
+  const hasAnnotations = pins.length > 0
 
-              {/* Annotate button */}
-              <div style={{ padding: '6px 8px' }}>
-                <button
-                  onClick={e => { e.stopPropagation(); onAnnotate(photo) }}
-                  style={{
-                    width: '100%', padding: '5px 0',
-                    background: hasAnnotations ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${hasAnnotations ? 'rgba(239,68,68,0.3)' : 'rgba(255,255,255,0.08)'}`,
-                    borderRadius: 6, color: hasAnnotations ? '#ef4444' : '#7070a0',
-                    fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                  }}
-                >
-                  {hasAnnotations ? `📍 수정 메모 ${pins.length}개` : '📍 수정 메모 추가'}
-                </button>
-              </div>
-            </div>
-          )
-        })}
+  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
+    const img = imgRef.current
+    if (!img) return
+    const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect()
+    // Normalized cursor position inside the wrapper, centered (-0.5..0.5)
+    const nx = (e.clientX - rect.left) / rect.width - 0.5
+    const ny = (e.clientY - rect.top) / rect.height - 0.5
+    // The image is scaled to 1.12x, so it overflows by ~6% on each side → we have ~6% of
+    // range to drag it. Translate inversely so the photo moves toward the cursor.
+    const tx = (-nx * 22).toFixed(2)
+    const ty = (-ny * 22).toFixed(2)
+    img.style.transform = `scale(1.12) translate(${tx}px, ${ty}px)`
+  }
+
+  function handleLeave() {
+    const img = imgRef.current
+    if (!img) return
+    img.style.transform = ''
+  }
+
+  return (
+    <div className={`pc${isSelected ? ' sel' : ''}${hasAnnotations ? ' has-ann' : ''}`}>
+      <div className="pc-img-wrap" onMouseMove={handleMove} onMouseLeave={handleLeave}>
+        <img ref={imgRef} src={photo.signedUrl} alt={photo.filename} loading="lazy" />
+        {/* Overlay: clicking anywhere on the image opens the lightbox */}
+        <div className="ov" onClick={onOpenLightbox} role="button" aria-label={`${idx + 1}번 사진 크게 보기`}>
+          {/* Check circle — nested button; stops propagation so it only toggles selection */}
+          <button
+            type="button"
+            className="cc"
+            onClick={e => { e.stopPropagation(); onToggle() }}
+            aria-label={isSelected ? '선택 해제' : '선택'}
+          >✓</button>
+        </div>
+        <div className="sb">✓ 선택</div>
+        {hasAnnotations && <div className="ann-badge">📍 {pins.length}개</div>}
+        <div className="pn">#{String(idx + 1).padStart(3, '0')}</div>
+      </div>
+      <div className="pc-btns">
+        <button type="button" className="pc-btn" onClick={onOpenLightbox}>
+          🔍 크게 보기
+        </button>
+        <button type="button" className={`pc-btn${hasAnnotations ? ' ann-on' : ''}`} onClick={onOpenAnnotate}>
+          📍 {hasAnnotations ? '주석 수정' : '주석 추가'}
+        </button>
+      </div>
+      <div className="cmtbox">
+        <textarea
+          value={comment}
+          onChange={(e) => onCommentChange(e.target.value)}
+          placeholder="전체 코멘트 (선택 이유, 보정 방향 등)..."
+          rows={2}
+        />
       </div>
     </div>
   )

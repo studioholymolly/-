@@ -1,11 +1,13 @@
+import Link from 'next/link'
 import { redirect, notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { markProjectNotificationsRead, getUnreadCount } from '@/lib/actions/notifications'
 import Navbar from '@/components/Navbar'
 import StatusBadge from '@/components/StatusBadge'
+import BackButton from '@/components/BackButton'
 import ProjectTabs from '@/components/project/ProjectTabs'
 import { formatDate } from '@/lib/utils'
-import { Project, Photo, RetouchedPhoto, Selection, Annotation, RevisionRequest, PhotoWithUrl, RetouchedPhotoWithUrl } from '@/lib/types'
+import { Project, Photo, RetouchedPhoto, Selection, Annotation, RevisionRequest, PhotoWithUrl, RetouchedPhotoWithUrl, Submission } from '@/lib/types'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -17,42 +19,55 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .from('projects').select('*').eq('id', id).eq('studio_id', user.id).single()
   if (!project) notFound()
 
-  // Mark notifications read
-  await markProjectNotificationsRead(id)
+  // Run every independent read in parallel — all ~1 RTT instead of N
+  const [
+    photosRes,
+    retouchedRes,
+    selectionsRes,
+    annotationsRes,
+    revisionRes,
+    submissionsRes,
+    unreadCount,
+  ] = await Promise.all([
+    supabase.from('photos').select('*').eq('project_id', id).order('sort_order'),
+    supabase.from('retouched_photos').select('*').eq('project_id', id).order('sort_order'),
+    supabase.from('selections').select('*').eq('project_id', id),
+    supabase.from('annotations').select('*').eq('project_id', id),
+    supabase.from('revision_requests').select('*').eq('project_id', id).maybeSingle(),
+    supabase.from('submissions').select('*').eq('project_id', id).order('created_at', { ascending: false }),
+    getUnreadCount(),
+  ])
 
-  // Fetch photos
-  const { data: photos = [] } = await supabase
-    .from('photos').select('*').eq('project_id', id).order('sort_order')
+  const photos = (photosRes.data ?? []) as Photo[]
+  const retouchedPhotos = (retouchedRes.data ?? []) as RetouchedPhoto[]
+  const selections = (selectionsRes.data ?? []) as Selection[]
+  const annotations = (annotationsRes.data ?? []) as Annotation[]
+  const revisionRequest = revisionRes.data as RevisionRequest | null
+  const submissions = (submissionsRes.data ?? []) as Submission[]
 
-  const { data: retouchedPhotos = [] } = await supabase
-    .from('retouched_photos').select('*').eq('project_id', id).order('sort_order')
+  // Batch signed URLs — 1 round trip per bucket instead of N
+  const [origSignedRes, retSignedRes] = await Promise.all([
+    photos.length
+      ? supabase.storage.from('originals').createSignedUrls(photos.map(p => p.storage_path), 3600)
+      : Promise.resolve({ data: [] as Array<{ signedUrl: string; path?: string | null }> }),
+    retouchedPhotos.length
+      ? supabase.storage.from('retouched').createSignedUrls(retouchedPhotos.map(p => p.storage_path), 3600)
+      : Promise.resolve({ data: [] as Array<{ signedUrl: string; path?: string | null }> }),
+  ])
 
-  const { data: selections = [] } = await supabase
-    .from('selections').select('*').eq('project_id', id)
+  const photoUrls: PhotoWithUrl[] = photos.map((p, i) => ({
+    ...p,
+    signedUrl: origSignedRes.data?.[i]?.signedUrl || '',
+  }))
+  const retouchedUrls: RetouchedPhotoWithUrl[] = retouchedPhotos.map((p, i) => ({
+    ...p,
+    signedUrl: retSignedRes.data?.[i]?.signedUrl || '',
+  }))
 
-  const { data: annotations = [] } = await supabase
-    .from('annotations').select('*').eq('project_id', id)
-
-  const { data: revisionRequest } = await supabase
-    .from('revision_requests').select('*').eq('project_id', id).single()
-
-  // Generate signed URLs for original photos
-  const photoUrls: PhotoWithUrl[] = await Promise.all(
-    (photos as Photo[]).map(async (p) => {
-      const { data } = await supabase.storage.from('originals').createSignedUrl(p.storage_path, 3600)
-      return { ...p, signedUrl: data?.signedUrl || '' }
-    })
-  )
-
-  // Generate signed URLs for retouched photos
-  const retouchedUrls: RetouchedPhotoWithUrl[] = await Promise.all(
-    (retouchedPhotos as RetouchedPhoto[]).map(async (p) => {
-      const { data } = await supabase.storage.from('retouched').createSignedUrl(p.storage_path, 3600)
-      return { ...p, signedUrl: data?.signedUrl || '' }
-    })
-  )
-
-  const unreadCount = await getUnreadCount()
+  // Only mark read if there's actually something unread (skip a pointless 2-query round trip)
+  if (project.unread_for_studio) {
+    await markProjectNotificationsRead(id)
+  }
   const selectedPhotoIds = Array.from(
     new Set((selections as Selection[]).filter(s => s.status === 'selected').map(s => s.photo_id))
   )
@@ -61,6 +76,16 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       <Navbar unreadCount={unreadCount} />
       <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 24px' }}>
+        {/* Back / Home */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          <BackButton />
+          <Link href="/dashboard" style={{
+            background: 'var(--s2)', border: '1px solid var(--bd2)',
+            color: 'var(--tx)', padding: '7px 14px',
+            borderRadius: 8, fontSize: 13, fontWeight: 600,
+            textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6,
+          }}>🏠 홈</Link>
+        </div>
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
           <div>
@@ -84,6 +109,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           annotations={annotations as Annotation[]}
           revisionRequest={revisionRequest as RevisionRequest | null}
           selectedPhotoIds={selectedPhotoIds}
+          submissions={submissions}
         />
       </div>
     </div>
