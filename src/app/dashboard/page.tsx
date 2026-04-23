@@ -3,9 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getUnreadCount } from '@/lib/actions/notifications'
 import Navbar from '@/components/Navbar'
-import StatusBadge from '@/components/StatusBadge'
-import ProjectRowActions from '@/components/ProjectRowActions'
-import { formatDate, WORKFLOW_STATUSES, STATUS_LABELS } from '@/lib/utils'
+import DashboardViews from '@/components/dashboard/DashboardViews'
+import { WORKFLOW_STATUSES, STATUS_LABELS } from '@/lib/utils'
 import { Project, ProjectStatus } from '@/lib/types'
 
 interface DashboardSearchParams {
@@ -116,75 +115,8 @@ export default async function DashboardPage({
           })}
         </div>
 
-        {/* Project list */}
-        {visibleProjects.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: '80px 20px',
-            background: 'var(--s1)', border: '1px solid var(--bd)',
-            borderRadius: 16,
-          }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>📁</div>
-            <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-              {activeFilter ? `'${STATUS_LABELS[activeFilter]}' 상태의 프로젝트가 없습니다` : '프로젝트가 없습니다'}
-            </h3>
-            {!activeFilter && (
-              <>
-                <p style={{ fontSize: 13, color: 'var(--mu)', marginBottom: 20 }}>첫 프로젝트를 만들어 클라이언트와 협업을 시작하세요</p>
-                <Link href="/projects/new" style={{
-                  background: 'var(--vio)', color: '#fff',
-                  padding: '10px 20px', borderRadius: 8,
-                  fontSize: 14, fontWeight: 700, textDecoration: 'none',
-                }}>+ 새 프로젝트 만들기</Link>
-              </>
-            )}
-            {activeFilter && (
-              <Link href="/dashboard" style={{
-                background: 'var(--s2)', color: 'var(--tx)',
-                border: '1px solid var(--bd2)',
-                padding: '10px 20px', borderRadius: 8,
-                fontSize: 14, fontWeight: 600, textDecoration: 'none',
-              }}>전체 보기</Link>
-            )}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {visibleProjects.map(project => (
-              <Link key={project.id} href={`/projects/${project.id}`} style={{ textDecoration: 'none' }}>
-                <div style={{
-                  background: 'var(--s1)', border: `1px solid ${project.unread_for_studio ? 'var(--vio)' : 'var(--bd)'}`,
-                  borderRadius: 12, padding: '16px 20px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'border-color 0.15s',
-                  cursor: 'pointer',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                    {project.unread_for_studio && (
-                      <span style={{
-                        width: 8, height: 8, borderRadius: '50%',
-                        background: 'var(--vio)', flexShrink: 0,
-                        display: 'inline-block',
-                      }} />
-                    )}
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--tx)', marginBottom: 3 }}>
-                        {project.name}
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--mu)' }}>
-                        {project.client_name} · {project.client_email}
-                        {project.deadline ? ` · 마감 ${formatDate(project.deadline)}` : ''}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-                    <StatusBadge status={project.status} />
-                    <span style={{ fontSize: 12, color: 'var(--mu)' }}>{formatDate(project.created_at)}</span>
-                    <ProjectRowActions projectId={project.id} projectName={project.name} />
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* Views: list / calendar / gantt */}
+        <DashboardViews projects={visibleProjects} activeFilter={activeFilter} />
       </div>
     </div>
   )
