@@ -386,7 +386,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                   }}>📤 클라이언트에게 보정본 공개하기</button>
                 </div>
               )}
-              {project.status === 'studio_editing' && project.revision_used && (
+              {(project.status === 'studio_editing' || project.status === 'client_reviewing') && project.revision_used && (
                 <div style={{
                   marginTop: 18, padding: 16,
                   background: 'rgba(59,130,246,0.08)',
