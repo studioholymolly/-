@@ -52,6 +52,7 @@ export default function ClientGallery({
   const [showRevSubmitModal, setShowRevSubmitModal] = useState(false)
   const [showNoRevConfirm, setShowNoRevConfirm] = useState(false)
   const [showDriveLinkPopup, setShowDriveLinkPopup] = useState(false)
+  const [showRevSubmittedPopup, setShowRevSubmittedPopup] = useState(false)
   const [noRevLoading, setNoRevLoading] = useState(false)
   const [noRevError, setNoRevError] = useState('')
 
@@ -180,20 +181,16 @@ export default function ClientGallery({
   // review/adjust their submitted selection until retouched photos are released
   // (`client_reviewing`). A warning banner in the header informs them retouching is in progress.
 
-  // Submitted success screen (handles both initial selection and revision submissions)
-  if (submittedKind) {
-    const isRevision = submittedKind === 'revision'
+  // Submitted success screen — full-page takeover for initial selection only.
+  // Revision submissions use a dismissable popup instead (see showRevSubmittedPopup).
+  if (submittedKind === 'selection') {
     return (
       <div style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a0c' }}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
-            {isRevision ? '수정 요청이 접수되었습니다!' : '셀렉이 완료되었습니다!'}
-          </h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>셀렉이 완료되었습니다!</h2>
           <p style={{ fontSize: 14, color: '#6b6b80', lineHeight: 1.7 }}>
-            {isRevision
-              ? <>수정 요청한 내용을 스튜디오에 전달했습니다.<br/>수정이 완료되면 다시 연락드릴게요.</>
-              : <>선택한 사진과 메모를 스튜디오에 전달했습니다.<br/>보정이 완료되면 다시 이 페이지를 방문해 주세요.</>}
+            선택한 사진과 메모를 스튜디오에 전달했습니다.<br/>보정이 완료되면 다시 이 페이지를 방문해 주세요.
           </p>
         </div>
       </div>
@@ -282,7 +279,11 @@ export default function ClientGallery({
             comments={revComments}
             shareToken={shareToken}
             onClose={() => setShowRevSubmitModal(false)}
-            onSuccess={() => { setShowRevSubmitModal(false); setSubmittedKind('revision') }}
+            onSuccess={() => {
+              setShowRevSubmitModal(false)
+              setRevisionMode('view')
+              setShowRevSubmittedPopup(true)
+            }}
           />
         )}
       </div>
@@ -455,6 +456,34 @@ export default function ClientGallery({
                 padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
                 cursor: 'pointer',
               }}>닫기</button>
+            </div>
+          </div>
+        )}
+
+        {/* Revision submission success popup */}
+        {showRevSubmittedPopup && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+            zIndex: 260, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#ffffff', border: '1px solid #e0e0e5', borderRadius: 16,
+              width: '100%', maxWidth: 420, padding: 28, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 10 }}>수정 요청 보내기 완료!</h3>
+              <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 22, lineHeight: 1.7 }}>
+                수정 요청한 내용을 스튜디오에 전달했습니다.<br/>수정이 완료되면 다시 연락드릴게요.
+              </p>
+              <button
+                onClick={() => { setShowRevSubmittedPopup(false); window.location.reload() }}
+                style={{
+                  background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff',
+                  border: 'none', padding: '11px 30px', borderRadius: 8,
+                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                }}
+              >확인</button>
             </div>
           </div>
         )}
