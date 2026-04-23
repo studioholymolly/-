@@ -7,7 +7,7 @@ import ShareLinkButton from './ShareLinkButton'
 import PhotoLightbox from '@/components/PhotoLightbox'
 import SelectionReviewLightbox from './SelectionReviewLightbox'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, RevisionRequest, Submission } from '@/lib/types'
-import { updateProjectStatus, setDriveLinkOriginals, setDriveLinkRetouched, updateProject, deleteProject } from '@/lib/actions/projects'
+import { updateProjectStatus, setDriveLinkRetouched, updateProject, deleteProject } from '@/lib/actions/projects'
 import { formatDateTime } from '@/lib/utils'
 
 interface Props {
@@ -25,7 +25,6 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
   const [tab, setTab] = useState<'originals' | 'selections' | 'retouch' | 'settings'>('originals')
   const [isPending, startTransition] = useTransition()
   const [driveLinkRetouchedInput, setDriveLinkRetouchedInput] = useState(project.drive_link || '')
-  const [driveLinkOriginalsInput, setDriveLinkOriginalsInput] = useState(project.drive_link_originals || '')
   const [editSaved, setEditSaved] = useState(false)
   const [lightbox, setLightbox] = useState<{ photos: { signedUrl: string; filename: string }[]; index: number } | null>(null)
   const [selectionReviewIndex, setSelectionReviewIndex] = useState<number | null>(null)
@@ -78,13 +77,6 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
   function handleStatusChange(newStatus: string) {
     startTransition(async () => {
       await updateProjectStatus(project.id, newStatus)
-      router.refresh()
-    })
-  }
-
-  function handleSaveOriginalsLink() {
-    startTransition(async () => {
-      await setDriveLinkOriginals(project.id, driveLinkOriginalsInput)
       router.refresh()
     })
   }
@@ -329,54 +321,54 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               </div>
 
               {project.status === 'studio_editing' && (
-                <button onClick={() => handleStatusChange('client_reviewing')} disabled={isPending} style={{
-                  marginTop: 16, background: '#0d9488', color: '#fff',
-                  border: 'none', padding: '11px 24px', borderRadius: 8,
-                  fontSize: 14, fontWeight: 700, cursor: 'pointer',
-                }}>📤 클라이언트에게 보정본 공개</button>
+                <div style={{
+                  marginTop: 18, padding: 16,
+                  background: 'rgba(13,148,136,0.08)',
+                  border: '1px solid rgba(13,148,136,0.35)',
+                  borderRadius: 10,
+                }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>📤 보정본이 준비되셨나요?</h4>
+                  <p style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 12, lineHeight: 1.6 }}>
+                    아래 버튼을 누르면 클라이언트가 <b>기존 공유 링크</b>에서 보정본을 확인할 수 있습니다. 수정 요청 1회까지 받을 수 있어요.
+                  </p>
+                  <button onClick={() => handleStatusChange('client_reviewing')} disabled={isPending} style={{
+                    background: 'linear-gradient(135deg,#0d9488,#14b8a6)', color: '#fff',
+                    border: 'none', padding: '11px 24px', borderRadius: 8,
+                    fontSize: 14, fontWeight: 700, cursor: 'pointer',
+                  }}>📤 클라이언트에게 보정본 공개하기</button>
+                </div>
+              )}
+              {project.status === 'client_reviewing' && (
+                <div style={{
+                  marginTop: 18, padding: 14,
+                  background: 'rgba(34,197,94,0.08)',
+                  border: '1px solid rgba(34,197,94,0.35)',
+                  borderRadius: 10,
+                  fontSize: 13, color: 'var(--tx)', lineHeight: 1.6,
+                }}>
+                  ✅ 클라이언트가 공유 링크에서 보정본을 확인할 수 있는 상태입니다. (수정 요청 1회 가능)
+                </div>
               )}
             </div>
           )}
 
-          {/* Drive links (always visible) */}
+          {/* Drive link (단일 — 원본/보정본을 같은 드라이브 폴더에 넣으세요) */}
           <div style={{ marginTop: 24, padding: 18, background: 'var(--s2)', border: '1px solid var(--bd)', borderRadius: 12 }}>
             <h4 style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>🔗 구글 드라이브 다운로드 링크</h4>
-            <p style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 14 }}>원본과 보정본을 각각 업로드한 드라이브 폴더 링크를 붙여넣으세요. 클라이언트에게 공개됩니다.</p>
+            <p style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 14 }}>원본과 보정본을 모두 담은 드라이브 폴더 링크를 붙여넣으세요. 클라이언트에게 공개됩니다.</p>
 
-            {/* 원본 */}
-            <div style={{ marginBottom: 14 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>원본 다운로드 링크</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={driveLinkOriginalsInput}
-                  onChange={e => setDriveLinkOriginalsInput(e.target.value)}
-                  placeholder="https://drive.google.com/..."
-                  style={{ flex: 1, background: 'var(--s3)', border: '1px solid var(--bd)', color: 'var(--tx)', padding: '9px 12px', borderRadius: 7, fontSize: 13, outline: 'none' }}
-                />
-                <button onClick={handleSaveOriginalsLink} disabled={isPending} style={{
-                  background: 'var(--vio)', color: '#fff', border: 'none',
-                  padding: '9px 18px', borderRadius: 7, fontSize: 13,
-                  fontWeight: 700, cursor: 'pointer',
-                }}>저장</button>
-              </div>
-            </div>
-
-            {/* 보정본 */}
-            <div>
-              <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', display: 'block', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em' }}>보정본 다운로드 링크</label>
-              <div style={{ display: 'flex', gap: 8 }}>
-                <input
-                  value={driveLinkRetouchedInput}
-                  onChange={e => setDriveLinkRetouchedInput(e.target.value)}
-                  placeholder="https://drive.google.com/..."
-                  style={{ flex: 1, background: 'var(--s3)', border: '1px solid var(--bd)', color: 'var(--tx)', padding: '9px 12px', borderRadius: 7, fontSize: 13, outline: 'none' }}
-                />
-                <button onClick={handleSaveRetouchedLink} disabled={isPending} style={{
-                  background: '#16a34a', color: '#fff', border: 'none',
-                  padding: '9px 18px', borderRadius: 7, fontSize: 13,
-                  fontWeight: 700, cursor: 'pointer',
-                }}>저장</button>
-              </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={driveLinkRetouchedInput}
+                onChange={e => setDriveLinkRetouchedInput(e.target.value)}
+                placeholder="https://drive.google.com/..."
+                style={{ flex: 1, background: 'var(--s3)', border: '1px solid var(--bd)', color: 'var(--tx)', padding: '9px 12px', borderRadius: 7, fontSize: 13, outline: 'none' }}
+              />
+              <button onClick={handleSaveRetouchedLink} disabled={isPending} style={{
+                background: '#16a34a', color: '#fff', border: 'none',
+                padding: '9px 18px', borderRadius: 7, fontSize: 13,
+                fontWeight: 700, cursor: 'pointer',
+              }}>저장</button>
             </div>
           </div>
         </div>

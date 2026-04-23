@@ -80,22 +80,6 @@ export default function ClientGallery({
             모든 보정이 완료되었습니다. 아래 구글 드라이브 링크에서 최종 결과물을 다운로드해 주세요.
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, alignItems: 'center' }}>
-            {project.drive_link_originals && (
-              <a
-                href={project.drive_link_originals}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'linear-gradient(135deg, #6d28d9, #7c3aed)',
-                  color: '#fff', padding: '13px 26px',
-                  borderRadius: 10, fontSize: 14, fontWeight: 700,
-                  textDecoration: 'none',
-                }}
-              >
-                📁 원본 다운로드
-              </a>
-            )}
             {project.drive_link && (
               <a
                 href={project.drive_link}
@@ -109,7 +93,7 @@ export default function ClientGallery({
                   textDecoration: 'none',
                 }}
               >
-                📁 보정본 다운로드
+                📁 드라이브에서 다운로드
               </a>
             )}
           </div>

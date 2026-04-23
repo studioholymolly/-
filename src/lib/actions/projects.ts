@@ -97,20 +97,6 @@ export async function setDriveLink(projectId: string, driveLink: string) {
   revalidatePath('/dashboard')
 }
 
-export async function setDriveLinkOriginals(projectId: string, driveLink: string) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
-
-  await supabase
-    .from('projects')
-    .update({ drive_link_originals: driveLink || null })
-    .eq('id', projectId)
-    .eq('studio_id', user.id)
-
-  revalidatePath(`/projects/${projectId}`)
-}
-
 export async function setDriveLinkRetouched(projectId: string, driveLink: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
