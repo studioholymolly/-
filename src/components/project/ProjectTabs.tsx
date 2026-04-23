@@ -189,7 +189,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           )}
           {project.status === 'draft' && photos.length > 0 && (
             <div style={{ marginTop: 20 }}>
-              <ShareLinkButton projectId={project.id} token={project.share_token} clientEmail={project.client_email} />
+              <ShareLinkButton projectId={project.id} projectName={project.name} token={project.share_token} clientEmail={project.client_email} clientName={project.client_name} />
               <button onClick={() => handleStatusChange('selecting')} disabled={isPending} style={{
                 marginTop: 12, background: 'linear-gradient(135deg,#6d28d9,#7c3aed)',
                 color: '#fff', border: 'none', padding: '11px 24px',
@@ -199,7 +199,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           )}
           {project.status !== 'draft' && (
             <div style={{ marginTop: 16 }}>
-              <ShareLinkButton projectId={project.id} token={project.share_token} clientEmail={project.client_email} />
+              <ShareLinkButton projectId={project.id} projectName={project.name} token={project.share_token} clientEmail={project.client_email} clientName={project.client_name} />
             </div>
           )}
         </div>
@@ -592,7 +592,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           </form>
 
           <div style={{ marginBottom: 20 }}>
-            <ShareLinkButton projectId={project.id} token={project.share_token} clientEmail={project.client_email} />
+            <ShareLinkButton projectId={project.id} projectName={project.name} token={project.share_token} clientEmail={project.client_email} clientName={project.client_name} />
           </div>
 
           {/* Danger zone */}

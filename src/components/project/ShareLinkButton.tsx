@@ -7,16 +7,33 @@ import { regenerateShareToken } from '@/lib/actions/projects'
 
 interface Props {
   projectId: string
+  projectName: string
   token: string
   clientEmail: string
+  clientName?: string
 }
 
-export default function ShareLinkButton({ projectId, token, clientEmail }: Props) {
+export default function ShareLinkButton({ projectId, projectName, token, clientEmail, clientName }: Props) {
   const [copied, setCopied] = useState(false)
+  const [kakaoCopied, setKakaoCopied] = useState(false)
   const [justIssued, setJustIssued] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const url = getShareUrl(token)
+
+  // 카카오톡 안내 메시지 템플릿 — 프로젝트명 + 링크 + 사용법 안내 포함
+  const kakaoMessage = [
+    `안녕하세요${clientName ? ` ${clientName}님` : ''} 😊`,
+    `<${projectName}> 사진 셀렉 링크를 보내드립니다.`,
+    ``,
+    `👉 ${url}`,
+    ``,
+    `위 링크에서 마음에 드시는 사진을 선택하고, 보정이 필요한 부분은 각 사진에 핀을 추가해 남겨주세요.`,
+    `셀렉 완료 후 "셀렉 완료 전송" 버튼을 눌러주시면 됩니다.`,
+    ``,
+    `감사합니다 🙏`,
+    `— 스튜디오 홀리몰리`,
+  ].join('\n')
 
   async function copy() {
     await navigator.clipboard.writeText(url)
@@ -24,9 +41,15 @@ export default function ShareLinkButton({ projectId, token, clientEmail }: Props
     setTimeout(() => setCopied(false), 2500)
   }
 
+  async function copyKakao() {
+    await navigator.clipboard.writeText(kakaoMessage)
+    setKakaoCopied(true)
+    setTimeout(() => setKakaoCopied(false), 2500)
+  }
+
   function openEmail() {
-    const subject = encodeURIComponent('사진 셀렉 링크입니다')
-    const body = encodeURIComponent(`안녕하세요 😊\n\n아래 링크에서 사진을 확인하고 선택해 주세요.\n\n${url}\n\n감사합니다.`)
+    const subject = encodeURIComponent(`사진 셀렉 링크 — ${projectName}`)
+    const body = encodeURIComponent(kakaoMessage)
     window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`)
   }
 
@@ -71,6 +94,37 @@ export default function ShareLinkButton({ projectId, token, clientEmail }: Props
           cursor: 'pointer', whiteSpace: 'nowrap',
         }}>이메일 열기</button>
       </div>
+
+      {/* 카카오톡 안내 메시지 템플릿 */}
+      <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid var(--bd)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', textTransform: 'uppercase', letterSpacing: '0.08em', margin: 0 }}>
+            💬 카카오톡 안내 메시지
+          </p>
+          <button onClick={copyKakao} style={{
+            background: kakaoCopied ? '#14532d' : '#fee500',
+            border: 'none', color: kakaoCopied ? '#fff' : '#3a1d1d',
+            padding: '7px 12px', borderRadius: 6,
+            fontSize: 12, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+          }}>{kakaoCopied ? '✓ 복사됨' : '📋 메시지 복사'}</button>
+        </div>
+        <textarea
+          readOnly
+          value={kakaoMessage}
+          onFocus={e => e.currentTarget.select()}
+          rows={9}
+          style={{
+            width: '100%', background: 'var(--s3)', border: '1px solid var(--bd)',
+            color: 'var(--tx)', padding: '10px 12px', borderRadius: 6,
+            fontSize: 12, fontFamily: 'inherit', resize: 'vertical',
+            outline: 'none', lineHeight: 1.6,
+          }}
+        />
+        <p style={{ fontSize: 10, color: 'var(--mu)', marginTop: 6, lineHeight: 1.5 }}>
+          💡 메시지 복사 버튼을 누른 뒤 카카오톡에 붙여넣기 하세요
+        </p>
+      </div>
+
       <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--bd)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
         <p style={{ fontSize: 11, color: 'var(--mu)', lineHeight: 1.5, margin: 0 }}>
           사진을 추가하거나 정보를 수정했다면, 새 링크를 발급해 클라이언트에게 다시 보낼 수 있습니다. 기존 링크는 즉시 무효가 됩니다.
