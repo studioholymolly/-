@@ -57,7 +57,7 @@ export default async function DashboardPage({
     { key: 'selecting', label: '셀렉 중', value: countByStatus.selecting, color: '#60a5fa' },
     { key: 'selection_done', label: '셀렉 완료', value: countByStatus.selection_done, color: '#34d399' },
     { key: 'studio_editing', label: '보정 중', value: countByStatus.studio_editing, color: '#a78bfa' },
-    { key: 'client_reviewing', label: '검토 중', value: countByStatus.client_reviewing, color: '#fbbf24' },
+    { key: 'client_reviewing', label: '수정 중', value: countByStatus.client_reviewing, color: '#fbbf24' },
     { key: 'completed', label: '완료', value: countByStatus.completed, color: '#22c55e' },
   ]
 

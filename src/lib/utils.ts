@@ -25,7 +25,7 @@ export const STATUS_LABELS: Record<ProjectStatus, string> = {
   selecting: '셀렉 중',
   selection_done: '셀렉 완료',
   studio_editing: '보정 중',
-  client_reviewing: '검토 중',
+  client_reviewing: '수정 중',
   completed: '완료',
 }
 

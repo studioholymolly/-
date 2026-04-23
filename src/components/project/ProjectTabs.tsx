@@ -131,7 +131,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               background: project.status === s ? 'var(--vio)' : 'var(--s2)',
               color: project.status === s ? '#fff' : 'var(--tx)',
               border: '1px solid var(--bd2)',
-            }}>{({draft:'초안',selecting:'셀렉 중',selection_done:'셀렉 완료',studio_editing:'보정 중',client_reviewing:'검토 중',completed:'완료'} as const)[s]}</button>
+            }}>{({draft:'초안',selecting:'셀렉 중',selection_done:'셀렉 완료',studio_editing:'보정 중',client_reviewing:'수정 중',completed:'완료'} as const)[s]}</button>
           ))}
         </div>
       </div>
@@ -496,11 +496,22 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
       {tab === 'revisions' && (
         <div>
           {hasRevisionData ? (
-            <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 4 }}>📝 클라이언트가 수정 요청을 보냈습니다</h3>
-              <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
-                보정본 <b>{revisionSelectedIds.length}장</b>{revPinCount > 0 ? `, 핀 메모 ${revPinCount}개` : ''}{revCommentCount > 0 ? `, 코멘트 ${revCommentCount}개` : ''}. 사진을 클릭하면 핀 위치와 메모, 코멘트를 크게 볼 수 있습니다.
-              </p>
+            <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 260 }}>
+                <h3 style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 4 }}>📝 클라이언트가 수정 요청을 보냈습니다</h3>
+                <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
+                  보정본 <b>{revisionSelectedIds.length}장</b>{revPinCount > 0 ? `, 핀 메모 ${revPinCount}개` : ''}{revCommentCount > 0 ? `, 코멘트 ${revCommentCount}개` : ''}. 사진을 클릭하면 핀 위치와 메모, 코멘트를 크게 볼 수 있습니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTab('retouch')}
+                style={{
+                  background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', color: '#fff',
+                  border: 'none', padding: '9px 18px', borderRadius: 8,
+                  fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap',
+                }}
+              >📤 수정본 업로드하러 가기</button>
             </div>
           ) : (
             <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 10 }}>
