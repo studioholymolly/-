@@ -30,7 +30,6 @@ export default async function DashboardPage({
     supabase
       .from('projects')
       .select('*')
-      .eq('studio_id', user.id)
       .order('created_at', { ascending: false }),
     getUnreadCount(),
   ])

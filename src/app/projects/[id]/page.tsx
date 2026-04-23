@@ -16,7 +16,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   if (!user) redirect('/')
 
   const { data: project } = await supabase
-    .from('projects').select('*').eq('id', id).eq('studio_id', user.id).single()
+    .from('projects').select('*').eq('id', id).single()
   if (!project) notFound()
 
   // Run every independent read in parallel — all ~1 RTT instead of N

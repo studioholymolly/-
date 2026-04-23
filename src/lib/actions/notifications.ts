@@ -8,10 +8,10 @@ export async function getUnreadCount(): Promise<number> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return 0
 
+  // Shared studio: all authenticated members see all unread notifications
   const { count } = await supabase
     .from('notifications')
     .select('*', { count: 'exact', head: true })
-    .eq('studio_id', user.id)
     .eq('is_read', false)
 
   return count || 0
@@ -25,14 +25,12 @@ export async function markProjectNotificationsRead(projectId: string) {
   await supabase
     .from('notifications')
     .update({ is_read: true })
-    .eq('studio_id', user.id)
     .eq('project_id', projectId)
 
   await supabase
     .from('projects')
     .update({ unread_for_studio: false })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 }
 
 export async function markAllNotificationsRead() {
@@ -43,7 +41,6 @@ export async function markAllNotificationsRead() {
   await supabase
     .from('notifications')
     .update({ is_read: true })
-    .eq('studio_id', user.id)
     .eq('is_read', false)
 
   revalidatePath('/dashboard')

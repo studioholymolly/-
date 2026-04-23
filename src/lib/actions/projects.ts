@@ -63,7 +63,6 @@ export async function updateProject(projectId: string, formData: FormData) {
       updated_at: new Date().toISOString(),
     })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   if (error) return { error: error.message }
 
@@ -81,7 +80,6 @@ export async function updateProjectStatus(projectId: string, status: string) {
     .from('projects')
     .update({ status })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   revalidatePath(`/projects/${projectId}`)
 }
@@ -95,7 +93,6 @@ export async function setDriveLink(projectId: string, driveLink: string) {
     .from('projects')
     .update({ drive_link: driveLink, status: 'completed' })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   revalidatePath(`/projects/${projectId}`)
   revalidatePath('/dashboard')
@@ -110,7 +107,6 @@ export async function setDriveLinkRetouched(projectId: string, driveLink: string
     .from('projects')
     .update({ drive_link: driveLink || null })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   revalidatePath(`/projects/${projectId}`)
 }
@@ -129,7 +125,6 @@ export async function regenerateShareToken(projectId: string) {
     .from('projects')
     .update({ share_token: newToken, updated_at: new Date().toISOString() })
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   if (error) return { error: error.message }
 
@@ -146,7 +141,6 @@ export async function deleteProject(projectId: string) {
     .from('projects')
     .delete()
     .eq('id', projectId)
-    .eq('studio_id', user.id)
 
   revalidatePath('/dashboard')
   redirect('/dashboard')
