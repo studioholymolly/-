@@ -91,7 +91,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
     { key: 'originals', label: `원본 사진 (${photos.length})` },
     { key: 'selections', label: `셀렉 결과 (${selectedPhotoIds.length})` },
     { key: 'retouch', label: `보정본 (${retouchedPhotos.length})` },
-    ...(hasRevisionData ? [{ key: 'revisions', label: `수정 요청 (${revisionSelectedIds.length})` }] : []),
+    { key: 'revisions', label: `수정 요청 (${revisionSelectedIds.length})` },
     { key: 'settings', label: '설정' },
   ]
 
@@ -480,18 +480,27 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
         </div>
       )}
 
-      {/* Tab: Revisions (수정 요청) — only present when client submitted a revision with photo selections */}
+      {/* Tab: Revisions (수정 요청) — always present; empty state when client hasn't submitted yet */}
       {tab === 'revisions' && (
         <div>
-          <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
-            <h3 style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 4 }}>📝 클라이언트가 수정 요청을 보냈습니다</h3>
-            <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
-              보정본 <b>{revisionSelectedIds.length}장</b>{revPinCount > 0 ? `, 핀 메모 ${revPinCount}개` : ''}{revCommentCount > 0 ? `, 코멘트 ${revCommentCount}개` : ''}. 사진을 클릭하면 핀 위치와 메모, 코멘트를 크게 볼 수 있습니다.
-            </p>
-          </div>
+          {hasRevisionData ? (
+            <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
+              <h3 style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 4 }}>📝 클라이언트가 수정 요청을 보냈습니다</h3>
+              <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
+                보정본 <b>{revisionSelectedIds.length}장</b>{revPinCount > 0 ? `, 핀 메모 ${revPinCount}개` : ''}{revCommentCount > 0 ? `, 코멘트 ${revCommentCount}개` : ''}. 사진을 클릭하면 핀 위치와 메모, 코멘트를 크게 볼 수 있습니다.
+              </p>
+            </div>
+          ) : (
+            <div style={{ marginBottom: 16, padding: '12px 16px', background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 10 }}>
+              <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
+                아직 클라이언트가 수정 요청을 제출하지 않았습니다. 클라이언트가 보정본을 검토하고 &ldquo;수정 있음&rdquo;을 선택해 사진을 전달하면 이 탭에 내용이 표시됩니다.
+              </p>
+            </div>
+          )}
 
           {revisedRetouchedPhotos.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--mu)' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>⏳</div>
               <p>수정 요청된 보정본이 없습니다</p>
             </div>
           ) : (
