@@ -32,7 +32,7 @@ export default async function NewProjectPage() {
               label="클라이언트 안내 메시지"
               name="custom_message"
               type="textarea"
-              placeholder="예: 마음에 드시는 사진을 모두 선택해 주세요. 수정 요청은 각 사진에 핀을 추가해 남겨주세요 😊"
+              defaultValue="마음에 드시는 사진을 모두 선택해 주세요. 수정 요청은 각 사진에 핀을 추가해 남겨주세요 😊"
             />
 
             <div style={{ display: 'flex', gap: 10, paddingTop: 8 }}>
@@ -59,8 +59,8 @@ export default async function NewProjectPage() {
   )
 }
 
-function Field({ label, name, type = 'text', placeholder = '', required = false }: {
-  label: string; name: string; type?: string; placeholder?: string; required?: boolean
+function Field({ label, name, type = 'text', placeholder = '', required = false, defaultValue = '' }: {
+  label: string; name: string; type?: string; placeholder?: string; required?: boolean; defaultValue?: string
 }) {
   const baseStyle: React.CSSProperties = {
     background: 'var(--s2)', border: '1px solid var(--bd)',
@@ -73,8 +73,8 @@ function Field({ label, name, type = 'text', placeholder = '', required = false 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 5, gridColumn: type === 'textarea' ? '1/-1' : undefined }}>
       <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--mu)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</label>
       {type === 'textarea'
-        ? <textarea name={name} placeholder={placeholder} rows={3} style={{ ...baseStyle, resize: 'vertical' }} />
-        : <input name={name} type={type} placeholder={placeholder} required={required} style={baseStyle} />
+        ? <textarea name={name} placeholder={placeholder} defaultValue={defaultValue} rows={3} style={{ ...baseStyle, resize: 'vertical' }} />
+        : <input name={name} type={type} placeholder={placeholder} defaultValue={defaultValue} required={required} style={baseStyle} />
       }
     </div>
   )
