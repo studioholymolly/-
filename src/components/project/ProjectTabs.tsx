@@ -477,6 +477,18 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               }}>저장</button>
             </div>
           </div>
+
+          {/* 보정본 검토 단계에 맞는 카카오톡 메시지 템플릿 */}
+          <div style={{ marginTop: 16 }}>
+            <ShareLinkButton
+              projectId={project.id}
+              projectName={project.name}
+              token={project.share_token}
+              clientEmail={project.client_email}
+              clientName={project.client_name}
+              phase="reviewing"
+            />
+          </div>
         </div>
       )}
 

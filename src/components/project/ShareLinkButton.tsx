@@ -5,15 +5,18 @@ import { useRouter } from 'next/navigation'
 import { getShareUrl } from '@/lib/utils'
 import { regenerateShareToken } from '@/lib/actions/projects'
 
+type Phase = 'selecting' | 'reviewing'
+
 interface Props {
   projectId: string
   projectName: string
   token: string
   clientEmail: string
   clientName?: string
+  phase?: Phase
 }
 
-export default function ShareLinkButton({ projectId, projectName, token, clientEmail, clientName }: Props) {
+export default function ShareLinkButton({ projectId, projectName, token, clientEmail, clientName, phase = 'selecting' }: Props) {
   const [copied, setCopied] = useState(false)
   const [kakaoCopied, setKakaoCopied] = useState(false)
   const [justIssued, setJustIssued] = useState(false)
@@ -21,19 +24,32 @@ export default function ShareLinkButton({ projectId, projectName, token, clientE
   const router = useRouter()
   const url = getShareUrl(token)
 
-  // 카카오톡 안내 메시지 템플릿 — 프로젝트명 + 링크 + 사용법 안내 포함
-  const kakaoMessage = [
-    `안녕하세요${clientName ? ` ${clientName}님` : ''} 😊`,
-    `<${projectName}> 사진 셀렉 링크를 보내드립니다.`,
-    ``,
-    `👉 ${url}`,
-    ``,
-    `위 링크에서 마음에 드시는 사진을 선택하고, 보정이 필요한 부분은 각 사진에 핀을 추가해 남겨주세요.`,
-    `셀렉 완료 후 "셀렉 완료 전송" 버튼을 눌러주시면 됩니다.`,
-    ``,
-    `감사합니다 🙏`,
-    `— 스튜디오 홀리몰리`,
-  ].join('\n')
+  // 카카오톡 안내 메시지 — 단계별로 문구가 바뀝니다 (초기 셀렉 vs 보정본 검토)
+  const kakaoMessage = phase === 'reviewing'
+    ? [
+        `안녕하세요${clientName ? ` ${clientName}님` : ''} 😊`,
+        `<${projectName}> 보정본이 준비되었습니다. 아래 링크에서 확인해 주세요.`,
+        ``,
+        `👉 ${url}`,
+        ``,
+        `링크에서 보정본을 확인하시고 "수정 없음" 또는 "수정 있음"을 선택해 주세요.`,
+        `수정이 필요한 사진이 있으시면 해당 사진에 핀을 추가해 수정 방향을 남겨주시면 됩니다. (수정 요청은 1회 가능합니다)`,
+        ``,
+        `감사합니다 🙏`,
+        `— 스튜디오 홀리몰리`,
+      ].join('\n')
+    : [
+        `안녕하세요${clientName ? ` ${clientName}님` : ''} 😊`,
+        `<${projectName}> 사진 셀렉 링크를 보내드립니다.`,
+        ``,
+        `👉 ${url}`,
+        ``,
+        `위 링크에서 마음에 드시는 사진을 선택하고, 보정이 필요한 부분은 각 사진에 핀을 추가해 남겨주세요.`,
+        `셀렉 완료 후 "셀렉 완료 전송" 버튼을 눌러주시면 됩니다.`,
+        ``,
+        `감사합니다 🙏`,
+        `— 스튜디오 홀리몰리`,
+      ].join('\n')
 
   async function copy() {
     await navigator.clipboard.writeText(url)
@@ -48,7 +64,10 @@ export default function ShareLinkButton({ projectId, projectName, token, clientE
   }
 
   function openEmail() {
-    const subject = encodeURIComponent(`사진 셀렉 링크 — ${projectName}`)
+    const subjectText = phase === 'reviewing'
+      ? `보정본 확인 링크 — ${projectName}`
+      : `사진 셀렉 링크 — ${projectName}`
+    const subject = encodeURIComponent(subjectText)
     const body = encodeURIComponent(kakaoMessage)
     window.open(`mailto:${clientEmail}?subject=${subject}&body=${body}`)
   }
