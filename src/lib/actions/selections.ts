@@ -113,7 +113,11 @@ export async function submitSelections(
   return { ok: true, isResubmission }
 }
 
-export async function submitRevision(shareToken: string, message: string) {
+/**
+ * Client confirms "수정 없음" — no revisions needed. Marks the project as completed
+ * so the client immediately sees the drive link, and locks further revision edits.
+ */
+export async function submitNoRevision(shareToken: string) {
   const supabase = await createClient()
 
   const { data: project, error } = await supabase
@@ -126,24 +130,101 @@ export async function submitRevision(shareToken: string, message: string) {
   if (project.revision_used) return { error: '수정 요청은 1회만 가능합니다.' }
   if (project.status !== 'client_reviewing') return { error: '검토 기간이 아닙니다.' }
 
-  // Insert revision request
-  const { error: revError } = await supabase
-    .from('revision_requests')
-    .insert({ project_id: project.id, message })
-
-  if (revError) return { error: revError.message }
-
-  // Mark revision used + notify studio
   await supabase
     .from('projects')
-    .update({ revision_used: true, unread_for_studio: true })
+    .update({ revision_used: true, status: 'completed', unread_for_studio: true })
     .eq('id', project.id)
 
   await supabase.from('notifications').insert({
     studio_id: project.studio_id,
     project_id: project.id,
     type: 'revision_requested',
-    message: `${project.client_name}님이 수정 요청을 남겼습니다.`,
+    message: `${project.client_name}님이 수정 없이 완료했습니다.`,
+    is_read: false,
+  })
+
+  return { ok: true }
+}
+
+/**
+ * Client submits a revision with per-retouched-photo selections, annotations, and comments.
+ * This is the "수정 있음" path. Only allowed once (revision_used flag).
+ */
+export async function submitRevisionSelections(
+  shareToken: string,
+  selectedRetouchedPhotoIds: string[],
+  annotations: Record<string, AnnotationPin[]>,
+  comments: Record<string, string> = {}
+) {
+  const supabase = await createClient()
+
+  const { data: project, error } = await supabase
+    .from('projects')
+    .select('id, studio_id, status, revision_used, client_name')
+    .eq('share_token', shareToken)
+    .single()
+
+  if (error || !project) return { error: '프로젝트를 찾을 수 없습니다.' }
+  if (project.revision_used) return { error: '수정 요청은 1회만 가능합니다.' }
+  if (project.status !== 'client_reviewing') return { error: '검토 기간이 아닙니다.' }
+  if (selectedRetouchedPhotoIds.length === 0) {
+    return { error: '수정이 필요한 사진을 하나 이상 선택해 주세요.' }
+  }
+
+  const projectId = project.id
+
+  // Replace-all: wipe previous revision data, then insert fresh.
+  await supabase.from('revision_selections').delete().eq('project_id', projectId)
+  await supabase.from('revision_annotations').delete().eq('project_id', projectId)
+
+  const selectionRows = selectedRetouchedPhotoIds.map(photoId => ({
+    project_id: projectId,
+    retouched_photo_id: photoId,
+    comment: (comments[photoId] ?? '').trim() || null,
+  }))
+  const { error: selError } = await supabase.from('revision_selections').insert(selectionRows)
+  if (selError) return { error: selError.message }
+
+  const annotationRows: Array<{
+    project_id: string
+    retouched_photo_id: string
+    pin_number: number
+    x_pct: number
+    y_pct: number
+    comment: string
+  }> = []
+  for (const [photoId, pins] of Object.entries(annotations)) {
+    // Only keep annotations on photos that were actually selected for revision
+    if (!selectedRetouchedPhotoIds.includes(photoId)) continue
+    for (const pin of pins) {
+      annotationRows.push({
+        project_id: projectId,
+        retouched_photo_id: photoId,
+        pin_number: pin.pin_number,
+        x_pct: pin.x_pct,
+        y_pct: pin.y_pct,
+        comment: pin.comment,
+      })
+    }
+  }
+  if (annotationRows.length > 0) {
+    await supabase.from('revision_annotations').insert(annotationRows)
+  }
+
+  // Also insert an (empty-message) revision_requests row so existing studio UI shows the flag.
+  await supabase.from('revision_requests').insert({ project_id: projectId, message: '' })
+
+  // Flip back to studio_editing so the studio knows to do a second pass
+  await supabase
+    .from('projects')
+    .update({ revision_used: true, status: 'studio_editing', unread_for_studio: true })
+    .eq('id', projectId)
+
+  await supabase.from('notifications').insert({
+    studio_id: project.studio_id,
+    project_id: projectId,
+    type: 'revision_requested',
+    message: `${project.client_name}님이 수정 요청을 보냈습니다. (${selectedRetouchedPhotoIds.length}장 선택, 메모 ${annotationRows.length}개)`,
     is_read: false,
   })
 

@@ -1,10 +1,10 @@
 'use client'
 
 import { useRef } from 'react'
-import { PhotoWithUrl, AnnotationPin } from '@/lib/types'
+import { PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 
 interface Props {
-  photos: PhotoWithUrl[]
+  photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
   selections: Set<string>
   annotations: Record<string, AnnotationPin[]>
   comments: Record<string, string>
@@ -164,7 +164,7 @@ function PhotoCard({
   photo, idx, isSelected, pins, comment,
   onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
 }: {
-  photo: PhotoWithUrl
+  photo: PhotoWithUrl | RetouchedPhotoWithUrl
   idx: number
   isSelected: boolean
   pins: AnnotationPin[]

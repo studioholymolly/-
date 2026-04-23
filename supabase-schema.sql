@@ -102,9 +102,40 @@ create index if not exists annotations_project_photo_idx on annotations(project_
 create table if not exists revision_requests (
   id           uuid primary key default uuid_generate_v4(),
   project_id   uuid not null references projects(id) on delete cascade unique,
-  message      text not null,
+  message      text not null default '',
   created_at   timestamptz not null default now()
 );
+-- Migration: existing DBs had message NOT NULL without default; allow empty.
+alter table revision_requests alter column message drop not null;
+alter table revision_requests alter column message set default '';
+
+-- =========================================================
+-- TABLE: revision_selections (per-retouched-photo revision selections)
+-- =========================================================
+create table if not exists revision_selections (
+  id                 uuid primary key default uuid_generate_v4(),
+  project_id         uuid not null references projects(id) on delete cascade,
+  retouched_photo_id uuid not null references retouched_photos(id) on delete cascade,
+  comment            text,
+  created_at         timestamptz not null default now(),
+  unique(project_id, retouched_photo_id)
+);
+create index if not exists revision_selections_project_idx on revision_selections(project_id);
+
+-- =========================================================
+-- TABLE: revision_annotations (per-retouched-photo pin annotations)
+-- =========================================================
+create table if not exists revision_annotations (
+  id                 uuid primary key default uuid_generate_v4(),
+  project_id         uuid not null references projects(id) on delete cascade,
+  retouched_photo_id uuid not null references retouched_photos(id) on delete cascade,
+  pin_number         integer not null,
+  x_pct              numeric(6,3) not null,
+  y_pct              numeric(6,3) not null,
+  comment            text,
+  created_at         timestamptz not null default now()
+);
+create index if not exists revision_annotations_project_photo_idx on revision_annotations(project_id, retouched_photo_id);
 
 -- =========================================================
 -- TABLE: notifications
@@ -145,6 +176,8 @@ alter table retouched_photos  enable row level security;
 alter table selections        enable row level security;
 alter table annotations       enable row level security;
 alter table revision_requests enable row level security;
+alter table revision_selections enable row level security;
+alter table revision_annotations enable row level security;
 alter table notifications     enable row level security;
 
 -- projects: studio sees only their own; public can read by token (filtered in code)
@@ -189,6 +222,25 @@ create policy "revision_studio_all" on revision_requests
     exists (select 1 from projects where projects.id = revision_requests.project_id and projects.studio_id = auth.uid())
   );
 create policy "revision_public_insert" on revision_requests for insert with check (true);
+create policy "revision_public_read" on revision_requests for select using (true);
+
+-- revision_selections
+create policy "revision_selections_studio_all" on revision_selections
+  for all using (
+    exists (select 1 from projects where projects.id = revision_selections.project_id and projects.studio_id = auth.uid())
+  );
+create policy "revision_selections_public_read" on revision_selections for select using (true);
+create policy "revision_selections_public_insert" on revision_selections for insert with check (true);
+create policy "revision_selections_public_delete" on revision_selections for delete using (true);
+
+-- revision_annotations
+create policy "revision_annotations_studio_all" on revision_annotations
+  for all using (
+    exists (select 1 from projects where projects.id = revision_annotations.project_id and projects.studio_id = auth.uid())
+  );
+create policy "revision_annotations_public_read" on revision_annotations for select using (true);
+create policy "revision_annotations_public_insert" on revision_annotations for insert with check (true);
+create policy "revision_annotations_public_delete" on revision_annotations for delete using (true);
 
 -- notifications
 create policy "notifications_studio_all" on notifications

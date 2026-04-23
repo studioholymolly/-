@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, AnnotationPin } from '@/lib/types'
+import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, AnnotationPin, RevisionSelection, RevisionAnnotation } from '@/lib/types'
 import ClientGallery from '@/components/client/ClientGallery'
 
 export default async function ClientPage({ params }: { params: Promise<{ token: string }> }) {
@@ -28,12 +28,15 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
   // Fetch photos, retouched, prior selections/annotations (for re-submission) in parallel
   const [
     photosRes, retouchedRes, selectionsRes, annotationsRes, submissionsRes,
+    revisionSelectionsRes, revisionAnnotationsRes,
   ] = await Promise.all([
     supabase.from('photos').select('*').eq('project_id', project.id).order('sort_order'),
     supabase.from('retouched_photos').select('*').eq('project_id', project.id).order('sort_order'),
     supabase.from('selections').select('*').eq('project_id', project.id),
     supabase.from('annotations').select('*').eq('project_id', project.id),
     supabase.from('submissions').select('*').eq('project_id', project.id).order('created_at', { ascending: false }),
+    supabase.from('revision_selections').select('*').eq('project_id', project.id),
+    supabase.from('revision_annotations').select('*').eq('project_id', project.id),
   ])
 
   const photos = (photosRes.data ?? []) as PhotoWithUrl[]
@@ -78,6 +81,30 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
 
   const submissionCount = submissionsRes.data?.length ?? 0
 
+  // Hydrate previous revision submission (re-render on refresh after submit)
+  const revisionSelections = (revisionSelectionsRes.data ?? []) as RevisionSelection[]
+  const revisionAnnotationsList = (revisionAnnotationsRes.data ?? []) as RevisionAnnotation[]
+  const initialRevisionSelectedIds = revisionSelections.map(r => r.retouched_photo_id)
+  const initialRevisionComments: Record<string, string> = {}
+  for (const r of revisionSelections) {
+    if (r.comment && r.comment.trim()) initialRevisionComments[r.retouched_photo_id] = r.comment
+  }
+  const initialRevisionAnnotations: Record<string, AnnotationPin[]> = {}
+  for (const a of revisionAnnotationsList) {
+    if (!initialRevisionAnnotations[a.retouched_photo_id]) initialRevisionAnnotations[a.retouched_photo_id] = []
+    initialRevisionAnnotations[a.retouched_photo_id].push({
+      pin_number: a.pin_number,
+      x_pct: a.x_pct,
+      y_pct: a.y_pct,
+      comment: a.comment ?? '',
+    })
+  }
+  for (const photoId of Object.keys(initialRevisionAnnotations)) {
+    initialRevisionAnnotations[photoId] = initialRevisionAnnotations[photoId]
+      .sort((a, b) => a.pin_number - b.pin_number)
+      .map((p, i) => ({ ...p, pin_number: i + 1 }))
+  }
+
   return (
     <ClientGallery
       project={project as Project}
@@ -87,6 +114,9 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
       initialSelectedIds={initialSelectedIds}
       initialAnnotations={initialAnnotations}
       initialComments={initialComments}
+      initialRevisionSelectedIds={initialRevisionSelectedIds}
+      initialRevisionAnnotations={initialRevisionAnnotations}
+      initialRevisionComments={initialRevisionComments}
       submissionCount={submissionCount}
     />
   )

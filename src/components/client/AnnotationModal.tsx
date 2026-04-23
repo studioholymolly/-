@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { PhotoWithUrl, AnnotationPin } from '@/lib/types'
+import { PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 
 interface Props {
-  photo: PhotoWithUrl
+  photo: PhotoWithUrl | RetouchedPhotoWithUrl
   initialPins: AnnotationPin[]
   onSave: (pins: AnnotationPin[]) => void
   onClose: () => void

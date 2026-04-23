@@ -6,7 +6,7 @@ import UploadZone from './UploadZone'
 import ShareLinkButton from './ShareLinkButton'
 import PhotoLightbox from '@/components/PhotoLightbox'
 import SelectionReviewLightbox from './SelectionReviewLightbox'
-import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, RevisionRequest, Submission } from '@/lib/types'
+import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, RevisionRequest, RevisionSelection, RevisionAnnotation, Submission } from '@/lib/types'
 import { updateProjectStatus, setDriveLinkRetouched, updateProject, deleteProject } from '@/lib/actions/projects'
 import { formatDateTime } from '@/lib/utils'
 
@@ -19,15 +19,19 @@ interface Props {
   revisionRequest: RevisionRequest | null
   selectedPhotoIds: string[]
   submissions?: Submission[]
+  revisionSelections?: RevisionSelection[]
+  revisionAnnotations?: RevisionAnnotation[]
 }
 
-export default function ProjectTabs({ project, photos, retouchedPhotos, selections, annotations, revisionRequest, selectedPhotoIds, submissions = [] }: Props) {
-  const [tab, setTab] = useState<'originals' | 'selections' | 'retouch' | 'settings'>('originals')
+export default function ProjectTabs({ project, photos, retouchedPhotos, selections, annotations, revisionRequest, selectedPhotoIds, submissions = [], revisionSelections = [], revisionAnnotations = [] }: Props) {
+  const hasRevisionData = revisionSelections.length > 0
+  const [tab, setTab] = useState<'originals' | 'selections' | 'retouch' | 'revisions' | 'settings'>('originals')
   const [isPending, startTransition] = useTransition()
   const [driveLinkRetouchedInput, setDriveLinkRetouchedInput] = useState(project.drive_link || '')
   const [editSaved, setEditSaved] = useState(false)
   const [lightbox, setLightbox] = useState<{ photos: { signedUrl: string; filename: string }[]; index: number } | null>(null)
   const [selectionReviewIndex, setSelectionReviewIndex] = useState<number | null>(null)
+  const [revisionReviewIndex, setRevisionReviewIndex] = useState<number | null>(null)
   const router = useRouter()
 
   function openLightbox(photos: { signedUrl: string; filename: string }[], index: number) {
@@ -67,10 +71,26 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
   }
   const commentCount = Object.keys(commentsByPhoto).length
 
+  // Revision-side lookup tables (for the '수정 요청' tab)
+  const revisionSelectedIds = revisionSelections.map(r => r.retouched_photo_id)
+  const revisedRetouchedPhotos = retouchedPhotos.filter(p => revisionSelectedIds.includes(p.id))
+  const revAnnotationsByPhoto: Record<string, RevisionAnnotation[]> = {}
+  for (const ann of revisionAnnotations) {
+    if (!revAnnotationsByPhoto[ann.retouched_photo_id]) revAnnotationsByPhoto[ann.retouched_photo_id] = []
+    revAnnotationsByPhoto[ann.retouched_photo_id].push(ann)
+  }
+  const revCommentsByPhoto: Record<string, string> = {}
+  for (const rs of revisionSelections) {
+    if (rs.comment && rs.comment.trim()) revCommentsByPhoto[rs.retouched_photo_id] = rs.comment
+  }
+  const revCommentCount = Object.keys(revCommentsByPhoto).length
+  const revPinCount = revisionAnnotations.length
+
   const tabs = [
     { key: 'originals', label: `원본 사진 (${photos.length})` },
     { key: 'selections', label: `셀렉 결과 (${selectedPhotoIds.length})` },
     { key: 'retouch', label: `보정본 (${retouchedPhotos.length})` },
+    ...(hasRevisionData ? [{ key: 'revisions', label: `수정 요청 (${revisionSelectedIds.length})` }] : []),
     { key: 'settings', label: '설정' },
   ]
 
@@ -374,6 +394,84 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
         </div>
       )}
 
+      {/* Tab: Revisions (수정 요청) — only present when client submitted a revision with photo selections */}
+      {tab === 'revisions' && (
+        <div>
+          <div style={{ marginBottom: 16, padding: '12px 16px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 10 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 800, color: '#ef4444', marginBottom: 4 }}>📝 클라이언트가 수정 요청을 보냈습니다</h3>
+            <p style={{ fontSize: 12, color: 'var(--mu)', lineHeight: 1.6 }}>
+              보정본 <b>{revisionSelectedIds.length}장</b>{revPinCount > 0 ? `, 핀 메모 ${revPinCount}개` : ''}{revCommentCount > 0 ? `, 코멘트 ${revCommentCount}개` : ''}. 사진을 클릭하면 핀 위치와 메모, 코멘트를 크게 볼 수 있습니다.
+            </p>
+          </div>
+
+          {revisedRetouchedPhotos.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 60, color: 'var(--mu)' }}>
+              <p>수정 요청된 보정본이 없습니다</p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+              gap: 12,
+            }}>
+              {revisedRetouchedPhotos.map((p, i) => {
+                const anns = revAnnotationsByPhoto[p.id] || []
+                const hasComment = !!revCommentsByPhoto[p.id]
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => setRevisionReviewIndex(i)}
+                    aria-label={`${p.filename} 크게 보기`}
+                    style={{
+                      all: 'unset',
+                      display: 'block', position: 'relative',
+                      aspectRatio: '3 / 4', overflow: 'hidden',
+                      borderRadius: 10,
+                      border: `2px solid ${anns.length > 0 ? 'rgba(239,68,68,0.5)' : hasComment ? 'rgba(59,130,246,0.5)' : 'var(--bd)'}`,
+                      background: 'var(--s2)',
+                      cursor: 'zoom-in',
+                    }}
+                  >
+                    <img src={p.signedUrl} alt={p.filename}
+                      loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    {anns.length > 0 && (
+                      <div style={{
+                        position: 'absolute', top: 8, left: 8,
+                        background: 'var(--red)', color: '#fff',
+                        fontSize: 10, fontWeight: 800,
+                        padding: '3px 9px', borderRadius: 10,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                      }}>
+                        📍 수정 메모 {anns.length}개
+                      </div>
+                    )}
+                    {hasComment && (
+                      <div style={{
+                        position: 'absolute', top: 8, right: 8,
+                        background: '#3b82f6', color: '#fff',
+                        fontSize: 10, fontWeight: 800,
+                        padding: '3px 9px', borderRadius: 10,
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                      }}>
+                        💬 코멘트
+                      </div>
+                    )}
+                    <div style={{
+                      position: 'absolute', bottom: 6, left: 10,
+                      fontSize: 10, fontWeight: 700,
+                      color: 'rgba(255,255,255,0.85)',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+                    }}>#{String(i + 1).padStart(3, '0')}</div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Tab: Settings */}
       {tab === 'settings' && (
         <div style={{ maxWidth: 500 }}>
@@ -447,6 +545,18 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           index={selectionReviewIndex}
           onChange={setSelectionReviewIndex}
           onClose={() => setSelectionReviewIndex(null)}
+        />
+      )}
+
+      {/* Revision lightbox — pins + comments on retouched photos that were flagged for revision */}
+      {revisionReviewIndex !== null && (
+        <SelectionReviewLightbox
+          photos={revisedRetouchedPhotos}
+          annotationsByPhoto={revAnnotationsByPhoto}
+          commentsByPhoto={revCommentsByPhoto}
+          index={revisionReviewIndex}
+          onChange={setRevisionReviewIndex}
+          onClose={() => setRevisionReviewIndex(null)}
         />
       )}
     </div>

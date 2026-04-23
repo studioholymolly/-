@@ -7,7 +7,7 @@ import StatusBadge from '@/components/StatusBadge'
 import BackButton from '@/components/BackButton'
 import ProjectTabs from '@/components/project/ProjectTabs'
 import { formatDate } from '@/lib/utils'
-import { Project, Photo, RetouchedPhoto, Selection, Annotation, RevisionRequest, PhotoWithUrl, RetouchedPhotoWithUrl, Submission } from '@/lib/types'
+import { Project, Photo, RetouchedPhoto, Selection, Annotation, RevisionRequest, RevisionSelection, RevisionAnnotation, PhotoWithUrl, RetouchedPhotoWithUrl, Submission } from '@/lib/types'
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -27,6 +27,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     annotationsRes,
     revisionRes,
     submissionsRes,
+    revisionSelectionsRes,
+    revisionAnnotationsRes,
     unreadCount,
   ] = await Promise.all([
     supabase.from('photos').select('*').eq('project_id', id).order('sort_order'),
@@ -35,6 +37,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     supabase.from('annotations').select('*').eq('project_id', id),
     supabase.from('revision_requests').select('*').eq('project_id', id).maybeSingle(),
     supabase.from('submissions').select('*').eq('project_id', id).order('created_at', { ascending: false }),
+    supabase.from('revision_selections').select('*').eq('project_id', id),
+    supabase.from('revision_annotations').select('*').eq('project_id', id),
     getUnreadCount(),
   ])
 
@@ -44,6 +48,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   const annotations = (annotationsRes.data ?? []) as Annotation[]
   const revisionRequest = revisionRes.data as RevisionRequest | null
   const submissions = (submissionsRes.data ?? []) as Submission[]
+  const revisionSelections = (revisionSelectionsRes.data ?? []) as RevisionSelection[]
+  const revisionAnnotations = (revisionAnnotationsRes.data ?? []) as RevisionAnnotation[]
 
   // Batch signed URLs — 1 round trip per bucket instead of N
   const [origSignedRes, retSignedRes] = await Promise.all([
@@ -110,6 +116,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
           revisionRequest={revisionRequest as RevisionRequest | null}
           selectedPhotoIds={selectedPhotoIds}
           submissions={submissions}
+          revisionSelections={revisionSelections}
+          revisionAnnotations={revisionAnnotations}
         />
       </div>
     </div>

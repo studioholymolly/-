@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { submitSelections } from '@/lib/actions/selections'
-import { PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
+import { submitRevisionSelections } from '@/lib/actions/selections'
+import { RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 
 interface Props {
-  photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
+  photos: RetouchedPhotoWithUrl[]
   selectedIds: Set<string>
   annotations: Record<string, AnnotationPin[]>
   comments: Record<string, string>
@@ -14,7 +14,11 @@ interface Props {
   onSuccess: () => void
 }
 
-export default function SubmitModal({ photos, selectedIds, annotations, comments, shareToken, onClose, onSuccess }: Props) {
+/**
+ * Final-confirmation modal for the "수정 있음" path. Mirrors SubmitModal but calls
+ * submitRevisionSelections, which writes to revision_selections + revision_annotations.
+ */
+export default function RevisionSubmitModal({ photos, selectedIds, annotations, comments, shareToken, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -26,7 +30,7 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
     setLoading(true)
     setError('')
     try {
-      const result = await submitSelections(shareToken, Array.from(selectedIds), annotations, comments)
+      const result = await submitRevisionSelections(shareToken, Array.from(selectedIds), annotations, comments)
       if (result.error) {
         setError(result.error)
         setLoading(false)
@@ -51,18 +55,18 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
         maxHeight: '85vh', display: 'flex', flexDirection: 'column',
       }}>
         <div style={{ padding: '20px 20px 0' }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>셀렉을 완료할까요?</h2>
+          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>수정 요청을 보낼까요?</h2>
           <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 16 }}>
-            선택한 {selectedPhotos.length}장{totalPins > 0 ? `, 수정 메모 ${totalPins}개` : ''}{totalComments > 0 ? `, 코멘트 ${totalComments}개` : ''}를 스튜디오에 전달합니다.
+            {selectedPhotos.length}장에 대한 수정 요청{totalPins > 0 ? `, 메모 ${totalPins}개` : ''}{totalComments > 0 ? `, 코멘트 ${totalComments}개` : ''}를 스튜디오에 전달합니다. <b style={{ color: '#ef4444' }}>수정 요청은 1회만 가능합니다.</b>
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
             <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#22c55e' }}>{selectedPhotos.length}</div>
-              <div style={{ fontSize: 11, color: '#6b6b80' }}>선택된 사진</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#ef4444' }}>{selectedPhotos.length}</div>
+              <div style={{ fontSize: 11, color: '#6b6b80' }}>수정 요청</div>
             </div>
             <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#ef4444' }}>{totalPins}</div>
-              <div style={{ fontSize: 11, color: '#6b6b80' }}>수정 메모</div>
+              <div style={{ fontSize: 11, color: '#6b6b80' }}>핀 메모</div>
             </div>
             <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#3b82f6' }}>{totalComments}</div>
@@ -71,7 +75,6 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
           </div>
         </div>
 
-        {/* Selected photo thumbnails */}
         <div style={{ overflow: 'auto', padding: '0 20px', flex: 1 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 6 }}>
             {selectedPhotos.map(p => {
@@ -104,12 +107,12 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
           }}>취소</button>
           <button onClick={handleSubmit} disabled={loading} style={{
             flex: 2, padding: '11px',
-            background: loading ? '#374151' : 'linear-gradient(135deg,#16a34a,#22c55e)',
+            background: loading ? '#374151' : 'linear-gradient(135deg,#dc2626,#ef4444)',
             border: 'none', color: '#fff',
             borderRadius: 8, fontSize: 14, fontWeight: 700,
             cursor: loading ? 'not-allowed' : 'pointer',
           }}>
-            {loading ? '전송 중...' : '셀렉 완료 전송'}
+            {loading ? '전송 중...' : '수정 요청 보내기'}
           </button>
         </div>
       </div>

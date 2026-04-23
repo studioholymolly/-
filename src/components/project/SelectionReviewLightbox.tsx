@@ -1,11 +1,19 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { PhotoWithUrl, Annotation } from '@/lib/types'
+import { PhotoWithUrl, RetouchedPhotoWithUrl } from '@/lib/types'
+
+interface AnnotationLike {
+  id: string
+  pin_number: number
+  x_pct: number
+  y_pct: number
+  comment: string | null
+}
 
 interface Props {
-  photos: PhotoWithUrl[]
-  annotationsByPhoto: Record<string, Annotation[]>
+  photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
+  annotationsByPhoto: Record<string, AnnotationLike[]>
   commentsByPhoto: Record<string, string>
   index: number
   onChange: (i: number) => void

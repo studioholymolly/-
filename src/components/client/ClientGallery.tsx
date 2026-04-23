@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
+import { submitNoRevision } from '@/lib/actions/selections'
 import MasonryGallery from './MasonryGallery'
 import BottomBar from './BottomBar'
 import AnnotationModal from './AnnotationModal'
 import LightboxModal from './LightboxModal'
 import SubmitModal from './SubmitModal'
-import RevisionForm from './RevisionForm'
+import RevisionSubmitModal from './RevisionSubmitModal'
 
 interface Props {
   project: Project
@@ -17,12 +18,17 @@ interface Props {
   initialSelectedIds?: string[]
   initialAnnotations?: Record<string, AnnotationPin[]>
   initialComments?: Record<string, string>
+  initialRevisionSelectedIds?: string[]
+  initialRevisionAnnotations?: Record<string, AnnotationPin[]>
+  initialRevisionComments?: Record<string, string>
   submissionCount?: number
 }
 
 export default function ClientGallery({
   project, photos, retouchedPhotos, shareToken,
-  initialSelectedIds = [], initialAnnotations = {}, initialComments = {}, submissionCount = 0,
+  initialSelectedIds = [], initialAnnotations = {}, initialComments = {},
+  initialRevisionSelectedIds = [], initialRevisionAnnotations = {}, initialRevisionComments = {},
+  submissionCount = 0,
 }: Props) {
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelectedIds))
   const [annotations, setAnnotations] = useState<Record<string, AnnotationPin[]>>(initialAnnotations)
@@ -33,8 +39,21 @@ export default function ClientGallery({
   // Annotation modal is a separate overlay, opened by its own button
   const [annotatingIndex, setAnnotatingIndex] = useState<number | null>(null)
   const [showSubmitModal, setShowSubmitModal] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
+  const [submittedKind, setSubmittedKind] = useState<'selection' | 'revision' | null>(null)
   const [activeTab, setActiveTab] = useState<'original' | 'retouched'>('original')
+
+  // Revision (보정본 검토) state — used when status === 'client_reviewing'
+  const [revisionMode, setRevisionMode] = useState<'view' | 'editing'>('view')
+  const [revSelections, setRevSelections] = useState<Set<string>>(new Set(initialRevisionSelectedIds))
+  const [revAnnotations, setRevAnnotations] = useState<Record<string, AnnotationPin[]>>(initialRevisionAnnotations)
+  const [revComments, setRevComments] = useState<Record<string, string>>(initialRevisionComments)
+  const [revLightboxIndex, setRevLightboxIndex] = useState<number | null>(null)
+  const [revAnnotatingIndex, setRevAnnotatingIndex] = useState<number | null>(null)
+  const [showRevSubmitModal, setShowRevSubmitModal] = useState(false)
+  const [showNoRevConfirm, setShowNoRevConfirm] = useState(false)
+  const [showDriveLinkPopup, setShowDriveLinkPopup] = useState(false)
+  const [noRevLoading, setNoRevLoading] = useState(false)
+  const [noRevError, setNoRevError] = useState('')
 
   function toggleSelection(photoId: string) {
     setSelections(prev => {
@@ -52,6 +71,57 @@ export default function ClientGallery({
 
   function handleCommentChange(photoId: string, value: string) {
     setComments(prev => ({ ...prev, [photoId]: value }))
+  }
+
+  // ---- Revision-mode handlers ----
+  function toggleRevSelection(photoId: string) {
+    setRevSelections(prev => {
+      const next = new Set(prev)
+      if (next.has(photoId)) next.delete(photoId)
+      else next.add(photoId)
+      return next
+    })
+  }
+  function saveRevAnnotations(photoId: string, pins: AnnotationPin[]) {
+    setRevAnnotations(prev => ({ ...prev, [photoId]: pins }))
+    setRevAnnotatingIndex(null)
+    // Auto-select the photo if pins were added and it wasn't already selected
+    if (pins.length > 0) {
+      setRevSelections(prev => {
+        if (prev.has(photoId)) return prev
+        const next = new Set(prev)
+        next.add(photoId)
+        return next
+      })
+    }
+  }
+  function handleRevCommentChange(photoId: string, value: string) {
+    setRevComments(prev => ({ ...prev, [photoId]: value }))
+  }
+  function selectAllRev() {
+    setRevSelections(new Set(retouchedPhotos.map(p => p.id)))
+  }
+  function clearAllRev() {
+    setRevSelections(new Set())
+  }
+
+  async function handleConfirmNoRevision() {
+    setNoRevLoading(true)
+    setNoRevError('')
+    try {
+      const result = await submitNoRevision(shareToken)
+      if (result.error) {
+        setNoRevError(result.error)
+        setNoRevLoading(false)
+      } else {
+        setShowNoRevConfirm(false)
+        setShowDriveLinkPopup(true)
+        setNoRevLoading(false)
+      }
+    } catch {
+      setNoRevError('오류가 발생했습니다. 다시 시도해 주세요.')
+      setNoRevLoading(false)
+    }
   }
 
   const totalPins = Object.values(annotations).reduce((s, pins) => s + pins.length, 0)
@@ -110,23 +180,116 @@ export default function ClientGallery({
   // review/adjust their submitted selection until retouched photos are released
   // (`client_reviewing`). A warning banner in the header informs them retouching is in progress.
 
-  // Submitted success screen
-  if (submitted) {
+  // Submitted success screen (handles both initial selection and revision submissions)
+  if (submittedKind) {
+    const isRevision = submittedKind === 'revision'
     return (
       <div style={{ minHeight: '100vh', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0a0a0c' }}>
         <div style={{ textAlign: 'center', maxWidth: 420 }}>
           <div style={{ fontSize: 56, marginBottom: 16 }}>🎉</div>
-          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>셀렉이 완료되었습니다!</h2>
+          <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
+            {isRevision ? '수정 요청이 접수되었습니다!' : '셀렉이 완료되었습니다!'}
+          </h2>
           <p style={{ fontSize: 14, color: '#6b6b80', lineHeight: 1.7 }}>
-            선택한 사진과 메모를 스튜디오에 전달했습니다.<br/>
-            보정이 완료되면 다시 이 페이지를 방문해 주세요.
+            {isRevision
+              ? <>수정 요청한 내용을 스튜디오에 전달했습니다.<br/>수정이 완료되면 다시 연락드릴게요.</>
+              : <>선택한 사진과 메모를 스튜디오에 전달했습니다.<br/>보정이 완료되면 다시 이 페이지를 방문해 주세요.</>}
           </p>
         </div>
       </div>
     )
   }
 
-  // Client reviewing (retouched photos available)
+  // Client reviewing — revision selection mode (수정 있음 → editing)
+  if (project.status === 'client_reviewing' && revisionMode === 'editing' && !project.revision_used) {
+    const totalRevPins = Object.values(revAnnotations).reduce((s, pins) => s + pins.length, 0)
+    const allSelected = revSelections.size === retouchedPhotos.length && retouchedPhotos.length > 0
+    return (
+      <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0a0a0c' }}>
+        {/* Header */}
+        <div style={{ padding: '32px 24px 20px', borderBottom: '1px solid #e0e0e5', textAlign: 'center' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>스튜디오 홀리몰리</div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>수정이 필요한 사진 선택</h1>
+          <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 12 }}>수정이 필요한 보정본을 선택하고, 원하는 수정 방향을 주석(핀)과 코멘트로 남겨주세요.</p>
+          <div style={{ display: 'inline-flex', gap: 20, background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 12, padding: '10px 20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <span style={{ fontSize: 12, color: '#6b6b80' }}>전체 <b style={{ color: '#0a0a0c' }}>{retouchedPhotos.length}장</b></span>
+            <span style={{ fontSize: 12, color: '#6b6b80' }}>수정 요청 <b style={{ color: '#ef4444' }}>{revSelections.size}장</b></span>
+            {totalRevPins > 0 && <span style={{ fontSize: 12, color: '#6b6b80' }}>핀 메모 <b style={{ color: '#ef4444' }}>{totalRevPins}개</b></span>}
+          </div>
+          <div style={{ marginTop: 14, display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => setRevisionMode('view')} style={{
+              background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>← 검토 화면으로</button>
+            <button type="button" onClick={allSelected ? clearAllRev : selectAllRev} style={{
+              background: allSelected ? '#f3f3f5' : 'linear-gradient(135deg,#dc2626,#ef4444)',
+              border: allSelected ? '1px solid #e0e0e5' : 'none',
+              color: allSelected ? '#0a0a0c' : '#fff',
+              padding: '7px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}>{allSelected ? '전체 선택 해제' : '✓ 전체 선택'}</button>
+          </div>
+        </div>
+
+        {/* Selection gallery on retouched photos (reuses MasonryGallery) */}
+        <MasonryGallery
+          photos={retouchedPhotos}
+          selections={revSelections}
+          annotations={revAnnotations}
+          comments={revComments}
+          onToggle={toggleRevSelection}
+          onCommentChange={handleRevCommentChange}
+          onOpenLightbox={(i) => setRevLightboxIndex(i)}
+          onOpenAnnotate={(i) => setRevAnnotatingIndex(i)}
+        />
+
+        {/* Bottom submit bar */}
+        <BottomBar
+          totalCount={retouchedPhotos.length}
+          selectedCount={revSelections.size}
+          isResubmit={false}
+          onSubmit={() => setShowRevSubmitModal(true)}
+        />
+
+        {/* Lightbox */}
+        {revLightboxIndex !== null && retouchedPhotos[revLightboxIndex] && (
+          <LightboxModal
+            photos={retouchedPhotos}
+            index={revLightboxIndex}
+            isSelected={revSelections.has(retouchedPhotos[revLightboxIndex].id)}
+            onChangeIndex={setRevLightboxIndex}
+            onToggleSelect={() => toggleRevSelection(retouchedPhotos[revLightboxIndex].id)}
+            onOpenAnnotate={() => { const i = revLightboxIndex; setRevLightboxIndex(null); setRevAnnotatingIndex(i) }}
+            onClose={() => setRevLightboxIndex(null)}
+          />
+        )}
+
+        {/* Annotation modal */}
+        {revAnnotatingIndex !== null && retouchedPhotos[revAnnotatingIndex] && (
+          <AnnotationModal
+            photo={retouchedPhotos[revAnnotatingIndex]}
+            initialPins={revAnnotations[retouchedPhotos[revAnnotatingIndex].id] || []}
+            onSave={(pins) => saveRevAnnotations(retouchedPhotos[revAnnotatingIndex].id, pins)}
+            onClose={() => setRevAnnotatingIndex(null)}
+          />
+        )}
+
+        {/* Submit modal */}
+        {showRevSubmitModal && (
+          <RevisionSubmitModal
+            photos={retouchedPhotos}
+            selectedIds={revSelections}
+            annotations={revAnnotations}
+            comments={revComments}
+            shareToken={shareToken}
+            onClose={() => setShowRevSubmitModal(false)}
+            onSuccess={() => { setShowRevSubmitModal(false); setSubmittedKind('revision') }}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Client reviewing (retouched photos available) — view mode with 수정 없음 / 수정 있음 buttons
   if (project.status === 'client_reviewing') {
     return (
       <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0a0a0c' }}>
@@ -162,10 +325,40 @@ export default function ClientGallery({
             <div>
               <ReviewGrid photos={retouchedPhotos} onOpen={(i) => setRetouchedLightboxIndex(i)} />
               <div style={{ marginTop: 32 }}>
-                {!project.revision_used && <RevisionForm shareToken={shareToken} />}
-                {project.revision_used && (
+                {!project.revision_used ? (
+                  <div style={{
+                    background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 14,
+                    padding: 24, maxWidth: 560, margin: '0 auto', textAlign: 'center',
+                  }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 800, marginBottom: 8 }}>보정본 검토를 마쳐 주세요</h3>
+                    <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 18, lineHeight: 1.7 }}>
+                      모든 보정본이 마음에 드시면 &quot;수정 없음&quot;을, 수정이 필요한 사진이 있으면 &quot;수정 있음&quot;을 눌러 주세요.<br/>
+                      <b style={{ color: '#ef4444' }}>수정 요청은 1회만 가능합니다.</b>
+                    </p>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => setShowNoRevConfirm(true)}
+                        style={{
+                          background: 'linear-gradient(135deg,#16a34a,#22c55e)', color: '#fff',
+                          border: 'none', padding: '13px 26px', borderRadius: 10,
+                          fontSize: 14, fontWeight: 700, cursor: 'pointer', minWidth: 160,
+                        }}
+                      >✅ 수정 없음 — 완료</button>
+                      <button
+                        type="button"
+                        onClick={() => setRevisionMode('editing')}
+                        style={{
+                          background: 'linear-gradient(135deg,#dc2626,#ef4444)', color: '#fff',
+                          border: 'none', padding: '13px 26px', borderRadius: 10,
+                          fontSize: 14, fontWeight: 700, cursor: 'pointer', minWidth: 160,
+                        }}
+                      >✏️ 수정 있음 — 선택</button>
+                    </div>
+                  </div>
+                ) : (
                   <div style={{ textAlign: 'center', padding: 20, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 10 }}>
-                    <p style={{ fontSize: 13, color: '#fcd34d' }}>수정 요청을 이미 보내셨습니다. 스튜디오에서 확인 후 업데이트됩니다.</p>
+                    <p style={{ fontSize: 13, color: '#d97706' }}>수정 요청을 이미 보내셨습니다. 스튜디오에서 확인 후 업데이트됩니다.</p>
                   </div>
                 )}
               </div>
@@ -180,6 +373,90 @@ export default function ClientGallery({
         {/* View-only lightbox for retouched tab */}
         {retouchedLightboxIndex !== null && (
           <SimpleLightbox photos={retouchedPhotos} index={retouchedLightboxIndex} onChange={setRetouchedLightboxIndex} onClose={() => setRetouchedLightboxIndex(null)} />
+        )}
+
+        {/* "수정 없음" 확인 팝업 */}
+        {showNoRevConfirm && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)',
+            zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#ffffff', border: '1px solid #e0e0e5', borderRadius: 16,
+              width: '100%', maxWidth: 420, padding: 24,
+            }}>
+              <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 10 }}>수정 없이 완료할까요?</h3>
+              <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 18, lineHeight: 1.7 }}>
+                확인을 누르면 작업이 완료되고, 최종 파일을 다운로드할 수 있는 드라이브 링크가 표시됩니다. 이후에는 수정 요청을 보낼 수 없습니다.
+              </p>
+              {noRevError && (
+                <div style={{ marginBottom: 12, padding: '8px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 7, fontSize: 12, color: '#ef4444' }}>
+                  {noRevError}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button onClick={() => setShowNoRevConfirm(false)} disabled={noRevLoading} style={{
+                  flex: 1, padding: '11px', background: '#f3f3f5',
+                  border: '1px solid #e0e0e5', color: '#0a0a0c',
+                  borderRadius: 8, fontSize: 14, cursor: 'pointer',
+                }}>취소</button>
+                <button onClick={handleConfirmNoRevision} disabled={noRevLoading} style={{
+                  flex: 2, padding: '11px',
+                  background: noRevLoading ? '#9ca3af' : 'linear-gradient(135deg,#16a34a,#22c55e)',
+                  border: 'none', color: '#fff',
+                  borderRadius: 8, fontSize: 14, fontWeight: 700,
+                  cursor: noRevLoading ? 'not-allowed' : 'pointer',
+                }}>
+                  {noRevLoading ? '처리 중...' : '확인 — 완료'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Drive link popup — shown after 수정 없음 confirmation */}
+        {showDriveLinkPopup && (
+          <div style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+            zIndex: 250, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}>
+            <div style={{
+              background: '#ffffff', border: '1px solid #e0e0e5', borderRadius: 16,
+              width: '100%', maxWidth: 460, padding: 28, textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 56, marginBottom: 12 }}>🎉</div>
+              <h3 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>작업이 완료되었습니다!</h3>
+              <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 22, lineHeight: 1.7 }}>
+                아래 드라이브 링크에서 최종 파일을 다운로드해 주세요.
+              </p>
+              {project.drive_link ? (
+                <a
+                  href={project.drive_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'linear-gradient(135deg, #16a34a, #22c55e)',
+                    color: '#fff', padding: '13px 26px',
+                    borderRadius: 10, fontSize: 14, fontWeight: 700,
+                    textDecoration: 'none', marginBottom: 16,
+                  }}
+                >📁 드라이브에서 다운로드</a>
+              ) : (
+                <p style={{ fontSize: 13, color: '#d97706', marginBottom: 16 }}>
+                  다운로드 링크가 아직 준비되지 않았습니다. 스튜디오에서 곧 업로드해 드려요.
+                </p>
+              )}
+              <br/>
+              <button onClick={() => setShowDriveLinkPopup(false)} style={{
+                background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+                padding: '9px 18px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer',
+              }}>닫기</button>
+            </div>
+          </div>
         )}
       </div>
     )
@@ -276,7 +553,7 @@ export default function ClientGallery({
           comments={comments}
           shareToken={shareToken}
           onClose={() => setShowSubmitModal(false)}
-          onSuccess={() => { setShowSubmitModal(false); setSubmitted(true) }}
+          onSuccess={() => { setShowSubmitModal(false); setSubmittedKind('selection') }}
         />
       )}
     </div>

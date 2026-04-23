@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
-import { PhotoWithUrl } from '@/lib/types'
+import { PhotoWithUrl, RetouchedPhotoWithUrl } from '@/lib/types'
 
 interface Props {
-  photos: PhotoWithUrl[]
+  photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
   index: number
   isSelected: boolean
   onChangeIndex: (i: number) => void

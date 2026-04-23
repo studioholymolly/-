@@ -67,6 +67,25 @@ export interface RevisionRequest {
   created_at: string
 }
 
+export interface RevisionSelection {
+  id: string
+  project_id: string
+  retouched_photo_id: string
+  comment: string | null
+  created_at: string
+}
+
+export interface RevisionAnnotation {
+  id: string
+  project_id: string
+  retouched_photo_id: string
+  pin_number: number
+  x_pct: number
+  y_pct: number
+  comment: string | null
+  created_at: string
+}
+
 export interface Submission {
   id: string
   project_id: string
