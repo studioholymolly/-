@@ -17,6 +17,7 @@ create table if not exists projects (
   client_name        text not null,
   client_email       text not null default '',
   deadline           date,
+  retouching_start_date date,
   custom_message     text,
   status             text not null default 'draft',
   share_token        text not null unique default encode(gen_random_bytes(24), 'hex'),
@@ -27,6 +28,8 @@ create table if not exists projects (
   created_at         timestamptz not null default now(),
   updated_at         timestamptz not null default now()
 );
+-- Migration for existing DBs
+alter table projects add column if not exists retouching_start_date date;
 
 create index if not exists projects_studio_id_idx on projects(studio_id);
 create index if not exists projects_share_token_idx on projects(share_token);

@@ -26,7 +26,9 @@ export default async function NewProjectPage() {
               <Field label="프로젝트명 *" name="name" placeholder="예: 2025 봄 룩북" required />
               <Field label="클라이언트명 *" name="client_name" placeholder="예: 닥터리쥬올" required />
               <Field label="클라이언트 이메일 *" name="client_email" type="email" placeholder="client@example.com" required />
-              <Field label="셀렉 마감일" name="deadline" type="date" />
+              <div />
+              <Field label="보정 시작일" name="retouching_start_date" type="date" />
+              <Field label="보정 마감일" name="deadline" type="date" />
             </div>
             <Field
               label="클라이언트 안내 메시지"

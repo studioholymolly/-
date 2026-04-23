@@ -503,7 +503,7 @@ export default function ClientGallery({
           <span style={{ fontSize: 12, color: '#6b6b80' }}>전체 <b style={{ color: '#0a0a0c' }}>{photos.length}장</b></span>
           <span style={{ fontSize: 12, color: '#6b6b80' }}>선택 <b style={{ color: '#22c55e' }}>{selections.size}장</b></span>
           {totalPins > 0 && <span style={{ fontSize: 12, color: '#6b6b80' }}>수정 메모 <b style={{ color: '#ef4444' }}>{totalPins}개</b></span>}
-          {project.deadline && <span style={{ fontSize: 12, color: '#f59e0b' }}>마감 {new Date(project.deadline).toLocaleDateString('ko-KR')}</span>}
+          {project.deadline && <span style={{ fontSize: 12, color: '#f59e0b' }}>보정 마감 {new Date(project.deadline).toLocaleDateString('ko-KR')}</span>}
         </div>
         {project.custom_message && (
           <p style={{ maxWidth: 560, margin: '12px auto 0', fontSize: 13, color: '#6b6b80', lineHeight: 1.7 }}>{project.custom_message}</p>
@@ -618,7 +618,7 @@ function ReviewGrid({ photos, onOpen }: { photos: { id: string; signedUrl: strin
   )
 }
 
-/** Minimal view-only lightbox for the review step. */
+/** Minimal view-only lightbox for the review step (with zoom controls). */
 function SimpleLightbox({ photos, index, onChange, onClose }: {
   photos: { signedUrl: string; filename: string }[]
   index: number
@@ -626,52 +626,168 @@ function SimpleLightbox({ photos, index, onChange, onClose }: {
   onClose: () => void
 }) {
   const photo = photos[index]
+  const [zoom, setZoom] = useState(1)
+  const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null)
+  const ZOOM_MIN = 1, ZOOM_MAX = 4, ZOOM_STEP = 0.5
 
-  // keyboard + body scroll lock
-  useClientLightboxKeys({ onClose, onPrev: () => onChange((index - 1 + photos.length) % photos.length), onNext: () => onChange((index + 1) % photos.length) })
+  const reset = useCallback(() => { setZoom(1); setOffset({ x: 0, y: 0 }) }, [])
+  const zoomIn = useCallback(() => setZoom(z => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2))), [])
+  const zoomOut = useCallback(() => setZoom(z => {
+    const n = Math.max(ZOOM_MIN, +(z - ZOOM_STEP).toFixed(2))
+    if (n === 1) setOffset({ x: 0, y: 0 })
+    return n
+  }), [])
+
+  useEffect(() => { reset() }, [photo?.signedUrl, reset])
+
+  useClientLightboxKeys({
+    onClose,
+    onPrev: useCallback(() => { reset(); onChange((index - 1 + photos.length) % photos.length) }, [index, photos.length, onChange, reset]),
+    onNext: useCallback(() => { reset(); onChange((index + 1) % photos.length) }, [index, photos.length, onChange, reset]),
+    onZoomIn: zoomIn,
+    onZoomOut: zoomOut,
+    onReset: reset,
+  })
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (zoom <= 1) return
+    e.stopPropagation()
+    dragRef.current = { startX: e.clientX, startY: e.clientY, baseX: offset.x, baseY: offset.y }
+    ;(e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId)
+  }
+  function handlePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!dragRef.current) return
+    const dx = e.clientX - dragRef.current.startX
+    const dy = e.clientY - dragRef.current.startY
+    setOffset({ x: dragRef.current.baseX + dx, y: dragRef.current.baseY + dy })
+  }
+  function handlePointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    dragRef.current = null
+    ;(e.currentTarget as HTMLDivElement).releasePointerCapture?.(e.pointerId)
+  }
 
   if (!photo) return null
+  const canZoomIn = zoom < ZOOM_MAX
+  const canZoomOut = zoom > ZOOM_MIN
+
   return (
     <div
-      onClick={onClose}
+      onClick={(e) => { if (zoom === 1) onClose(); else e.stopPropagation() }}
       style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,0,0,0.94)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        cursor: 'zoom-out',
+        cursor: zoom === 1 ? 'zoom-out' : 'default',
       }}
     >
       <button onClick={e => { e.stopPropagation(); onClose() }} aria-label="닫기" style={{
         position: 'absolute', top: 20, right: 20,
         background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
         width: 42, height: 42, borderRadius: '50%', fontSize: 20, cursor: 'pointer', lineHeight: 1,
+        zIndex: 3,
       }}>✕</button>
       <div style={{ position: 'absolute', top: 24, left: 24, color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 600 }}>{index + 1} / {photos.length}</div>
+
       {photos.length > 1 && (
-        <button onClick={e => { e.stopPropagation(); onChange((index - 1 + photos.length) % photos.length) }} aria-label="이전" style={{
+        <button onClick={e => { e.stopPropagation(); reset(); onChange((index - 1 + photos.length) % photos.length) }} aria-label="이전" style={{
           position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
           background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
           width: 48, height: 48, borderRadius: '50%', fontSize: 22, cursor: 'pointer', lineHeight: 1,
+          zIndex: 3,
         }}>‹</button>
       )}
-      <img src={photo.signedUrl} alt={photo.filename} onClick={e => e.stopPropagation()} style={{ maxWidth: '92vw', maxHeight: '88vh', objectFit: 'contain', cursor: 'default', borderRadius: 6 }} />
+
+      <div
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        onClick={e => {
+          e.stopPropagation()
+          if (zoom === 1 && !dragRef.current) zoomIn()
+        }}
+        style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          maxWidth: '92vw', maxHeight: '88vh', overflow: 'hidden',
+          cursor: zoom > 1 ? (dragRef.current ? 'grabbing' : 'grab') : 'zoom-in',
+          touchAction: zoom > 1 ? 'none' : 'auto',
+        }}
+      >
+        <img
+          src={photo.signedUrl}
+          alt={photo.filename}
+          draggable={false}
+          style={{
+            maxWidth: '92vw', maxHeight: '88vh', objectFit: 'contain', borderRadius: 6,
+            transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
+            transformOrigin: 'center center',
+            transition: dragRef.current ? 'none' : 'transform 0.15s ease-out',
+            userSelect: 'none', willChange: 'transform',
+          }}
+        />
+      </div>
+
       {photos.length > 1 && (
-        <button onClick={e => { e.stopPropagation(); onChange((index + 1) % photos.length) }} aria-label="다음" style={{
+        <button onClick={e => { e.stopPropagation(); reset(); onChange((index + 1) % photos.length) }} aria-label="다음" style={{
           position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)',
           background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
           width: 48, height: 48, borderRadius: '50%', fontSize: 22, cursor: 'pointer', lineHeight: 1,
+          zIndex: 3,
         }}>›</button>
       )}
+
+      {/* Zoom controls */}
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', gap: 6, alignItems: 'center',
+          background: 'rgba(255,255,255,0.1)', borderRadius: 10, padding: '4px 6px',
+          border: '1px solid rgba(255,255,255,0.18)',
+          zIndex: 3,
+        }}
+      >
+        <button onClick={zoomOut} disabled={!canZoomOut} aria-label="축소" title="축소 ( − )" style={{
+          width: 34, height: 34, borderRadius: 7,
+          background: canZoomOut ? 'rgba(255,255,255,0.12)' : 'transparent',
+          border: 'none', color: canZoomOut ? '#fff' : '#6b6b80',
+          cursor: canZoomOut ? 'pointer' : 'not-allowed',
+          fontSize: 18, fontWeight: 700, lineHeight: 1,
+        }}>−</button>
+        <button onClick={reset} aria-label="원래 크기로" title="원래 크기 ( 0 )" style={{
+          minWidth: 54, height: 34, padding: '0 8px', borderRadius: 7,
+          background: 'transparent', border: 'none',
+          color: '#fff', fontSize: 11, fontWeight: 700, cursor: 'pointer',
+        }}>🔍 {Math.round(zoom * 100)}%</button>
+        <button onClick={zoomIn} disabled={!canZoomIn} aria-label="확대" title="확대 ( + )" style={{
+          width: 34, height: 34, borderRadius: 7,
+          background: canZoomIn ? 'rgba(255,255,255,0.12)' : 'transparent',
+          border: 'none', color: canZoomIn ? '#fff' : '#6b6b80',
+          cursor: canZoomIn ? 'pointer' : 'not-allowed',
+          fontSize: 18, fontWeight: 700, lineHeight: 1,
+        }}>＋</button>
+      </div>
     </div>
   )
 }
 
-function useClientLightboxKeys({ onClose, onPrev, onNext }: { onClose: () => void; onPrev: () => void; onNext: () => void }) {
+function useClientLightboxKeys({ onClose, onPrev, onNext, onZoomIn, onZoomOut, onReset }: {
+  onClose: () => void
+  onPrev: () => void
+  onNext: () => void
+  onZoomIn?: () => void
+  onZoomOut?: () => void
+  onReset?: () => void
+}) {
   useEffect(() => {
     function handle(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
       else if (e.key === 'ArrowLeft') onPrev()
       else if (e.key === 'ArrowRight') onNext()
+      else if ((e.key === '+' || e.key === '=') && onZoomIn) { e.preventDefault(); onZoomIn() }
+      else if ((e.key === '-' || e.key === '_') && onZoomOut) { e.preventDefault(); onZoomOut() }
+      else if (e.key === '0' && onReset) { e.preventDefault(); onReset() }
     }
     window.addEventListener('keydown', handle)
     const prevOverflow = document.body.style.overflow
@@ -680,5 +796,5 @@ function useClientLightboxKeys({ onClose, onPrev, onNext }: { onClose: () => voi
       window.removeEventListener('keydown', handle)
       document.body.style.overflow = prevOverflow
     }
-  }, [onClose, onPrev, onNext])
+  }, [onClose, onPrev, onNext, onZoomIn, onZoomOut, onReset])
 }

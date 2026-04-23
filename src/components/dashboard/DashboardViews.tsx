@@ -120,7 +120,8 @@ function ListView({ projects, activeFilter }: { projects: Project[]; activeFilte
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--mu)' }}>
                   {project.client_name} · {project.client_email}
-                  {project.deadline ? ` · 마감 ${formatDate(project.deadline)}` : ''}
+                  {project.retouching_start_date ? ` · 보정 시작 ${formatDate(project.retouching_start_date)}` : ''}
+                  {project.deadline ? ` · 보정 마감 ${formatDate(project.deadline)}` : ''}
                 </div>
               </div>
             </div>
@@ -256,7 +257,7 @@ function CalendarView({ projects }: { projects: Project[] }) {
         ))}
       </div>
       <p style={{ fontSize: 11, color: 'var(--mu)', textAlign: 'center', marginTop: 8 }}>
-        프로젝트 마감일 기준으로 표시됩니다
+        프로젝트 보정 마감일 기준으로 표시됩니다
       </p>
     </div>
   )
@@ -282,19 +283,22 @@ function GanttView({ projects }: { projects: Project[] }) {
       }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📊</div>
         <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>간트차트로 표시할 프로젝트가 없습니다</p>
-        <p style={{ fontSize: 12 }}>프로젝트에 <b>마감일</b>을 설정하면 이곳에 타임라인이 표시됩니다</p>
+        <p style={{ fontSize: 12 }}>프로젝트에 <b>보정 마감일</b>을 설정하면 이곳에 타임라인이 표시됩니다</p>
       </div>
     )
   }
 
-  // Sort by created_at ascending for display order
-  const sorted = [...scheduled].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+  // Use retouching_start_date when present, otherwise fall back to created_at for the bar start.
+  const barStartMs = (p: Project) => new Date(p.retouching_start_date || p.created_at).getTime()
 
-  // Determine date range: earliest created_at → latest max(deadline, today)
+  // Sort by bar start ascending for display order
+  const sorted = [...scheduled].sort((a, b) => barStartMs(a) - barStartMs(b))
+
+  // Determine date range: earliest bar start → latest max(deadline, today)
   const nowMs = Date.now()
   let minMs = Infinity, maxMs = -Infinity
   for (const p of sorted) {
-    const start = new Date(p.created_at).getTime()
+    const start = barStartMs(p)
     const end = Math.max(new Date(p.deadline!).getTime(), nowMs)
     if (start < minMs) minMs = start
     if (end > maxMs) maxMs = end
@@ -351,7 +355,7 @@ function GanttView({ projects }: { projects: Project[] }) {
       {/* Project rows */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {sorted.map(p => {
-          const start = new Date(p.created_at).getTime()
+          const start = barStartMs(p)
           const end = new Date(p.deadline!).getTime()
           const leftPct = Math.max(0, ((start - minMs) / totalMs) * 100)
           // Ensure minimum visible width
@@ -419,7 +423,7 @@ function GanttView({ projects }: { projects: Project[] }) {
         ))}
       </div>
       <p style={{ fontSize: 11, color: 'var(--mu)', textAlign: 'center', marginTop: 8 }}>
-        프로젝트 생성일부터 마감일까지의 기간을 표시합니다 · 마감일이 지난 항목은 빨간 테두리로 강조됩니다
+        보정 시작일(없으면 프로젝트 생성일)부터 보정 마감일까지의 기간을 표시합니다 · 마감이 지난 항목은 빨간 테두리로 강조됩니다
       </p>
     </div>
   )

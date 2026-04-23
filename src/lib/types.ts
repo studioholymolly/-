@@ -8,6 +8,7 @@ export interface Project {
   client_name: string
   client_email: string
   deadline: string | null
+  retouching_start_date: string | null
   custom_message: string | null
   status: ProjectStatus
   share_token: string

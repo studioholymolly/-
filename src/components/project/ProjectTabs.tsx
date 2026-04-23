@@ -577,7 +577,8 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               <EditField label="프로젝트명" name="name" defaultValue={project.name} required />
               <EditField label="클라이언트명" name="client_name" defaultValue={project.client_name} required />
               <EditField label="클라이언트 이메일" name="client_email" type="email" defaultValue={project.client_email} required />
-              <EditField label="셀렉 마감일" name="deadline" type="date" defaultValue={project.deadline || ''} />
+              <EditField label="보정 시작일" name="retouching_start_date" type="date" defaultValue={project.retouching_start_date || ''} />
+              <EditField label="보정 마감일" name="deadline" type="date" defaultValue={project.deadline || ''} />
               <EditField label="클라이언트 안내 메시지" name="custom_message" type="textarea" defaultValue={project.custom_message || ''} />
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>

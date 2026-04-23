@@ -13,6 +13,7 @@ export async function createProject(formData: FormData) {
   const client_name = formData.get('client_name') as string
   const client_email = formData.get('client_email') as string
   const deadline = formData.get('deadline') as string || null
+  const retouching_start_date = formData.get('retouching_start_date') as string || null
   const custom_message = formData.get('custom_message') as string || null
 
   const { data, error } = await supabase
@@ -23,6 +24,7 @@ export async function createProject(formData: FormData) {
       client_name,
       client_email,
       deadline: deadline || null,
+      retouching_start_date: retouching_start_date || null,
       custom_message,
       status: 'draft',
     })
@@ -46,6 +48,7 @@ export async function updateProject(projectId: string, formData: FormData) {
   const client_name = formData.get('client_name') as string
   const client_email = formData.get('client_email') as string
   const deadline = (formData.get('deadline') as string) || null
+  const retouching_start_date = (formData.get('retouching_start_date') as string) || null
   const custom_message = (formData.get('custom_message') as string) || null
 
   const { error } = await supabase
@@ -55,6 +58,7 @@ export async function updateProject(projectId: string, formData: FormData) {
       client_name,
       client_email,
       deadline,
+      retouching_start_date,
       custom_message,
       updated_at: new Date().toISOString(),
     })

@@ -102,7 +102,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
               <StatusBadge status={(project as Project).status} />
               <span style={{ fontSize: 12, color: 'var(--mu)' }}>{project.client_name} · {project.client_email}</span>
-              {project.deadline && <span style={{ fontSize: 12, color: '#f59e0b' }}>마감 {formatDate(project.deadline)}</span>}
+              {project.retouching_start_date && <span style={{ fontSize: 12, color: 'var(--mu)' }}>보정 시작 {formatDate(project.retouching_start_date)}</span>}
+              {project.deadline && <span style={{ fontSize: 12, color: '#f59e0b' }}>보정 마감 {formatDate(project.deadline)}</span>}
             </div>
           </div>
         </div>
