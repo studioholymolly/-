@@ -120,6 +120,22 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
 
   return (
     <div>
+      {/* Project status (항상 고정 표시 — 탭과 독립) */}
+      <div style={{ background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 12, padding: '14px 18px', marginBottom: 18 }}>
+        <h3 style={{ fontSize: 12, fontWeight: 800, color: 'var(--mu)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 10 }}>프로젝트 상태 변경</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          {(['draft', 'selecting', 'selection_done', 'studio_editing', 'client_reviewing', 'completed'] as const).map(s => (
+            <button key={s} onClick={() => handleStatusChange(s)} disabled={isPending || project.status === s} style={{
+              padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+              cursor: project.status === s ? 'default' : 'pointer',
+              background: project.status === s ? 'var(--vio)' : 'var(--s2)',
+              color: project.status === s ? '#fff' : 'var(--tx)',
+              border: '1px solid var(--bd2)',
+            }}>{({draft:'초안',selecting:'셀렉 중',selection_done:'셀렉 완료',studio_editing:'보정 중',client_reviewing:'검토 중',completed:'완료'} as const)[s]}</button>
+          ))}
+        </div>
+      </div>
+
       {/* Tab bar */}
       <div style={{ display: 'flex', borderBottom: '1px solid var(--bd)', marginBottom: 24, gap: 0 }}>
         {tabs.map(t => (
@@ -564,22 +580,6 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               {editSaved && <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>✓ 저장됨</span>}
             </div>
           </form>
-
-          {/* Status change */}
-          <div style={{ background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 12, padding: 20, marginBottom: 14 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>프로젝트 상태 변경</h3>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {(['draft', 'selecting', 'selection_done', 'studio_editing', 'client_reviewing', 'completed'] as const).map(s => (
-                <button key={s} onClick={() => handleStatusChange(s)} disabled={isPending || project.status === s} style={{
-                  padding: '7px 14px', borderRadius: 7, fontSize: 12, fontWeight: 600,
-                  cursor: project.status === s ? 'default' : 'pointer',
-                  background: project.status === s ? 'var(--vio)' : 'var(--s2)',
-                  color: project.status === s ? '#fff' : 'var(--tx)',
-                  border: '1px solid var(--bd2)',
-                }}>{({draft:'초안',selecting:'셀렉 중',selection_done:'셀렉 완료',studio_editing:'보정 중',client_reviewing:'검토 중',completed:'완료'} as const)[s]}</button>
-              ))}
-            </div>
-          </div>
 
           <div style={{ marginBottom: 20 }}>
             <ShareLinkButton projectId={project.id} token={project.share_token} clientEmail={project.client_email} />
