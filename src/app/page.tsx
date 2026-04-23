@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { signIn } from '@/lib/actions/auth'
+import { STUDIO_NAME } from '@/lib/brand'
 
 export default function LoginPage() {
   const [error, setError] = useState('')
@@ -38,7 +39,7 @@ export default function LoginPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--tx)', marginBottom: 4 }}>
-            스튜디오 홀리몰리
+            {STUDIO_NAME}
           </h1>
           <p style={{ fontSize: 13, color: 'var(--mu)' }}>스튜디오 관리자 로그인</p>
         </div>

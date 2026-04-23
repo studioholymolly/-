@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 import { submitNoRevision } from '@/lib/actions/selections'
+import { STUDIO_NAME } from '@/lib/brand'
 import MasonryGallery from './MasonryGallery'
 import BottomBar from './BottomBar'
 import AnnotationModal from './AnnotationModal'
@@ -168,7 +169,7 @@ export default function ClientGallery({
               </a>
             )}
           </div>
-          <p style={{ fontSize: 12, color: '#8a8a95', marginTop: 20 }}>감사합니다 — 스튜디오 홀리몰리</p>
+          <p style={{ fontSize: 12, color: '#8a8a95', marginTop: 20 }}>감사합니다 — {STUDIO_NAME}</p>
         </div>
       </div>
     )
@@ -205,7 +206,7 @@ export default function ClientGallery({
       <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0a0a0c' }}>
         {/* Header */}
         <div style={{ padding: '32px 24px 20px', borderBottom: '1px solid #e0e0e5', textAlign: 'center' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>스튜디오 홀리몰리</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>{STUDIO_NAME}</div>
           <h1 style={{ fontSize: 22, fontWeight: 900, marginBottom: 4 }}>수정이 필요한 사진 선택</h1>
           <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 12 }}>수정이 필요한 보정본을 선택하고, 원하는 수정 방향을 주석(핀)과 코멘트로 남겨주세요.</p>
           <div style={{ display: 'inline-flex', gap: 20, background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 12, padding: '10px 20px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -296,7 +297,7 @@ export default function ClientGallery({
       <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0a0a0c' }}>
         {/* Header */}
         <div style={{ padding: '32px 24px 20px', borderBottom: '1px solid #e0e0e5', textAlign: 'center' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>스튜디오 홀리몰리</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>{STUDIO_NAME}</div>
           <h1 style={{ fontSize: 24, fontWeight: 900, marginBottom: 4 }}>{project.name}</h1>
           <p style={{ fontSize: 13, color: '#6b6b80' }}>{project.client_name}</p>
           <div style={{ marginTop: 12, display: 'inline-flex', background: 'rgba(22,163,74,0.08)', border: '1px solid #16a34a', borderRadius: 20, padding: '4px 14px' }}>
@@ -496,7 +497,7 @@ export default function ClientGallery({
     <div style={{ minHeight: '100vh', background: '#ffffff', color: '#0a0a0c' }}>
       {/* Header */}
       <div style={{ padding: '32px 24px 20px', borderBottom: '1px solid #e0e0e5', textAlign: 'center' }}>
-        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>스튜디오 홀리몰리</div>
+        <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.2em', color: '#6b6b80', textTransform: 'uppercase', marginBottom: 8 }}>{STUDIO_NAME}</div>
         <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 4 }}>{project.name}</h1>
         <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 12 }}>{project.client_name}</p>
         <div style={{ display: 'inline-flex', gap: 20, background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 12, padding: '10px 20px', flexWrap: 'wrap', justifyContent: 'center' }}>

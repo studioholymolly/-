@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { signOut } from '@/lib/actions/auth'
+import { STUDIO_SHORT_NAME } from '@/lib/brand'
 
 interface NavbarProps {
   unreadCount?: number
@@ -20,7 +21,7 @@ export default function Navbar({ unreadCount = 0 }: NavbarProps) {
       <Link href="/dashboard" style={{ textDecoration: 'none' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ fontSize: 20 }}>📷</span>
-          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--tx)' }}>홀리몰리</span>
+          <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--tx)' }}>{STUDIO_SHORT_NAME}</span>
         </div>
       </Link>
 

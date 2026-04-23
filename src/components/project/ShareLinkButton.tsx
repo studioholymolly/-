@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { getShareUrl } from '@/lib/utils'
 import { regenerateShareToken } from '@/lib/actions/projects'
+import { STUDIO_NAME } from '@/lib/brand'
 
 type Phase = 'selecting' | 'reviewing'
 
@@ -36,7 +37,7 @@ export default function ShareLinkButton({ projectId, projectName, token, clientE
         `수정이 필요한 사진이 있으시면 해당 사진에 핀을 추가해 수정 방향을 남겨주시면 됩니다. (수정 요청은 1회 가능합니다)`,
         ``,
         `감사합니다 🙏`,
-        `— 스튜디오 홀리몰리`,
+        `— ${STUDIO_NAME}`,
       ].join('\n')
     : [
         `안녕하세요${clientName ? ` ${clientName}님` : ''} 😊`,
@@ -48,7 +49,7 @@ export default function ShareLinkButton({ projectId, projectName, token, clientE
         `셀렉 완료 후 "셀렉 완료 전송" 버튼을 눌러주시면 됩니다.`,
         ``,
         `감사합니다 🙏`,
-        `— 스튜디오 홀리몰리`,
+        `— ${STUDIO_NAME}`,
       ].join('\n')
 
   async function copy() {
