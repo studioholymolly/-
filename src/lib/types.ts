@@ -45,6 +45,7 @@ export interface Selection {
   project_id: string
   photo_id: string
   status: SelectionStatus
+  comment: string | null
   submitted_at: string | null
 }
 

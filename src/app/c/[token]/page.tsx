@@ -55,6 +55,10 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
   const selections = (selectionsRes.data ?? []) as Selection[]
   const annotations = (annotationsRes.data ?? []) as Annotation[]
   const initialSelectedIds = selections.filter(s => s.status === 'selected').map(s => s.photo_id)
+  const initialComments: Record<string, string> = {}
+  for (const s of selections) {
+    if (s.comment && s.comment.trim()) initialComments[s.photo_id] = s.comment
+  }
   const initialAnnotations: Record<string, AnnotationPin[]> = {}
   for (const a of annotations) {
     if (!initialAnnotations[a.photo_id]) initialAnnotations[a.photo_id] = []
@@ -82,6 +86,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
       shareToken={token}
       initialSelectedIds={initialSelectedIds}
       initialAnnotations={initialAnnotations}
+      initialComments={initialComments}
       submissionCount={submissionCount}
     />
   )

@@ -16,16 +16,17 @@ interface Props {
   shareToken: string
   initialSelectedIds?: string[]
   initialAnnotations?: Record<string, AnnotationPin[]>
+  initialComments?: Record<string, string>
   submissionCount?: number
 }
 
 export default function ClientGallery({
   project, photos, retouchedPhotos, shareToken,
-  initialSelectedIds = [], initialAnnotations = {}, submissionCount = 0,
+  initialSelectedIds = [], initialAnnotations = {}, initialComments = {}, submissionCount = 0,
 }: Props) {
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelectedIds))
   const [annotations, setAnnotations] = useState<Record<string, AnnotationPin[]>>(initialAnnotations)
-  const [comments, setComments] = useState<Record<string, string>>({})
+  const [comments, setComments] = useState<Record<string, string>>(initialComments)
   // Lightbox ("크게 보기") state — main gallery + retouched tab
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const [retouchedLightboxIndex, setRetouchedLightboxIndex] = useState<number | null>(null)
@@ -288,6 +289,7 @@ export default function ClientGallery({
           photos={photos}
           selectedIds={selections}
           annotations={annotations}
+          comments={comments}
           shareToken={shareToken}
           onClose={() => setShowSubmitModal(false)}
           onSuccess={() => { setShowSubmitModal(false); setSubmitted(true) }}

@@ -6,7 +6,8 @@ import { AnnotationPin } from '@/lib/types'
 export async function submitSelections(
   shareToken: string,
   selectedPhotoIds: string[],
-  annotations: Record<string, AnnotationPin[]>
+  annotations: Record<string, AnnotationPin[]>,
+  comments: Record<string, string> = {}
 ) {
   const supabase = await createClient()
 
@@ -44,6 +45,7 @@ export async function submitSelections(
       project_id: projectId,
       photo_id: photoId,
       status: 'selected',
+      comment: (comments[photoId] ?? '').trim() || null,
       submitted_at: new Date().toISOString(),
     }))
 

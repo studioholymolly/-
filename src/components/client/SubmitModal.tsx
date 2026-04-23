@@ -8,23 +8,25 @@ interface Props {
   photos: PhotoWithUrl[]
   selectedIds: Set<string>
   annotations: Record<string, AnnotationPin[]>
+  comments: Record<string, string>
   shareToken: string
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function SubmitModal({ photos, selectedIds, annotations, shareToken, onClose, onSuccess }: Props) {
+export default function SubmitModal({ photos, selectedIds, annotations, comments, shareToken, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const selectedPhotos = photos.filter(p => selectedIds.has(p.id))
   const totalPins = Object.values(annotations).reduce((s, pins) => s + pins.length, 0)
+  const totalComments = selectedPhotos.filter(p => (comments[p.id] ?? '').trim()).length
 
   async function handleSubmit() {
     setLoading(true)
     setError('')
     try {
-      const result = await submitSelections(shareToken, Array.from(selectedIds), annotations)
+      const result = await submitSelections(shareToken, Array.from(selectedIds), annotations, comments)
       if (result.error) {
         setError(result.error)
         setLoading(false)
@@ -51,7 +53,7 @@ export default function SubmitModal({ photos, selectedIds, annotations, shareTok
         <div style={{ padding: '20px 20px 0' }}>
           <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 4 }}>셀렉을 완료할까요?</h2>
           <p style={{ fontSize: 13, color: '#6b6b80', marginBottom: 16 }}>
-            선택한 {selectedPhotos.length}장{totalPins > 0 ? `과 수정 메모 ${totalPins}개` : ''}를 스튜디오에 전달합니다.
+            선택한 {selectedPhotos.length}장{totalPins > 0 ? `, 수정 메모 ${totalPins}개` : ''}{totalComments > 0 ? `, 코멘트 ${totalComments}개` : ''}를 스튜디오에 전달합니다.
           </p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
             <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
@@ -61,6 +63,10 @@ export default function SubmitModal({ photos, selectedIds, annotations, shareTok
             <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
               <div style={{ fontSize: 20, fontWeight: 800, color: '#ef4444' }}>{totalPins}</div>
               <div style={{ fontSize: 11, color: '#6b6b80' }}>수정 메모</div>
+            </div>
+            <div style={{ flex: 1, background: '#f3f3f5', border: '1px solid #e0e0e5', borderRadius: 8, padding: '10px 14px', textAlign: 'center' }}>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#3b82f6' }}>{totalComments}</div>
+              <div style={{ fontSize: 11, color: '#6b6b80' }}>코멘트</div>
             </div>
           </div>
         </div>

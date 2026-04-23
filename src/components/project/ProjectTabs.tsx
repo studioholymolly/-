@@ -62,6 +62,11 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
     if (!annotationsByPhoto[ann.photo_id]) annotationsByPhoto[ann.photo_id] = []
     annotationsByPhoto[ann.photo_id].push(ann)
   }
+  const commentsByPhoto: Record<string, string> = {}
+  for (const sel of selections) {
+    if (sel.comment && sel.comment.trim()) commentsByPhoto[sel.photo_id] = sel.comment
+  }
+  const commentCount = Object.keys(commentsByPhoto).length
 
   const tabs = [
     { key: 'originals', label: `원본 사진 (${photos.length})` },
@@ -212,7 +217,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           ) : (
             <div>
               <p style={{ fontSize: 13, color: 'var(--mu)', marginBottom: 16 }}>
-                클라이언트가 {selectedPhotoIds.length}장을 선택했습니다. <span style={{ color: 'var(--mu)' }}>사진을 클릭하면 핀 위치와 메모를 크게 볼 수 있습니다.</span>
+                클라이언트가 {selectedPhotoIds.length}장을 선택했습니다{commentCount > 0 ? ` · 코멘트 ${commentCount}개` : ''}. <span style={{ color: 'var(--mu)' }}>사진을 클릭하면 핀 위치와 메모를 크게 볼 수 있습니다.</span>
               </p>
               <div style={{
                 display: 'grid',
@@ -221,6 +226,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               }}>
                 {selectedPhotos.map((p, i) => {
                   const anns = annotationsByPhoto[p.id] || []
+                  const hasComment = !!commentsByPhoto[p.id]
                   return (
                     <button
                       key={p.id}
@@ -232,7 +238,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                         display: 'block', position: 'relative',
                         aspectRatio: '3 / 4', overflow: 'hidden',
                         borderRadius: 10,
-                        border: `2px solid ${anns.length > 0 ? 'rgba(239,68,68,0.5)' : 'var(--bd)'}`,
+                        border: `2px solid ${anns.length > 0 ? 'rgba(239,68,68,0.5)' : hasComment ? 'rgba(59,130,246,0.5)' : 'var(--bd)'}`,
                         background: 'var(--s2)',
                         cursor: 'zoom-in',
                       }}
@@ -249,6 +255,17 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                           boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
                         }}>
                           📍 수정 요청 {anns.length}개
+                        </div>
+                      )}
+                      {hasComment && (
+                        <div style={{
+                          position: 'absolute', top: 8, right: 8,
+                          background: '#3b82f6', color: '#fff',
+                          fontSize: 10, fontWeight: 800,
+                          padding: '3px 9px', borderRadius: 10,
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                        }}>
+                          💬 코멘트
                         </div>
                       )}
                       <div style={{
@@ -434,6 +451,7 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
         <SelectionReviewLightbox
           photos={selectedPhotos}
           annotationsByPhoto={annotationsByPhoto}
+          commentsByPhoto={commentsByPhoto}
           index={selectionReviewIndex}
           onChange={setSelectionReviewIndex}
           onClose={() => setSelectionReviewIndex(null)}

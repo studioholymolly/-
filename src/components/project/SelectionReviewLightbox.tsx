@@ -6,6 +6,7 @@ import { PhotoWithUrl, Annotation } from '@/lib/types'
 interface Props {
   photos: PhotoWithUrl[]
   annotationsByPhoto: Record<string, Annotation[]>
+  commentsByPhoto: Record<string, string>
   index: number
   onChange: (i: number) => void
   onClose: () => void
@@ -16,11 +17,12 @@ interface Props {
  * at full resolution with the client's pins + comments overlaid accurately.
  */
 export default function SelectionReviewLightbox({
-  photos, annotationsByPhoto, index, onChange, onClose,
+  photos, annotationsByPhoto, commentsByPhoto, index, onChange, onClose,
 }: Props) {
   const photo = photos[index]
   const anns = photo ? (annotationsByPhoto[photo.id] || []) : []
   const sortedAnns = [...anns].sort((a, b) => a.pin_number - b.pin_number)
+  const photoComment = photo ? (commentsByPhoto[photo.id] || '').trim() : ''
 
   const prev = useCallback(() => onChange((index - 1 + photos.length) % photos.length), [index, photos.length, onChange])
   const next = useCallback(() => onChange((index + 1) % photos.length), [index, photos.length, onChange])
@@ -132,9 +134,32 @@ export default function SelectionReviewLightbox({
             <p style={{ fontSize: 11, color: '#6b6b80', marginTop: 3 }}>클라이언트가 남긴 내용입니다</p>
           </div>
           <div style={{ flex: 1, overflow: 'auto', padding: 12 }}>
-            {sortedAnns.length === 0 && (
+            {photoComment && (
+              <div style={{
+                marginBottom: 14, padding: 12,
+                background: 'rgba(59,130,246,0.08)',
+                border: '1px solid rgba(59,130,246,0.35)',
+                borderRadius: 8,
+              }}>
+                <div style={{ fontSize: 11, fontWeight: 800, color: '#2563eb', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  💬 전체 코멘트
+                </div>
+                <div style={{
+                  fontSize: 12.5, color: '#0a0a0c', lineHeight: 1.55,
+                  whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+                }}>
+                  {photoComment}
+                </div>
+              </div>
+            )}
+            {sortedAnns.length === 0 && !photoComment && (
               <div style={{ textAlign: 'center', padding: '48px 16px', color: '#8a8a95', fontSize: 12, lineHeight: 1.7 }}>
                 수정 요청이 없습니다
+              </div>
+            )}
+            {sortedAnns.length === 0 && photoComment && (
+              <div style={{ fontSize: 11, color: '#8a8a95', fontStyle: 'italic', textAlign: 'center', padding: '8px 0' }}>
+                핀으로 표시된 수정 요청은 없습니다
               </div>
             )}
             {sortedAnns.map(ann => (

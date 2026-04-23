@@ -70,9 +70,13 @@ create table if not exists selections (
   project_id   uuid not null references projects(id) on delete cascade,
   photo_id     uuid not null references photos(id) on delete cascade,
   status       text not null default 'selected',
+  comment      text,
   submitted_at timestamptz,
   unique(project_id, photo_id)
 );
+
+-- Migration (기존 DB에 선택 코멘트 컬럼 추가)
+alter table selections add column if not exists comment text;
 
 create index if not exists selections_project_id_idx on selections(project_id);
 
