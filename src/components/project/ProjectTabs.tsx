@@ -8,6 +8,7 @@ import PhotoLightbox from '@/components/PhotoLightbox'
 import SelectionReviewLightbox from './SelectionReviewLightbox'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, RevisionRequest, RevisionSelection, RevisionAnnotation, Submission } from '@/lib/types'
 import { updateProjectStatus, setDriveLinkRetouched, updateProject, deleteProject } from '@/lib/actions/projects'
+import { deletePhoto } from '@/lib/actions/photos'
 import { formatDateTime } from '@/lib/utils'
 
 interface Props {
@@ -97,6 +98,15 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
   function handleStatusChange(newStatus: string) {
     startTransition(async () => {
       await updateProjectStatus(project.id, newStatus)
+      router.refresh()
+    })
+  }
+
+  function handleDeleteRetouched(photoId: string, storagePath: string, filename: string) {
+    const ok = window.confirm(`"${filename}" 보정본을 삭제할까요?\n\n이 작업은 되돌릴 수 없습니다.`)
+    if (!ok) return
+    startTransition(async () => {
+      await deletePhoto(photoId, 'retouched', storagePath)
       router.refresh()
     })
   }
@@ -321,26 +331,44 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                 gap: 8,
               }}>
                 {retouchedPhotos.map((p, i) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => openLightbox(retouchedPhotos.map(x => ({ signedUrl: x.signedUrl, filename: x.filename })), i)}
-                    style={{
-                      all: 'unset',
-                      aspectRatio: '1 / 1',
-                      borderRadius: 8, overflow: 'hidden',
-                      background: 'var(--s2)', border: '1px solid var(--bd)',
-                      cursor: 'zoom-in', display: 'block',
-                    }}
-                  >
-                    <img src={p.signedUrl} alt={p.filename}
-                      loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  </button>
+                  <div key={p.id} style={{ position: 'relative', aspectRatio: '1 / 1' }}>
+                    <button
+                      type="button"
+                      onClick={() => openLightbox(retouchedPhotos.map(x => ({ signedUrl: x.signedUrl, filename: x.filename })), i)}
+                      style={{
+                        all: 'unset',
+                        width: '100%', height: '100%',
+                        borderRadius: 8, overflow: 'hidden',
+                        background: 'var(--s2)', border: '1px solid var(--bd)',
+                        cursor: 'zoom-in', display: 'block',
+                      }}
+                    >
+                      <img src={p.signedUrl} alt={p.filename}
+                        loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleDeleteRetouched(p.id, p.storage_path, p.filename) }}
+                      disabled={isPending}
+                      aria-label={`${p.filename} 삭제`}
+                      title="삭제"
+                      style={{
+                        position: 'absolute', top: 6, right: 6,
+                        width: 26, height: 26, borderRadius: '50%',
+                        background: 'rgba(239,68,68,0.92)', color: '#fff',
+                        border: '1.5px solid rgba(255,255,255,0.9)',
+                        fontSize: 14, fontWeight: 800, lineHeight: 1,
+                        cursor: isPending ? 'not-allowed' : 'pointer',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.35)',
+                      }}
+                    >✕</button>
+                  </div>
                 ))}
               </div>
 
-              {project.status === 'studio_editing' && (
+              {project.status === 'studio_editing' && !project.revision_used && (
                 <div style={{
                   marginTop: 18, padding: 16,
                   background: 'rgba(13,148,136,0.08)',
@@ -358,7 +386,38 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                   }}>📤 클라이언트에게 보정본 공개하기</button>
                 </div>
               )}
-              {project.status === 'client_reviewing' && (
+              {project.status === 'studio_editing' && project.revision_used && (
+                <div style={{
+                  marginTop: 18, padding: 16,
+                  background: 'rgba(59,130,246,0.08)',
+                  border: '1px solid rgba(59,130,246,0.35)',
+                  borderRadius: 10,
+                }}>
+                  <h4 style={{ fontSize: 13, fontWeight: 800, marginBottom: 6 }}>✨ 수정 작업을 마치셨나요?</h4>
+                  <p style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 12, lineHeight: 1.6 }}>
+                    수정된 최종 파일을 드라이브에 업로드하고 아래 링크란에 저장한 뒤, 이 버튼을 누르면 클라이언트가 다운로드 링크를 바로 받아볼 수 있어요. (수정 요청은 이미 1회 사용됨)
+                  </p>
+                  {!project.drive_link && (
+                    <p style={{ fontSize: 12, color: '#d97706', marginBottom: 12, fontWeight: 600 }}>
+                      ⚠️ 아래 드라이브 링크를 먼저 저장해 주세요
+                    </p>
+                  )}
+                  <button
+                    onClick={() => {
+                      const ok = window.confirm('클라이언트에게 최종 파일을 전달하고 작업을 완료합니다. 계속하시겠습니까?')
+                      if (ok) handleStatusChange('completed')
+                    }}
+                    disabled={isPending || !project.drive_link}
+                    style={{
+                      background: !project.drive_link ? '#9ca3af' : 'linear-gradient(135deg,#2563eb,#3b82f6)',
+                      color: '#fff', border: 'none', padding: '11px 24px', borderRadius: 8,
+                      fontSize: 14, fontWeight: 700,
+                      cursor: (!project.drive_link || isPending) ? 'not-allowed' : 'pointer',
+                    }}
+                  >📤 수정 완료 — 클라이언트에게 전달</button>
+                </div>
+              )}
+              {project.status === 'client_reviewing' && !project.revision_used && (
                 <div style={{
                   marginTop: 18, padding: 14,
                   background: 'rgba(34,197,94,0.08)',
@@ -367,6 +426,17 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                   fontSize: 13, color: 'var(--tx)', lineHeight: 1.6,
                 }}>
                   ✅ 클라이언트가 공유 링크에서 보정본을 확인할 수 있는 상태입니다. (수정 요청 1회 가능)
+                </div>
+              )}
+              {project.status === 'completed' && (
+                <div style={{
+                  marginTop: 18, padding: 14,
+                  background: 'rgba(22,163,74,0.1)',
+                  border: '1px solid rgba(22,163,74,0.4)',
+                  borderRadius: 10,
+                  fontSize: 13, color: 'var(--tx)', lineHeight: 1.6,
+                }}>
+                  🎉 작업 완료 — 클라이언트가 공유 링크에서 드라이브 다운로드 버튼을 볼 수 있습니다.
                 </div>
               )}
             </div>
