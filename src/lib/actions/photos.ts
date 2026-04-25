@@ -22,6 +22,14 @@ export async function confirmPhotoUpload(
     return { error: error.message }
   }
 
+  if (bucket === 'retouched') {
+    const { data: proj } = await supabase
+      .from('projects').select('status').eq('id', projectId).single()
+    if (proj && proj.status !== 'studio_editing' && proj.status !== 'completed') {
+      await supabase.from('projects').update({ status: 'studio_editing' }).eq('id', projectId)
+    }
+  }
+
   revalidatePath(`/projects/${projectId}`)
   return { ok: true }
 }
