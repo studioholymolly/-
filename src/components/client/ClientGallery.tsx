@@ -12,6 +12,7 @@ import AnnotationModal from './AnnotationModal'
 import LightboxModal from './LightboxModal'
 import SubmitModal from './SubmitModal'
 import RevisionSubmitModal from './RevisionSubmitModal'
+import HelpGuideModal, { shouldShowHelpGuide } from './HelpGuideModal'
 
 interface Props {
   project: Project
@@ -58,6 +59,16 @@ export default function ClientGallery({
   const [showRevSubmittedPopup, setShowRevSubmittedPopup] = useState(false)
   const [noRevLoading, setNoRevLoading] = useState(false)
   const [noRevError, setNoRevError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showHelp, setShowHelp] = useState(false)
+
+  useEffect(() => {
+    if (shouldShowHelpGuide()) setShowHelp(true)
+  }, [])
+
+  const filteredPhotos = searchQuery.trim()
+    ? photos.filter(p => p.filename.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : photos
 
   function toggleSelection(photoId: string) {
     setSelections(prev => {
@@ -533,17 +544,74 @@ export default function ClientGallery({
         )}
       </div>
 
+      {/* Toolbar: search + actions */}
+      <div style={{
+        maxWidth: 1500, margin: '0 auto', padding: '14px 16px 0',
+        display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+      }}>
+        <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: 360 }}>
+          <span style={{
+            position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+            fontSize: 13, color: '#8a8a95', pointerEvents: 'none',
+          }}>🔍</span>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="파일명 검색…"
+            style={{
+              width: '100%', padding: '9px 12px 9px 34px',
+              background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+              fontSize: 13, color: '#0a0a0c', outline: 'none',
+            }}
+          />
+        </div>
+        {searchQuery.trim() && (
+          <span style={{ fontSize: 12, color: '#6b6b80' }}>
+            검색 결과 <b style={{ color: '#0a0a0c' }}>{filteredPhotos.length}</b> / {photos.length}장
+          </span>
+        )}
+        <div style={{ flex: 1 }} />
+        {selections.size > 0 && (
+          <button
+            type="button"
+            onClick={() => setSelections(new Set())}
+            style={{
+              background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+              padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}
+          >전체 선택 해제 ({selections.size})</button>
+        )}
+        <button
+          type="button"
+          onClick={() => setShowHelp(true)}
+          aria-label="사용 가이드"
+          title="사용 가이드"
+          style={{
+            background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+            padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          }}
+        >❔ 사용법</button>
+      </div>
+
       {/* Gallery */}
-      <MasonryGallery
-        photos={photos}
-        selections={selections}
-        annotations={annotations}
-        comments={comments}
-        onToggle={toggleSelection}
-        onCommentChange={handleCommentChange}
-        onOpenLightbox={(i) => setLightboxIndex(i)}
-        onOpenAnnotate={(i) => setAnnotatingIndex(i)}
-      />
+      {filteredPhotos.length > 0 ? (
+        <MasonryGallery
+          photos={filteredPhotos}
+          selections={selections}
+          annotations={annotations}
+          comments={comments}
+          onToggle={toggleSelection}
+          onCommentChange={handleCommentChange}
+          onOpenLightbox={(i) => setLightboxIndex(i)}
+          onOpenAnnotate={(i) => setAnnotatingIndex(i)}
+        />
+      ) : (
+        <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b80' }}>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>🔎</div>
+          <p style={{ fontSize: 13 }}>“{searchQuery}” 와 일치하는 파일이 없습니다</p>
+        </div>
+      )}
 
       {/* Bottom bar */}
       <BottomBar
@@ -554,27 +622,29 @@ export default function ClientGallery({
       />
 
       {/* Lightbox (크게 보기) */}
-      {lightboxIndex !== null && photos[lightboxIndex] && (
+      {lightboxIndex !== null && filteredPhotos[lightboxIndex] && (
         <LightboxModal
-          photos={photos}
+          photos={filteredPhotos}
           index={lightboxIndex}
-          isSelected={selections.has(photos[lightboxIndex].id)}
+          isSelected={selections.has(filteredPhotos[lightboxIndex].id)}
           onChangeIndex={setLightboxIndex}
-          onToggleSelect={() => toggleSelection(photos[lightboxIndex].id)}
+          onToggleSelect={() => toggleSelection(filteredPhotos[lightboxIndex].id)}
           onOpenAnnotate={() => { const i = lightboxIndex; setLightboxIndex(null); setAnnotatingIndex(i) }}
           onClose={() => setLightboxIndex(null)}
         />
       )}
 
       {/* Annotation modal */}
-      {annotatingIndex !== null && photos[annotatingIndex] && (
+      {annotatingIndex !== null && filteredPhotos[annotatingIndex] && (
         <AnnotationModal
-          photo={photos[annotatingIndex]}
-          initialPins={annotations[photos[annotatingIndex].id] || []}
-          onSave={(pins) => saveAnnotations(photos[annotatingIndex].id, pins)}
+          photo={filteredPhotos[annotatingIndex]}
+          initialPins={annotations[filteredPhotos[annotatingIndex].id] || []}
+          onSave={(pins) => saveAnnotations(filteredPhotos[annotatingIndex].id, pins)}
           onClose={() => setAnnotatingIndex(null)}
         />
       )}
+
+      {showHelp && <HelpGuideModal onClose={() => setShowHelp(false)} />}
 
       {/* Submit modal */}
       {showSubmitModal && (
