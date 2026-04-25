@@ -30,3 +30,8 @@ create policy "photo_favorites_public_insert" on photo_favorites for insert with
 
 drop policy if exists "photo_favorites_public_delete" on photo_favorites;
 create policy "photo_favorites_public_delete" on photo_favorites for delete using (true);
+
+
+-- 2026-04-25 · Phase 4 · optional 4-digit access code per project
+-- When set, the client share page shows a code gate before content.
+alter table projects add column if not exists access_code text;

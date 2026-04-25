@@ -12,6 +12,9 @@ import LightboxModal from './LightboxModal'
 import SubmitModal from './SubmitModal'
 import RevisionSubmitModal from './RevisionSubmitModal'
 import HelpGuideModal, { shouldShowHelpGuide } from './HelpGuideModal'
+import ComparisonModal from './ComparisonModal'
+import VisitorNameGate, { loadVisitorName, saveVisitorName } from './VisitorNameGate'
+import AccessCodeGate, { isAccessOk } from './AccessCodeGate'
 import { downloadPhotosAsZip } from '@/lib/downloadZip'
 import { toggleFavorite } from '@/lib/actions/favorites'
 
@@ -71,6 +74,30 @@ export default function ClientGallery({
   const [zipProgress, setZipProgress] = useState<{ loaded: number; total: number } | null>(null)
   const [favorites, setFavorites] = useState<Set<string>>(new Set(initialFavoriteIds))
   const [filterTab, setFilterTab] = useState<'all' | 'favorites' | 'selected'>('all')
+  const [compareSet, setCompareSet] = useState<Set<string>>(new Set())
+  const [showCompare, setShowCompare] = useState(false)
+  const COMPARE_MAX = 4
+  const [visitorName, setVisitorName] = useState('')
+  const [showVisitorGate, setShowVisitorGate] = useState(false)
+  const [editVisitor, setEditVisitor] = useState(false)
+  const requiresAccessCode = !!project.access_code
+  const [accessOk, setAccessOk] = useState(!requiresAccessCode)
+
+  useEffect(() => {
+    const stored = loadVisitorName(shareToken)
+    if (stored) setVisitorName(stored)
+    else setShowVisitorGate(true)
+    if (requiresAccessCode) setAccessOk(isAccessOk(shareToken))
+  }, [shareToken, requiresAccessCode])
+
+  function handleToggleCompare(photoId: string) {
+    setCompareSet(prev => {
+      const next = new Set(prev)
+      if (next.has(photoId)) next.delete(photoId)
+      else if (next.size < COMPARE_MAX) next.add(photoId)
+      return next
+    })
+  }
 
   function handleToggleFavorite(photoId: string) {
     setFavorites(prev => {
@@ -111,8 +138,12 @@ export default function ClientGallery({
     : retouchedPhotos
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && !loadVisitorName(shareToken) && shouldShowHelpGuide()) {
+      // help modal will be shown after visitor gate
+      return
+    }
     if (shouldShowHelpGuide()) setShowHelp(true)
-  }, [])
+  }, [shareToken])
 
   const filteredPhotos = (() => {
     let list: PhotoWithUrl[] = photos
@@ -853,6 +884,17 @@ export default function ClientGallery({
             }}
           >전체 선택 해제 ({selections.size})</button>
         )}
+        {compareSet.size >= 2 && (
+          <button
+            type="button"
+            onClick={() => setShowCompare(true)}
+            style={{
+              background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', color: '#fff',
+              border: 'none', padding: '8px 14px', borderRadius: 8,
+              fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}
+          >🔀 비교하기 ({compareSet.size})</button>
+        )}
         <button
           type="button"
           onClick={handleBulkDownload}
@@ -879,6 +921,21 @@ export default function ClientGallery({
             padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
           }}
         >❔ 사용법</button>
+        {visitorName && (
+          <button
+            type="button"
+            onClick={() => setEditVisitor(true)}
+            title="방문자 이름 변경"
+            style={{
+              background: '#fafafa', border: '1px solid #e0e0e5', color: '#0a0a0c',
+              padding: '6px 10px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+              cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 6,
+            }}
+          >
+            <span style={{ fontSize: 9, color: '#8a8a95', letterSpacing: '0.1em' }}>REVIEWER</span>
+            {visitorName} ✏️
+          </button>
+        )}
       </div>
 
       {/* Project Memo */}
@@ -917,8 +974,11 @@ export default function ClientGallery({
           annotations={annotations}
           comments={comments}
           favorites={favorites}
+          compareSet={compareSet}
+          compareLimitReached={compareSet.size >= COMPARE_MAX}
           onToggle={toggleSelection}
           onToggleFavorite={handleToggleFavorite}
+          onToggleCompare={handleToggleCompare}
           onCommentChange={handleCommentChange}
           onOpenLightbox={(i) => setLightboxIndex(i)}
           onOpenAnnotate={(i) => setAnnotatingIndex(i)}
@@ -970,6 +1030,54 @@ export default function ClientGallery({
       )}
 
       {showHelp && <HelpGuideModal onClose={() => setShowHelp(false)} />}
+
+      {showVisitorGate && (
+        <VisitorNameGate
+          onSave={(name) => {
+            saveVisitorName(shareToken, name)
+            setVisitorName(name)
+            setShowVisitorGate(false)
+            if (shouldShowHelpGuide()) setShowHelp(true)
+          }}
+        />
+      )}
+
+      {!showVisitorGate && requiresAccessCode && !accessOk && (
+        <AccessCodeGate
+          shareToken={shareToken}
+          visitorName={visitorName}
+          onSuccess={() => setAccessOk(true)}
+        />
+      )}
+
+      {editVisitor && (
+        <VisitorNameGate
+          initial={visitorName}
+          confirmLabel="저장"
+          title="방문자 이름 변경"
+          description="이 브라우저에서만 기억돼요."
+          onSave={(name) => {
+            saveVisitorName(shareToken, name)
+            setVisitorName(name)
+            setEditVisitor(false)
+          }}
+          onClose={() => setEditVisitor(false)}
+        />
+      )}
+
+      {showCompare && compareSet.size >= 2 && (
+        <ComparisonModal
+          photos={photos.filter(p => compareSet.has(p.id))}
+          onClose={() => setShowCompare(false)}
+          onRemove={(id) => {
+            setCompareSet(prev => {
+              const next = new Set(prev)
+              next.delete(id)
+              return next
+            })
+          }}
+        />
+      )}
 
       {/* Submit modal */}
       {showSubmitModal && (

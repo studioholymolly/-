@@ -16,6 +16,7 @@ export interface Project {
   drive_link_originals: string | null
   revision_used: boolean
   unread_for_studio: boolean
+  access_code: string | null
   created_at: string
   updated_at: string
 }

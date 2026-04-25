@@ -16,6 +16,9 @@ interface Props {
   viewOnly?: boolean
   favorites?: Set<string>
   onToggleFavorite?: (photoId: string) => void
+  compareSet?: Set<string>
+  onToggleCompare?: (photoId: string) => void
+  compareLimitReached?: boolean
 }
 
 export default function MasonryGallery({
@@ -24,6 +27,9 @@ export default function MasonryGallery({
   viewOnly = false,
   favorites,
   onToggleFavorite,
+  compareSet,
+  onToggleCompare,
+  compareLimitReached = false,
 }: Props) {
   return (
     <div style={{ padding: '20px 16px 140px', maxWidth: 1500, margin: '0 auto' }}>
@@ -114,6 +120,21 @@ export default function MasonryGallery({
           pointer-events: none;
         }
 
+        .cmp {
+          position: absolute; top: 8px; left: 8px; z-index: 3;
+          width: 22px; height: 22px; border-radius: 50%;
+          background: rgba(0,0,0,0.45);
+          border: 2px solid rgba(255,255,255,0.8); color: rgba(255,255,255,0.95);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 12px; line-height: 1; cursor: pointer;
+          opacity: 0.55; transition: opacity .15s, background .15s, color .15s, border-color .15s;
+        }
+        .pc:hover .cmp { opacity: 1; }
+        .cmp.on {
+          background: #7c3aed; border-color: #7c3aed; color: #fff; opacity: 1;
+        }
+        .cmp.off-disabled { cursor: not-allowed; opacity: 0.25; }
+
         .heart {
           position: absolute; top: 8px; right: 8px; z-index: 3;
           width: 32px; height: 32px; border-radius: 50%;
@@ -163,10 +184,13 @@ export default function MasonryGallery({
             idx={idx}
             isSelected={selections.has(photo.id)}
             isFavorited={favorites?.has(photo.id) ?? false}
+            isCompared={compareSet?.has(photo.id) ?? false}
+            compareDisabled={compareLimitReached && !(compareSet?.has(photo.id) ?? false)}
             pins={annotations[photo.id] || []}
             comment={comments[photo.id] || ''}
             onToggle={() => onToggle(photo.id)}
             onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(photo.id) : undefined}
+            onToggleCompare={onToggleCompare ? () => onToggleCompare(photo.id) : undefined}
             onCommentChange={(v) => onCommentChange(photo.id, v)}
             onOpenLightbox={() => onOpenLightbox(idx)}
             onOpenAnnotate={() => onOpenAnnotate(idx)}
@@ -187,18 +211,22 @@ export default function MasonryGallery({
  *  - Click the check circle (✓) → toggle selection. (stopPropagation so it doesn't open lightbox.)
  */
 function PhotoCard({
-  photo, idx, isSelected, isFavorited, pins, comment,
-  onToggle, onToggleFavorite, onCommentChange, onOpenLightbox, onOpenAnnotate,
+  photo, idx, isSelected, isFavorited, isCompared, compareDisabled,
+  pins, comment,
+  onToggle, onToggleFavorite, onToggleCompare, onCommentChange, onOpenLightbox, onOpenAnnotate,
   viewOnly,
 }: {
   photo: PhotoWithUrl | RetouchedPhotoWithUrl
   idx: number
   isSelected: boolean
   isFavorited: boolean
+  isCompared: boolean
+  compareDisabled: boolean
   pins: AnnotationPin[]
   comment: string
   onToggle: () => void
   onToggleFavorite?: () => void
+  onToggleCompare?: () => void
   onCommentChange: (v: string) => void
   onOpenLightbox: () => void
   onOpenAnnotate: () => void
@@ -251,6 +279,22 @@ function PhotoCard({
         </div>
         {!viewOnly && <div className="sb">✓ 선택</div>}
         {hasAnnotations && <div className="ann-badge">📍 {pins.length}개</div>}
+        {!viewOnly && onToggleCompare && (
+          <button
+            type="button"
+            className={`cmp${isCompared ? ' on' : ''}${compareDisabled ? ' off-disabled' : ''}`}
+            onClick={e => { e.stopPropagation(); if (!compareDisabled) onToggleCompare() }}
+            disabled={compareDisabled}
+            aria-label={isCompared ? '비교에서 제외' : '비교에 추가'}
+            title={
+              isCompared ? '비교에서 제외'
+              : compareDisabled ? '최대 4장까지 비교할 수 있어요'
+              : '비교에 추가'
+            }
+          >
+            {isCompared ? '✓' : ''}
+          </button>
+        )}
         {!viewOnly && onToggleFavorite && (
           <button
             type="button"

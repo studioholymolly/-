@@ -98,6 +98,35 @@ export async function setDriveLink(projectId: string, driveLink: string) {
   revalidatePath('/dashboard')
 }
 
+export async function setAccessCode(projectId: string, code: string | null) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect('/')
+
+  const trimmed = (code ?? '').trim()
+  const value = trimmed && /^\d{4}$/.test(trimmed) ? trimmed : null
+
+  await supabase
+    .from('projects')
+    .update({ access_code: value })
+    .eq('id', projectId)
+
+  revalidatePath(`/projects/${projectId}`)
+  return { ok: true, code: value }
+}
+
+export async function verifyAccessCode(shareToken: string, code: string) {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('projects')
+    .select('access_code')
+    .eq('share_token', shareToken)
+    .single()
+  const stored = (data as { access_code?: string | null } | null)?.access_code ?? null
+  if (!stored) return { ok: true }
+  return { ok: stored === code.trim() }
+}
+
 export async function setDriveLinkRetouched(projectId: string, driveLink: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

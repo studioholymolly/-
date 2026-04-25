@@ -8,7 +8,7 @@ import ShareLinkButton from './ShareLinkButton'
 import PhotoLightbox from '@/components/PhotoLightbox'
 import SelectionReviewLightbox from './SelectionReviewLightbox'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, Selection, Annotation, RevisionRequest, RevisionSelection, RevisionAnnotation, Submission } from '@/lib/types'
-import { updateProjectStatus, setDriveLinkRetouched, updateProject, deleteProject } from '@/lib/actions/projects'
+import { updateProjectStatus, setDriveLinkRetouched, updateProject, deleteProject, setAccessCode } from '@/lib/actions/projects'
 import { deletePhoto } from '@/lib/actions/photos'
 import { formatDateTime } from '@/lib/utils'
 
@@ -637,6 +637,8 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
             <ShareLinkButton projectId={project.id} projectName={project.name} token={project.share_token} clientEmail={project.client_email} clientName={project.client_name} />
           </div>
 
+          <AccessCodeForm projectId={project.id} initial={project.access_code ?? ''} />
+
           {/* Danger zone */}
           <div style={{ background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: 12, padding: 20 }}>
             <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6, color: '#ef4444' }}>프로젝트 삭제</h3>
@@ -681,6 +683,76 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
           onClose={() => setRevisionReviewIndex(null)}
         />
       )}
+    </div>
+  )
+}
+
+function AccessCodeForm({ projectId, initial }: { projectId: string; initial: string }) {
+  const [code, setCode] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  async function save(value: string | null) {
+    setBusy(true); setError('')
+    const res = await setAccessCode(projectId, value)
+    setBusy(false)
+    if (res.ok) {
+      setCode(res.code ?? '')
+      setSaved(true)
+      setTimeout(() => setSaved(false), 1800)
+    } else {
+      setError('저장에 실패했어요.')
+    }
+  }
+
+  return (
+    <div style={{ background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 12, padding: 20, marginBottom: 14 }}>
+      <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 6 }}>🔒 접속 코드 (선택)</h3>
+      <p style={{ fontSize: 12, color: 'var(--mu)', marginBottom: 12, lineHeight: 1.6 }}>
+        4자리 숫자 코드를 설정하면 클라이언트가 공유 링크에 접속한 뒤 이 코드를 입력해야 사진을 볼 수 있어요. 비워두면 코드 없이 바로 진입합니다.
+      </p>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={4}
+          value={code}
+          onChange={e => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+          placeholder="0000"
+          style={{
+            background: 'var(--s2)', border: '1px solid var(--bd)', color: 'var(--tx)',
+            padding: '9px 12px', borderRadius: 7, fontSize: 16, width: 110,
+            textAlign: 'center', letterSpacing: '0.4em', fontWeight: 700,
+            fontFamily: 'ui-monospace, SFMono-Regular, monospace', outline: 'none',
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => save(code || null)}
+          disabled={busy || (code !== '' && !/^\d{4}$/.test(code))}
+          style={{
+            background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', color: '#fff',
+            border: 'none', padding: '9px 16px', borderRadius: 7,
+            fontSize: 13, fontWeight: 700, cursor: busy ? 'wait' : 'pointer',
+            opacity: busy ? 0.6 : 1,
+          }}
+        >{busy ? '저장 중...' : code ? '코드 저장' : '코드 사용 안 함'}</button>
+        {initial && (
+          <button
+            type="button"
+            onClick={() => { setCode(''); save(null) }}
+            disabled={busy}
+            style={{
+              background: 'var(--s2)', border: '1px solid var(--bd)', color: 'var(--tx)',
+              padding: '9px 12px', borderRadius: 7, fontSize: 12, fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >코드 제거</button>
+        )}
+        {saved && <span style={{ fontSize: 12, color: '#22c55e', fontWeight: 600 }}>✓ 저장됨</span>}
+        {error && <span style={{ fontSize: 12, color: '#ef4444' }}>{error}</span>}
+      </div>
     </div>
   )
 }
