@@ -13,6 +13,7 @@ import SubmitModal from './SubmitModal'
 import RevisionSubmitModal from './RevisionSubmitModal'
 import HelpGuideModal, { shouldShowHelpGuide } from './HelpGuideModal'
 import { downloadPhotosAsZip } from '@/lib/downloadZip'
+import { toggleFavorite } from '@/lib/actions/favorites'
 
 interface Props {
   project: Project
@@ -28,6 +29,7 @@ interface Props {
   submissionCount?: number
   initialMemo?: string
   initialRevisionMemo?: string
+  initialFavoriteIds?: string[]
 }
 
 export default function ClientGallery({
@@ -35,6 +37,7 @@ export default function ClientGallery({
   initialSelectedIds = [], initialAnnotations = {}, initialComments = {},
   initialRevisionSelectedIds = [], initialRevisionAnnotations = {}, initialRevisionComments = {},
   submissionCount = 0, initialMemo = '', initialRevisionMemo = '',
+  initialFavoriteIds = [],
 }: Props) {
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelectedIds))
   const [annotations, setAnnotations] = useState<Record<string, AnnotationPin[]>>(initialAnnotations)
@@ -66,6 +69,25 @@ export default function ClientGallery({
   const [memo, setMemo] = useState(initialMemo)
   const [revisionMemo, setRevisionMemo] = useState(initialRevisionMemo)
   const [zipProgress, setZipProgress] = useState<{ loaded: number; total: number } | null>(null)
+  const [favorites, setFavorites] = useState<Set<string>>(new Set(initialFavoriteIds))
+  const [filterTab, setFilterTab] = useState<'all' | 'favorites' | 'selected'>('all')
+
+  function handleToggleFavorite(photoId: string) {
+    setFavorites(prev => {
+      const next = new Set(prev)
+      if (next.has(photoId)) next.delete(photoId)
+      else next.add(photoId)
+      return next
+    })
+    toggleFavorite(shareToken, photoId).catch(() => {
+      setFavorites(prev => {
+        const next = new Set(prev)
+        if (next.has(photoId)) next.delete(photoId)
+        else next.add(photoId)
+        return next
+      })
+    })
+  }
 
   async function downloadAsZip(items: { signedUrl: string; filename: string }[], baseName: string) {
     if (zipProgress || items.length === 0) return
@@ -92,9 +114,16 @@ export default function ClientGallery({
     if (shouldShowHelpGuide()) setShowHelp(true)
   }, [])
 
-  const filteredPhotos = searchQuery.trim()
-    ? photos.filter(p => p.filename.toLowerCase().includes(searchQuery.trim().toLowerCase()))
-    : photos
+  const filteredPhotos = (() => {
+    let list: PhotoWithUrl[] = photos
+    if (filterTab === 'favorites') list = list.filter(p => favorites.has(p.id))
+    else if (filterTab === 'selected') list = list.filter(p => selections.has(p.id))
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase()
+      list = list.filter(p => p.filename.toLowerCase().includes(q))
+    }
+    return list
+  })()
 
   function toggleSelection(photoId: string) {
     setSelections(prev => {
@@ -779,6 +808,35 @@ export default function ClientGallery({
             }}
           />
         </div>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 4,
+          background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+          padding: 3,
+        }}>
+          <span style={{ fontSize: 10, fontWeight: 800, color: '#6b6b80', letterSpacing: '0.1em', padding: '0 8px' }}>
+            SELECTED <b style={{ color: '#22c55e', fontSize: 13 }}>{selections.size}</b><span style={{ color: '#8a8a95' }}> / {photos.length}</span>
+          </span>
+          {([
+            { key: 'all', label: '전체', color: '#0a0a0c' },
+            { key: 'favorites', label: `♥ 찜한 컷${favorites.size > 0 ? ` (${favorites.size})` : ''}`, color: '#ef4444' },
+            { key: 'selected', label: `선택됨${selections.size > 0 ? ` (${selections.size})` : ''}`, color: '#22c55e' },
+          ] as const).map(t => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setFilterTab(t.key)}
+              style={{
+                background: filterTab === t.key
+                  ? (t.key === 'favorites' ? 'rgba(239,68,68,0.12)' : t.key === 'selected' ? 'rgba(34,197,94,0.12)' : '#fff')
+                  : 'transparent',
+                border: 'none', cursor: 'pointer',
+                padding: '6px 10px', borderRadius: 6,
+                fontSize: 12, fontWeight: 700,
+                color: filterTab === t.key ? t.color : '#6b6b80',
+              }}
+            >{t.label}</button>
+          ))}
+        </div>
         {searchQuery.trim() && (
           <span style={{ fontSize: 12, color: '#6b6b80' }}>
             검색 결과 <b style={{ color: '#0a0a0c' }}>{filteredPhotos.length}</b> / {photos.length}장
@@ -858,15 +916,23 @@ export default function ClientGallery({
           selections={selections}
           annotations={annotations}
           comments={comments}
+          favorites={favorites}
           onToggle={toggleSelection}
+          onToggleFavorite={handleToggleFavorite}
           onCommentChange={handleCommentChange}
           onOpenLightbox={(i) => setLightboxIndex(i)}
           onOpenAnnotate={(i) => setAnnotatingIndex(i)}
         />
       ) : (
         <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b80' }}>
-          <div style={{ fontSize: 36, marginBottom: 8 }}>🔎</div>
-          <p style={{ fontSize: 13 }}>“{searchQuery}” 와 일치하는 파일이 없습니다</p>
+          <div style={{ fontSize: 36, marginBottom: 8 }}>
+            {filterTab === 'favorites' ? '♡' : filterTab === 'selected' ? '☐' : '🔎'}
+          </div>
+          <p style={{ fontSize: 13 }}>
+            {filterTab === 'favorites' ? '찜한 사진이 없습니다' :
+             filterTab === 'selected' ? '선택한 사진이 없습니다' :
+             `“${searchQuery}” 와 일치하는 파일이 없습니다`}
+          </p>
         </div>
       )}
 
@@ -884,8 +950,10 @@ export default function ClientGallery({
           photos={filteredPhotos}
           index={lightboxIndex}
           isSelected={selections.has(filteredPhotos[lightboxIndex].id)}
+          isFavorited={favorites.has(filteredPhotos[lightboxIndex].id)}
           onChangeIndex={setLightboxIndex}
           onToggleSelect={() => toggleSelection(filteredPhotos[lightboxIndex].id)}
+          onToggleFavorite={() => handleToggleFavorite(filteredPhotos[lightboxIndex].id)}
           onOpenAnnotate={() => { const i = lightboxIndex; setLightboxIndex(null); setAnnotatingIndex(i) }}
           onClose={() => setLightboxIndex(null)}
         />

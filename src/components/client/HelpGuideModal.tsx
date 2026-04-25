@@ -54,12 +54,12 @@ export default function HelpGuideModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
-          <Tip n="1" color="#22c55e" title="사진 선택" body="각 사진의 ✓ 버튼이나 라이트박스에서 스페이스바로 선택하세요." />
-          <Tip n="2" color="#ef4444" title="수정 요청 (📍 PIN)" body="사진을 클릭하면 PIN 모드로 수정 위치를 표시하고 메모를 남길 수 있어요." />
-          <Tip n="3" color="#3b82f6" title="코멘트" body="선택한 사진 카드 아래에 전체 코멘트를 남길 수 있어요." />
-          <Tip n="4" color="#a855f7" title="파일명 검색" body="상단 검색창에 파일명 일부를 입력하면 빠르게 찾을 수 있어요." />
-          <Tip n="5" color="#f59e0b" title="라이트박스 단축키" body="← → 이동 · + − 줌 · 0 원래 크기 · Space 선택 · Esc 닫기" />
-          <Tip n="6" color="#0ea5e9" title="다운로드" body="라이트박스에서 ⬇ 버튼을 누르면 원본 화질로 저장됩니다." />
+          <Tip n="1" color="#ef4444" title="1단계 · 찜하기 (♥)" body="우측 상단 ♡ 버튼이나 라이트박스에서 F 키로 마음에 드는 사진을 모두 찜하세요. 상단 [♥ 찜한 컷] 탭에서 모아볼 수 있어요." />
+          <Tip n="2" color="#22c55e" title="2단계 · 최종 선택 (Space)" body="찜한 사진 중에서 ✓ 버튼이나 스페이스바로 최종본을 결정하세요." />
+          <Tip n="3" color="#a855f7" title="보기 필터 & 검색" body="상단 탭으로 찜한 컷·선택된 컷만 모아 보거나, 파일명 검색으로 빠르게 찾을 수 있어요." />
+          <Tip n="4" color="#dc2626" title="수정 요청 (📍 PIN)" body="사진을 클릭하면 PIN 모드로 수정 위치를 표시하고 메모를 남길 수 있어요." />
+          <Tip n="5" color="#3b82f6" title="전체 메모 + 코멘트" body="상단 전체 메모에 프로젝트 전반 의견을, 선택 카드에는 사진별 코멘트를 남길 수 있어요." />
+          <Tip n="6" color="#0ea5e9" title="다운로드 & 단축키" body="라이트박스 ⬇로 원본 저장 · 📦로 ZIP 일괄 받기. 라이트박스 단축키: ← → 이동 · + − 줌 · 0 원래 크기 · Space 선택 · F 찜하기 · Esc 닫기" />
         </div>
 
         <div style={{

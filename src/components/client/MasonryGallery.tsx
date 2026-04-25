@@ -14,12 +14,16 @@ interface Props {
   onOpenLightbox: (index: number) => void
   onOpenAnnotate: (index: number) => void
   viewOnly?: boolean
+  favorites?: Set<string>
+  onToggleFavorite?: (photoId: string) => void
 }
 
 export default function MasonryGallery({
   photos, selections, annotations, comments,
   onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
   viewOnly = false,
+  favorites,
+  onToggleFavorite,
 }: Props) {
   return (
     <div style={{ padding: '20px 16px 140px', maxWidth: 1500, margin: '0 auto' }}>
@@ -110,6 +114,22 @@ export default function MasonryGallery({
           pointer-events: none;
         }
 
+        .heart {
+          position: absolute; top: 8px; right: 8px; z-index: 3;
+          width: 32px; height: 32px; border-radius: 50%;
+          background: rgba(0,0,0,0.45);
+          border: none; color: rgba(255,255,255,0.85);
+          display: flex; align-items: center; justify-content: center;
+          font-size: 16px; line-height: 1; cursor: pointer;
+          backdrop-filter: blur(4px);
+          opacity: 0.55; transition: opacity .15s, transform .15s, background .15s, color .15s;
+        }
+        .pc:hover .heart { opacity: 1; }
+        .heart:hover { transform: scale(1.1); }
+        .heart.on {
+          background: rgba(239,68,68,0.95); color: #fff; opacity: 1;
+        }
+
         .pc-btns { display: flex; border-top: 1px solid #e0e0e5; flex-shrink: 0; }
         .pc-btn {
           flex: 1; background: none; border: none; color: #6b6b80;
@@ -142,9 +162,11 @@ export default function MasonryGallery({
             photo={photo}
             idx={idx}
             isSelected={selections.has(photo.id)}
+            isFavorited={favorites?.has(photo.id) ?? false}
             pins={annotations[photo.id] || []}
             comment={comments[photo.id] || ''}
             onToggle={() => onToggle(photo.id)}
+            onToggleFavorite={onToggleFavorite ? () => onToggleFavorite(photo.id) : undefined}
             onCommentChange={(v) => onCommentChange(photo.id, v)}
             onOpenLightbox={() => onOpenLightbox(idx)}
             onOpenAnnotate={() => onOpenAnnotate(idx)}
@@ -165,16 +187,18 @@ export default function MasonryGallery({
  *  - Click the check circle (✓) → toggle selection. (stopPropagation so it doesn't open lightbox.)
  */
 function PhotoCard({
-  photo, idx, isSelected, pins, comment,
-  onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
+  photo, idx, isSelected, isFavorited, pins, comment,
+  onToggle, onToggleFavorite, onCommentChange, onOpenLightbox, onOpenAnnotate,
   viewOnly,
 }: {
   photo: PhotoWithUrl | RetouchedPhotoWithUrl
   idx: number
   isSelected: boolean
+  isFavorited: boolean
   pins: AnnotationPin[]
   comment: string
   onToggle: () => void
+  onToggleFavorite?: () => void
   onCommentChange: (v: string) => void
   onOpenLightbox: () => void
   onOpenAnnotate: () => void
@@ -227,6 +251,17 @@ function PhotoCard({
         </div>
         {!viewOnly && <div className="sb">✓ 선택</div>}
         {hasAnnotations && <div className="ann-badge">📍 {pins.length}개</div>}
+        {!viewOnly && onToggleFavorite && (
+          <button
+            type="button"
+            className={`heart${isFavorited ? ' on' : ''}`}
+            onClick={e => { e.stopPropagation(); onToggleFavorite() }}
+            aria-label={isFavorited ? '찜 해제' : '찜하기'}
+            title={isFavorited ? '찜 해제 (F)' : '찜하기 (F)'}
+          >
+            {isFavorited ? '♥' : '♡'}
+          </button>
+        )}
         <div className="pn">#{String(idx + 1).padStart(3, '0')}</div>
       </div>
       <div className="pc-btns">

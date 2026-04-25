@@ -28,7 +28,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
   // Fetch photos, retouched, prior selections/annotations (for re-submission) in parallel
   const [
     photosRes, retouchedRes, selectionsRes, annotationsRes, submissionsRes,
-    revisionSelectionsRes, revisionAnnotationsRes, revisionRequestRes,
+    revisionSelectionsRes, revisionAnnotationsRes, revisionRequestRes, favoritesRes,
   ] = await Promise.all([
     supabase.from('photos').select('*').eq('project_id', project.id).order('sort_order'),
     supabase.from('retouched_photos').select('*').eq('project_id', project.id).order('sort_order'),
@@ -38,6 +38,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
     supabase.from('revision_selections').select('*').eq('project_id', project.id),
     supabase.from('revision_annotations').select('*').eq('project_id', project.id),
     supabase.from('revision_requests').select('message').eq('project_id', project.id).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('photo_favorites').select('photo_id').eq('project_id', project.id),
   ])
 
   const photos = (photosRes.data ?? []) as PhotoWithUrl[]
@@ -83,6 +84,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
   const submissionCount = submissionsRes.data?.length ?? 0
   const latestMemo = (submissionsRes.data?.[0] as { memo?: string | null } | undefined)?.memo ?? ''
   const latestRevisionMemo = (revisionRequestRes.data as { message?: string | null } | null)?.message ?? ''
+  const initialFavoriteIds = (favoritesRes.data ?? []).map((f: { photo_id: string }) => f.photo_id)
 
   // Hydrate previous revision submission (re-render on refresh after submit)
   const revisionSelections = (revisionSelectionsRes.data ?? []) as RevisionSelection[]
@@ -123,6 +125,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
       submissionCount={submissionCount}
       initialMemo={latestMemo}
       initialRevisionMemo={latestRevisionMemo}
+      initialFavoriteIds={initialFavoriteIds}
     />
   )
 }

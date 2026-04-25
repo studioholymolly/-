@@ -8,8 +8,10 @@ interface Props {
   photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
   index: number
   isSelected: boolean
+  isFavorited?: boolean
   onChangeIndex: (i: number) => void
   onToggleSelect: () => void
+  onToggleFavorite?: () => void
   onOpenAnnotate: () => void
   onClose: () => void
 }
@@ -19,8 +21,8 @@ const ZOOM_MAX = 4
 const ZOOM_STEP = 0.5
 
 export default function LightboxModal({
-  photos, index, isSelected,
-  onChangeIndex, onToggleSelect, onOpenAnnotate, onClose,
+  photos, index, isSelected, isFavorited = false,
+  onChangeIndex, onToggleSelect, onToggleFavorite, onOpenAnnotate, onClose,
 }: Props) {
   const photo = photos[index]
 
@@ -61,6 +63,7 @@ export default function LightboxModal({
       else if (e.key === 'ArrowLeft') prev()
       else if (e.key === 'ArrowRight') next()
       else if (e.key === ' ') { e.preventDefault(); onToggleSelect() }
+      else if ((e.key === 'f' || e.key === 'F') && onToggleFavorite) { e.preventDefault(); onToggleFavorite() }
       else if (e.key === '+' || e.key === '=') { e.preventDefault(); zoomIn() }
       else if (e.key === '-' || e.key === '_') { e.preventDefault(); zoomOut() }
       else if (e.key === '0') { e.preventDefault(); resetZoom() }
@@ -72,7 +75,7 @@ export default function LightboxModal({
       window.removeEventListener('keydown', handleKey)
       document.body.style.overflow = prevOverflow
     }
-  }, [prev, next, onClose, onToggleSelect])
+  }, [prev, next, onClose, onToggleSelect, onToggleFavorite])
 
   // Reset zoom whenever photo changes
   useEffect(() => { resetZoom() }, [photo?.id])
@@ -214,6 +217,21 @@ export default function LightboxModal({
 
       {/* Action controls */}
       <div style={{ display: 'flex', gap: 10, marginTop: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {onToggleFavorite && (
+          <button
+            onClick={onToggleFavorite}
+            title={isFavorited ? '찜 해제 (F)' : '찜하기 (F)'}
+            style={{
+              background: isFavorited ? 'rgba(239,68,68,0.95)' : '#f3f3f5',
+              border: `1px solid ${isFavorited ? '#ef4444' : '#c4c4cc'}`,
+              color: isFavorited ? '#fff' : '#0a0a0c',
+              padding: '8px 18px', borderRadius: 8, cursor: 'pointer',
+              fontSize: 13, fontWeight: 700,
+            }}
+          >
+            {isFavorited ? '♥ 찜함' : '♡ 찜하기'}
+          </button>
+        )}
         <button
           onClick={onToggleSelect}
           style={{
