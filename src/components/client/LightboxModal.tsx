@@ -2,6 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from 'react'
 import { PhotoWithUrl, RetouchedPhotoWithUrl } from '@/lib/types'
+import { downloadImageFromUrl } from '@/lib/downloadImage'
 
 interface Props {
   photos: Array<PhotoWithUrl | RetouchedPhotoWithUrl>
@@ -25,7 +26,20 @@ export default function LightboxModal({
 
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [downloading, setDownloading] = useState(false)
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null)
+
+  async function handleDownload() {
+    if (!photo || downloading) return
+    setDownloading(true)
+    try {
+      await downloadImageFromUrl(photo.signedUrl, photo.filename)
+    } catch {
+      window.open(photo.signedUrl, '_blank')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   function resetZoom() { setZoom(1); setOffset({ x: 0, y: 0 }) }
 
@@ -217,6 +231,11 @@ export default function LightboxModal({
           padding: '8px 18px', borderRadius: 8, cursor: 'pointer',
           fontSize: 13, fontWeight: 600,
         }}>📍 주석 추가</button>
+        <button onClick={handleDownload} disabled={downloading} style={{
+          background: '#f3f3f5', border: '1px solid #c4c4cc', color: '#0a0a0c',
+          padding: '8px 18px', borderRadius: 8, cursor: downloading ? 'wait' : 'pointer',
+          fontSize: 13, fontWeight: 600, opacity: downloading ? 0.6 : 1,
+        }}>{downloading ? '⬇ 다운로드 중...' : '⬇ 다운로드'}</button>
         <button onClick={onClose} style={{
           background: '#f3f3f5', border: '1px solid #c4c4cc', color: '#0a0a0c',
           padding: '8px 18px', borderRadius: 8, cursor: 'pointer',

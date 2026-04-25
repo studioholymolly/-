@@ -4,8 +4,8 @@ export async function compressImageFile(
   file: File,
   opts: { maxDim?: number; quality?: number } = {}
 ): Promise<File> {
-  const maxDim = opts.maxDim ?? 2400
-  const quality = opts.quality ?? 0.82
+  const maxDim = opts.maxDim ?? 6000
+  const quality = opts.quality ?? 0.95
 
   if (!SUPPORTED.has(file.type)) return file
 

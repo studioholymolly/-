@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import Image from 'next/image'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
+import { downloadImageFromUrl } from '@/lib/downloadImage'
 import { submitNoRevision } from '@/lib/actions/selections'
 import { STUDIO_NAME } from '@/lib/brand'
 import MasonryGallery from './MasonryGallery'
@@ -631,8 +632,21 @@ function SimpleLightbox({ photos, index, onChange, onClose }: {
   const photo = photos[index]
   const [zoom, setZoom] = useState(1)
   const [offset, setOffset] = useState({ x: 0, y: 0 })
+  const [downloading, setDownloading] = useState(false)
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number } | null>(null)
   const ZOOM_MIN = 1, ZOOM_MAX = 4, ZOOM_STEP = 0.5
+
+  async function handleDownload() {
+    if (!photo || downloading) return
+    setDownloading(true)
+    try {
+      await downloadImageFromUrl(photo.signedUrl, photo.filename)
+    } catch {
+      window.open(photo.signedUrl, '_blank')
+    } finally {
+      setDownloading(false)
+    }
+  }
 
   const reset = useCallback(() => { setZoom(1); setOffset({ x: 0, y: 0 }) }, [])
   const zoomIn = useCallback(() => setZoom(z => Math.min(ZOOM_MAX, +(z + ZOOM_STEP).toFixed(2))), [])
@@ -739,6 +753,20 @@ function SimpleLightbox({ photos, index, onChange, onClose }: {
           zIndex: 3,
         }}>›</button>
       )}
+
+      <button
+        onClick={e => { e.stopPropagation(); handleDownload() }}
+        disabled={downloading}
+        aria-label="다운로드"
+        title="다운로드"
+        style={{
+          position: 'absolute', top: 20, right: 78,
+          background: 'rgba(255,255,255,0.12)', border: 'none', color: '#fff',
+          width: 42, height: 42, borderRadius: '50%', fontSize: 18, lineHeight: 1,
+          cursor: downloading ? 'wait' : 'pointer', opacity: downloading ? 0.5 : 1,
+          zIndex: 3,
+        }}
+      >⬇</button>
 
       {/* Zoom controls */}
       <div
