@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import Image from 'next/image'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 import { downloadImageFromUrl } from '@/lib/downloadImage'
 import { submitNoRevision } from '@/lib/actions/selections'
@@ -28,13 +27,14 @@ interface Props {
   initialRevisionComments?: Record<string, string>
   submissionCount?: number
   initialMemo?: string
+  initialRevisionMemo?: string
 }
 
 export default function ClientGallery({
   project, photos, retouchedPhotos, shareToken,
   initialSelectedIds = [], initialAnnotations = {}, initialComments = {},
   initialRevisionSelectedIds = [], initialRevisionAnnotations = {}, initialRevisionComments = {},
-  submissionCount = 0, initialMemo = '',
+  submissionCount = 0, initialMemo = '', initialRevisionMemo = '',
 }: Props) {
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelectedIds))
   const [annotations, setAnnotations] = useState<Record<string, AnnotationPin[]>>(initialAnnotations)
@@ -64,15 +64,16 @@ export default function ClientGallery({
   const [searchQuery, setSearchQuery] = useState('')
   const [showHelp, setShowHelp] = useState(false)
   const [memo, setMemo] = useState(initialMemo)
+  const [revisionMemo, setRevisionMemo] = useState(initialRevisionMemo)
   const [zipProgress, setZipProgress] = useState<{ loaded: number; total: number } | null>(null)
 
-  async function handleBulkDownload() {
-    if (zipProgress || photos.length === 0) return
-    setZipProgress({ loaded: 0, total: photos.length })
+  async function downloadAsZip(items: { signedUrl: string; filename: string }[], baseName: string) {
+    if (zipProgress || items.length === 0) return
+    setZipProgress({ loaded: 0, total: items.length })
     try {
       await downloadPhotosAsZip(
-        photos.map(p => ({ url: p.signedUrl, filename: p.filename })),
-        `${project.name || 'photos'}.zip`,
+        items.map(p => ({ url: p.signedUrl, filename: p.filename })),
+        `${baseName || 'photos'}.zip`,
         (loaded, total) => setZipProgress({ loaded, total })
       )
     } catch (e) {
@@ -82,6 +83,10 @@ export default function ClientGallery({
       setZipProgress(null)
     }
   }
+  const handleBulkDownload = () => downloadAsZip(photos, project.name)
+  const filteredRetouched = searchQuery.trim()
+    ? retouchedPhotos.filter(p => p.filename.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : retouchedPhotos
 
   useEffect(() => {
     if (shouldShowHelpGuide()) setShowHelp(true)
@@ -262,17 +267,103 @@ export default function ClientGallery({
           </div>
         </div>
 
+        {/* Toolbar */}
+        <div style={{
+          maxWidth: 1500, margin: '0 auto', padding: '14px 16px 0',
+          display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+        }}>
+          <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: 360 }}>
+            <span style={{
+              position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+              fontSize: 13, color: '#8a8a95', pointerEvents: 'none',
+            }}>🔍</span>
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="파일명 검색…"
+              style={{
+                width: '100%', padding: '9px 12px 9px 34px',
+                background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+                fontSize: 13, color: '#0a0a0c', outline: 'none',
+              }}
+            />
+          </div>
+          {searchQuery.trim() && (
+            <span style={{ fontSize: 12, color: '#6b6b80' }}>
+              검색 결과 <b style={{ color: '#0a0a0c' }}>{filteredRetouched.length}</b> / {retouchedPhotos.length}장
+            </span>
+          )}
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            onClick={() => downloadAsZip(retouchedPhotos, `${project.name}_보정본`)}
+            disabled={!!zipProgress || retouchedPhotos.length === 0}
+            title="보정본 전체 다운로드 (ZIP)"
+            style={{
+              background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+              padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+              cursor: zipProgress ? 'wait' : 'pointer', opacity: zipProgress ? 0.6 : 1,
+            }}
+          >
+            {zipProgress
+              ? `📦 ${zipProgress.loaded}/${zipProgress.total}`
+              : `📦 보정본 다운로드 (${retouchedPhotos.length})`}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowHelp(true)}
+            title="사용 가이드"
+            style={{
+              background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+              padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+            }}
+          >❔ 사용법</button>
+        </div>
+
+        {/* Revision memo */}
+        <div style={{ maxWidth: 1500, margin: '0 auto', padding: '12px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 12, flexWrap: 'wrap' }}>
+            <label htmlFor="rev-memo" style={{ fontSize: 12, fontWeight: 800, color: '#0a0a0c' }}>
+              📝 수정 요청 메모 (Project Memo)
+            </label>
+            <span style={{ fontSize: 11, color: '#8a8a95' }}>
+              이 메모는 수정 요청 제출 시 작가님께 전달됩니다
+            </span>
+          </div>
+          <textarea
+            id="rev-memo"
+            value={revisionMemo}
+            onChange={e => setRevisionMemo(e.target.value)}
+            placeholder="보정본 전체에 대한 수정 방향, 톤 조정, 전달사항 등을 자유롭게 작성해주세요."
+            rows={2}
+            style={{
+              width: '100%', padding: '10px 12px',
+              background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+              fontSize: 13, color: '#0a0a0c', fontFamily: 'inherit',
+              resize: 'vertical', minHeight: 56, outline: 'none', lineHeight: 1.5,
+            }}
+          />
+        </div>
+
         {/* Selection gallery on retouched photos (reuses MasonryGallery) */}
-        <MasonryGallery
-          photos={retouchedPhotos}
-          selections={revSelections}
-          annotations={revAnnotations}
-          comments={revComments}
-          onToggle={toggleRevSelection}
-          onCommentChange={handleRevCommentChange}
-          onOpenLightbox={(i) => setRevLightboxIndex(i)}
-          onOpenAnnotate={(i) => setRevAnnotatingIndex(i)}
-        />
+        {filteredRetouched.length > 0 ? (
+          <MasonryGallery
+            photos={filteredRetouched}
+            selections={revSelections}
+            annotations={revAnnotations}
+            comments={revComments}
+            onToggle={toggleRevSelection}
+            onCommentChange={handleRevCommentChange}
+            onOpenLightbox={(i) => setRevLightboxIndex(i)}
+            onOpenAnnotate={(i) => setRevAnnotatingIndex(i)}
+          />
+        ) : (
+          <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b80' }}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🔎</div>
+            <p style={{ fontSize: 13 }}>“{searchQuery}” 와 일치하는 파일이 없습니다</p>
+          </div>
+        )}
 
         {/* Bottom submit bar */}
         <BottomBar
@@ -283,24 +374,24 @@ export default function ClientGallery({
         />
 
         {/* Lightbox */}
-        {revLightboxIndex !== null && retouchedPhotos[revLightboxIndex] && (
+        {revLightboxIndex !== null && filteredRetouched[revLightboxIndex] && (
           <LightboxModal
-            photos={retouchedPhotos}
+            photos={filteredRetouched}
             index={revLightboxIndex}
-            isSelected={revSelections.has(retouchedPhotos[revLightboxIndex].id)}
+            isSelected={revSelections.has(filteredRetouched[revLightboxIndex].id)}
             onChangeIndex={setRevLightboxIndex}
-            onToggleSelect={() => toggleRevSelection(retouchedPhotos[revLightboxIndex].id)}
+            onToggleSelect={() => toggleRevSelection(filteredRetouched[revLightboxIndex].id)}
             onOpenAnnotate={() => { const i = revLightboxIndex; setRevLightboxIndex(null); setRevAnnotatingIndex(i) }}
             onClose={() => setRevLightboxIndex(null)}
           />
         )}
 
         {/* Annotation modal */}
-        {revAnnotatingIndex !== null && retouchedPhotos[revAnnotatingIndex] && (
+        {revAnnotatingIndex !== null && filteredRetouched[revAnnotatingIndex] && (
           <AnnotationModal
-            photo={retouchedPhotos[revAnnotatingIndex]}
-            initialPins={revAnnotations[retouchedPhotos[revAnnotatingIndex].id] || []}
-            onSave={(pins) => saveRevAnnotations(retouchedPhotos[revAnnotatingIndex].id, pins)}
+            photo={filteredRetouched[revAnnotatingIndex]}
+            initialPins={revAnnotations[filteredRetouched[revAnnotatingIndex].id] || []}
+            onSave={(pins) => saveRevAnnotations(filteredRetouched[revAnnotatingIndex].id, pins)}
             onClose={() => setRevAnnotatingIndex(null)}
           />
         )}
@@ -312,6 +403,7 @@ export default function ClientGallery({
             selectedIds={revSelections}
             annotations={revAnnotations}
             comments={revComments}
+            memo={revisionMemo}
             shareToken={shareToken}
             onClose={() => setShowRevSubmitModal(false)}
             onSuccess={() => {
@@ -321,6 +413,8 @@ export default function ClientGallery({
             }}
           />
         )}
+
+        {showHelp && <HelpGuideModal onClose={() => setShowHelp(false)} />}
       </div>
     )
   }
@@ -353,14 +447,110 @@ export default function ClientGallery({
           ))}
         </div>
 
-        <div style={{ padding: '20px 16px 40px', maxWidth: 1200, margin: '0 auto' }}>
+        {/* Toolbar (shared across both tabs) */}
+        {(() => {
+          const tabPhotos = activeTab === 'original' ? photos : retouchedPhotos
+          const tabFiltered = activeTab === 'original' ? filteredPhotos : filteredRetouched
+          const tabLabel = activeTab === 'original' ? '원본' : '보정본'
+          const zipBase = `${project.name}_${tabLabel}`
+          return (
+            <div style={{
+              maxWidth: 1500, margin: '0 auto', padding: '14px 16px 0',
+              display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap',
+            }}>
+              <div style={{ position: 'relative', flex: '1 1 240px', maxWidth: 360 }}>
+                <span style={{
+                  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+                  fontSize: 13, color: '#8a8a95', pointerEvents: 'none',
+                }}>🔍</span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="파일명 검색…"
+                  style={{
+                    width: '100%', padding: '9px 12px 9px 34px',
+                    background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+                    fontSize: 13, color: '#0a0a0c', outline: 'none',
+                  }}
+                />
+              </div>
+              {searchQuery.trim() && (
+                <span style={{ fontSize: 12, color: '#6b6b80' }}>
+                  검색 결과 <b style={{ color: '#0a0a0c' }}>{tabFiltered.length}</b> / {tabPhotos.length}장
+                </span>
+              )}
+              <div style={{ flex: 1 }} />
+              <button
+                type="button"
+                onClick={() => downloadAsZip(tabPhotos, zipBase)}
+                disabled={!!zipProgress || tabPhotos.length === 0}
+                title={`${tabLabel} 전체 다운로드 (ZIP)`}
+                style={{
+                  background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+                  padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+                  cursor: zipProgress ? 'wait' : 'pointer', opacity: zipProgress ? 0.6 : 1,
+                }}
+              >
+                {zipProgress
+                  ? `📦 ${zipProgress.loaded}/${zipProgress.total}`
+                  : `📦 ${tabLabel} 다운로드 (${tabPhotos.length})`}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowHelp(true)}
+                title="사용 가이드"
+                style={{
+                  background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+                  padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                }}
+              >❔ 사용법</button>
+            </div>
+          )
+        })()}
+
+        <div style={{ padding: '8px 0 40px' }}>
           {activeTab === 'original' && (
-            <ReviewGrid photos={photos} onOpen={(i) => setLightboxIndex(i)} />
+            filteredPhotos.length > 0 ? (
+              <MasonryGallery
+                photos={filteredPhotos}
+                selections={new Set()}
+                annotations={{}}
+                comments={{}}
+                onToggle={() => {}}
+                onCommentChange={() => {}}
+                onOpenLightbox={(i) => setLightboxIndex(i)}
+                onOpenAnnotate={() => {}}
+                viewOnly
+              />
+            ) : (
+              <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b80' }}>
+                <div style={{ fontSize: 36, marginBottom: 8 }}>🔎</div>
+                <p style={{ fontSize: 13 }}>“{searchQuery}” 와 일치하는 파일이 없습니다</p>
+              </div>
+            )
           )}
           {activeTab === 'retouched' && (
-            <div>
-              <ReviewGrid photos={retouchedPhotos} onOpen={(i) => setRetouchedLightboxIndex(i)} />
-              <div style={{ marginTop: 32 }}>
+            <>
+              {filteredRetouched.length > 0 ? (
+                <MasonryGallery
+                  photos={filteredRetouched}
+                  selections={new Set()}
+                  annotations={{}}
+                  comments={{}}
+                  onToggle={() => {}}
+                  onCommentChange={() => {}}
+                  onOpenLightbox={(i) => setRetouchedLightboxIndex(i)}
+                  onOpenAnnotate={() => {}}
+                  viewOnly
+                />
+              ) : (
+                <div style={{ padding: '60px 20px', textAlign: 'center', color: '#6b6b80' }}>
+                  <div style={{ fontSize: 36, marginBottom: 8 }}>🔎</div>
+                  <p style={{ fontSize: 13 }}>“{searchQuery}” 와 일치하는 파일이 없습니다</p>
+                </div>
+              )}
+              <div style={{ marginTop: 32, padding: '0 16px' }}>
                 {!project.revision_used ? (
                   <div style={{
                     background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 14,
@@ -398,17 +588,19 @@ export default function ClientGallery({
                   </div>
                 )}
               </div>
-            </div>
+            </>
           )}
         </div>
 
+        {showHelp && <HelpGuideModal onClose={() => setShowHelp(false)} />}
+
         {/* View-only lightbox for original tab */}
-        {lightboxIndex !== null && (
-          <SimpleLightbox photos={photos} index={lightboxIndex} onChange={setLightboxIndex} onClose={() => setLightboxIndex(null)} />
+        {lightboxIndex !== null && filteredPhotos[lightboxIndex] && (
+          <SimpleLightbox photos={filteredPhotos} index={lightboxIndex} onChange={setLightboxIndex} onClose={() => setLightboxIndex(null)} />
         )}
         {/* View-only lightbox for retouched tab */}
-        {retouchedLightboxIndex !== null && (
-          <SimpleLightbox photos={retouchedPhotos} index={retouchedLightboxIndex} onChange={setRetouchedLightboxIndex} onClose={() => setRetouchedLightboxIndex(null)} />
+        {retouchedLightboxIndex !== null && filteredRetouched[retouchedLightboxIndex] && (
+          <SimpleLightbox photos={filteredRetouched} index={retouchedLightboxIndex} onChange={setRetouchedLightboxIndex} onClose={() => setRetouchedLightboxIndex(null)} />
         )}
 
         {/* "수정 없음" 확인 팝업 */}
@@ -724,36 +916,6 @@ export default function ClientGallery({
           onSuccess={() => { setShowSubmitModal(false); setSubmittedKind('selection') }}
         />
       )}
-    </div>
-  )
-}
-
-/** Uniform-grid review gallery used in the `client_reviewing` state (view-only, no select). */
-function ReviewGrid({ photos, onOpen }: { photos: { id: string; signedUrl: string; filename: string }[]; onOpen: (i: number) => void }) {
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
-      gap: 10,
-    }}>
-      {photos.map((p, i) => (
-        <button
-          key={p.id}
-          type="button"
-          onClick={() => onOpen(i)}
-          style={{
-            all: 'unset',
-            position: 'relative',
-            aspectRatio: '1 / 1',
-            borderRadius: 10, overflow: 'hidden',
-            background: '#fafafa', border: '1px solid #e0e0e5',
-            cursor: 'zoom-in', display: 'block',
-          }}
-          aria-label={`${i + 1}번 사진 자세히 보기`}
-        >
-          <Image src={p.signedUrl} alt={p.filename} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: 'cover' }} />
-        </button>
-      ))}
     </div>
   )
 }

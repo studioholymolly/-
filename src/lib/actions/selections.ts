@@ -161,7 +161,8 @@ export async function submitRevisionSelections(
   shareToken: string,
   selectedRetouchedPhotoIds: string[],
   annotations: Record<string, AnnotationPin[]>,
-  comments: Record<string, string> = {}
+  comments: Record<string, string> = {},
+  memo: string = ''
 ) {
   const supabase = await createClient()
 
@@ -218,8 +219,7 @@ export async function submitRevisionSelections(
     await supabase.from('revision_annotations').insert(annotationRows)
   }
 
-  // Also insert an (empty-message) revision_requests row so existing studio UI shows the flag.
-  await supabase.from('revision_requests').insert({ project_id: projectId, message: '' })
+  await supabase.from('revision_requests').insert({ project_id: projectId, message: memo.trim() })
 
   // Flip back to studio_editing so the studio knows to do a second pass
   await supabase

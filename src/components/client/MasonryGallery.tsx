@@ -13,11 +13,13 @@ interface Props {
   onCommentChange: (photoId: string, value: string) => void
   onOpenLightbox: (index: number) => void
   onOpenAnnotate: (index: number) => void
+  viewOnly?: boolean
 }
 
 export default function MasonryGallery({
   photos, selections, annotations, comments,
   onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
+  viewOnly = false,
 }: Props) {
   return (
     <div style={{ padding: '20px 16px 140px', maxWidth: 1500, margin: '0 auto' }}>
@@ -146,6 +148,7 @@ export default function MasonryGallery({
             onCommentChange={(v) => onCommentChange(photo.id, v)}
             onOpenLightbox={() => onOpenLightbox(idx)}
             onOpenAnnotate={() => onOpenAnnotate(idx)}
+            viewOnly={viewOnly}
           />
         ))}
       </div>
@@ -164,6 +167,7 @@ export default function MasonryGallery({
 function PhotoCard({
   photo, idx, isSelected, pins, comment,
   onToggle, onCommentChange, onOpenLightbox, onOpenAnnotate,
+  viewOnly,
 }: {
   photo: PhotoWithUrl | RetouchedPhotoWithUrl
   idx: number
@@ -174,6 +178,7 @@ function PhotoCard({
   onCommentChange: (v: string) => void
   onOpenLightbox: () => void
   onOpenAnnotate: () => void
+  viewOnly: boolean
 }) {
   const imgRef = useRef<HTMLImageElement>(null)
   const hasAnnotations = pins.length > 0
@@ -211,15 +216,16 @@ function PhotoCard({
         />
         {/* Overlay: clicking anywhere on the image opens the lightbox */}
         <div className="ov" onClick={onOpenLightbox} role="button" aria-label={`${idx + 1}번 사진 크게 보기`}>
-          {/* Check circle — nested button; stops propagation so it only toggles selection */}
-          <button
-            type="button"
-            className="cc"
-            onClick={e => { e.stopPropagation(); onToggle() }}
-            aria-label={isSelected ? '선택 해제' : '선택'}
-          >✓</button>
+          {!viewOnly && (
+            <button
+              type="button"
+              className="cc"
+              onClick={e => { e.stopPropagation(); onToggle() }}
+              aria-label={isSelected ? '선택 해제' : '선택'}
+            >✓</button>
+          )}
         </div>
-        <div className="sb">✓ 선택</div>
+        {!viewOnly && <div className="sb">✓ 선택</div>}
         {hasAnnotations && <div className="ann-badge">📍 {pins.length}개</div>}
         <div className="pn">#{String(idx + 1).padStart(3, '0')}</div>
       </div>
@@ -227,18 +233,22 @@ function PhotoCard({
         <button type="button" className="pc-btn" onClick={onOpenLightbox}>
           🔍 크게 보기
         </button>
-        <button type="button" className={`pc-btn${hasAnnotations ? ' ann-on' : ''}`} onClick={onOpenAnnotate}>
-          📍 {hasAnnotations ? '주석 수정' : '주석 추가'}
-        </button>
+        {!viewOnly && (
+          <button type="button" className={`pc-btn${hasAnnotations ? ' ann-on' : ''}`} onClick={onOpenAnnotate}>
+            📍 {hasAnnotations ? '주석 수정' : '주석 추가'}
+          </button>
+        )}
       </div>
-      <div className="cmtbox">
-        <textarea
-          value={comment}
-          onChange={(e) => onCommentChange(e.target.value)}
-          placeholder="전체 코멘트 (선택 이유, 보정 방향 등)..."
-          rows={2}
-        />
-      </div>
+      {!viewOnly && (
+        <div className="cmtbox">
+          <textarea
+            value={comment}
+            onChange={(e) => onCommentChange(e.target.value)}
+            placeholder="전체 코멘트 (선택 이유, 보정 방향 등)..."
+            rows={2}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -10,6 +10,7 @@ interface Props {
   selectedIds: Set<string>
   annotations: Record<string, AnnotationPin[]>
   comments: Record<string, string>
+  memo: string
   shareToken: string
   onClose: () => void
   onSuccess: () => void
@@ -19,7 +20,7 @@ interface Props {
  * Final-confirmation modal for the "수정 있음" path. Mirrors SubmitModal but calls
  * submitRevisionSelections, which writes to revision_selections + revision_annotations.
  */
-export default function RevisionSubmitModal({ photos, selectedIds, annotations, comments, shareToken, onClose, onSuccess }: Props) {
+export default function RevisionSubmitModal({ photos, selectedIds, annotations, comments, memo, shareToken, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -31,7 +32,7 @@ export default function RevisionSubmitModal({ photos, selectedIds, annotations, 
     setLoading(true)
     setError('')
     try {
-      const result = await submitRevisionSelections(shareToken, Array.from(selectedIds), annotations, comments)
+      const result = await submitRevisionSelections(shareToken, Array.from(selectedIds), annotations, comments, memo)
       if (result.error) {
         setError(result.error)
         setLoading(false)
