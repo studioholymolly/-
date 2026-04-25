@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { confirmPhotoUpload } from '@/lib/actions/photos'
+import { compressImageFile } from '@/lib/imageCompress'
 
 interface UploadedFile {
   id: string
@@ -23,17 +24,20 @@ export default function UploadZone({ projectId, bucket, onUploadComplete }: Uplo
   const [dragging, setDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  async function uploadFile(file: File, index: number) {
+  async function uploadFile(originalFile: File, index: number) {
     const id = `${Date.now()}-${index}`
 
     setFiles(prev => [...prev, {
-      id, filename: file.name,
-      preview: URL.createObjectURL(file),
+      id, filename: originalFile.name,
+      preview: URL.createObjectURL(originalFile),
       progress: 0, done: false,
     }])
 
     try {
-      // Get signed upload URL
+      const file = await compressImageFile(originalFile)
+
+      setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 15 } : f))
+
       const res = await fetch('/api/upload', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +46,6 @@ export default function UploadZone({ projectId, bucket, onUploadComplete }: Uplo
       const { signedUrl, storagePath, error } = await res.json()
       if (error) throw new Error(error)
 
-      // Upload directly to Supabase Storage
       setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 30 } : f))
 
       const uploadRes = await fetch(signedUrl, {
@@ -54,7 +57,6 @@ export default function UploadZone({ projectId, bucket, onUploadComplete }: Uplo
 
       setFiles(prev => prev.map(f => f.id === id ? { ...f, progress: 80 } : f))
 
-      // Confirm in DB
       const sortOrder = index
       await confirmPhotoUpload(projectId, storagePath, file.name, bucket, sortOrder)
 

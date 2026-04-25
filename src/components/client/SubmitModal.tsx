@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { submitSelections } from '@/lib/actions/selections'
 import { PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 
@@ -78,7 +79,7 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
               const pins = annotations[p.id] || []
               return (
                 <div key={p.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 6, overflow: 'hidden', border: '1px solid #e0e0e5' }}>
-                  <img src={p.signedUrl} alt={p.filename} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <Image src={p.signedUrl} alt={p.filename} fill sizes="80px" style={{ objectFit: 'cover' }} />
                   {pins.length > 0 && (
                     <div style={{ position: 'absolute', top: 2, right: 2, background: '#ef4444', color: '#fff', fontSize: 8, fontWeight: 800, padding: '1px 5px', borderRadius: 6 }}>
                       {pins.length}

@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef } from 'react'
+import Image from 'next/image'
 import { PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 
 interface Props {
@@ -200,7 +201,14 @@ function PhotoCard({
   return (
     <div className={`pc${isSelected ? ' sel' : ''}${hasAnnotations ? ' has-ann' : ''}`}>
       <div className="pc-img-wrap" onMouseMove={handleMove} onMouseLeave={handleLeave}>
-        <img ref={imgRef} src={photo.signedUrl} alt={photo.filename} loading="lazy" />
+        <Image
+          ref={imgRef}
+          src={photo.signedUrl}
+          alt={photo.filename}
+          fill
+          sizes="(max-width: 450px) 100vw, (max-width: 750px) 50vw, (max-width: 1100px) 33vw, 25vw"
+          style={{ objectFit: 'cover' }}
+        />
         {/* Overlay: clicking anywhere on the image opens the lightbox */}
         <div className="ov" onClick={onOpenLightbox} role="button" aria-label={`${idx + 1}번 사진 크게 보기`}>
           {/* Check circle — nested button; stops propagation so it only toggles selection */}

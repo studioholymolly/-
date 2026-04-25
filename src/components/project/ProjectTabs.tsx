@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import UploadZone from './UploadZone'
 import ShareLinkButton from './ShareLinkButton'
 import PhotoLightbox from '@/components/PhotoLightbox'
@@ -173,15 +174,17 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                     onClick={() => openLightbox(photos.map(x => ({ signedUrl: x.signedUrl, filename: x.filename })), i)}
                     style={{
                       all: 'unset',
+                      position: 'relative',
                       aspectRatio: '1 / 1',
                       borderRadius: 8, overflow: 'hidden',
                       background: 'var(--s2)', border: '1px solid var(--bd)',
                       cursor: 'zoom-in', display: 'block',
                     }}
                   >
-                    <img src={p.signedUrl} alt={p.filename}
-                      loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <Image src={p.signedUrl} alt={p.filename}
+                      fill
+                      sizes="(max-width: 600px) 50vw, (max-width: 1100px) 25vw, 180px"
+                      style={{ objectFit: 'cover' }} />
                   </button>
                 ))}
               </div>
@@ -281,9 +284,10 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                         cursor: 'zoom-in',
                       }}
                     >
-                      <img src={p.signedUrl} alt={p.filename}
-                        loading="lazy"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <Image src={p.signedUrl} alt={p.filename}
+                        fill
+                        sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
+                        style={{ objectFit: 'cover' }} />
                       {anns.length > 0 && (
                         <div style={{
                           position: 'absolute', top: 8, left: 8,
@@ -353,15 +357,16 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                       onClick={() => openLightbox(retouchedPhotos.map(x => ({ signedUrl: x.signedUrl, filename: x.filename })), i)}
                       style={{
                         all: 'unset',
-                        width: '100%', height: '100%',
+                        position: 'absolute', inset: 0,
                         borderRadius: 8, overflow: 'hidden',
                         background: 'var(--s2)', border: '1px solid var(--bd)',
                         cursor: 'zoom-in', display: 'block',
                       }}
                     >
-                      <img src={p.signedUrl} alt={p.filename}
-                        loading="lazy"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      <Image src={p.signedUrl} alt={p.filename}
+                        fill
+                        sizes="(max-width: 600px) 50vw, (max-width: 1100px) 25vw, 180px"
+                        style={{ objectFit: 'cover' }} />
                     </button>
                     <button
                       type="button"
@@ -551,9 +556,10 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
                       cursor: 'zoom-in',
                     }}
                   >
-                    <img src={p.signedUrl} alt={p.filename}
-                      loading="lazy"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <Image src={p.signedUrl} alt={p.filename}
+                      fill
+                      sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 220px"
+                      style={{ objectFit: 'cover' }} />
                     {anns.length > 0 && (
                       <div style={{
                         position: 'absolute', top: 8, left: 8,

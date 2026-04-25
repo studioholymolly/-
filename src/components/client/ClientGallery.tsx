@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import Image from 'next/image'
 import { Project, PhotoWithUrl, RetouchedPhotoWithUrl, AnnotationPin } from '@/lib/types'
 import { submitNoRevision } from '@/lib/actions/selections'
 import { STUDIO_NAME } from '@/lib/brand'
@@ -605,6 +606,7 @@ function ReviewGrid({ photos, onOpen }: { photos: { id: string; signedUrl: strin
           onClick={() => onOpen(i)}
           style={{
             all: 'unset',
+            position: 'relative',
             aspectRatio: '1 / 1',
             borderRadius: 10, overflow: 'hidden',
             background: '#fafafa', border: '1px solid #e0e0e5',
@@ -612,7 +614,7 @@ function ReviewGrid({ photos, onOpen }: { photos: { id: string; signedUrl: strin
           }}
           aria-label={`${i + 1}번 사진 자세히 보기`}
         >
-          <img src={p.signedUrl} alt={p.filename} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          <Image src={p.signedUrl} alt={p.filename} fill sizes="(max-width: 600px) 33vw, 200px" style={{ objectFit: 'cover' }} />
         </button>
       ))}
     </div>
