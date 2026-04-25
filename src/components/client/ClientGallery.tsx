@@ -13,6 +13,7 @@ import LightboxModal from './LightboxModal'
 import SubmitModal from './SubmitModal'
 import RevisionSubmitModal from './RevisionSubmitModal'
 import HelpGuideModal, { shouldShowHelpGuide } from './HelpGuideModal'
+import { downloadPhotosAsZip } from '@/lib/downloadZip'
 
 interface Props {
   project: Project
@@ -26,13 +27,14 @@ interface Props {
   initialRevisionAnnotations?: Record<string, AnnotationPin[]>
   initialRevisionComments?: Record<string, string>
   submissionCount?: number
+  initialMemo?: string
 }
 
 export default function ClientGallery({
   project, photos, retouchedPhotos, shareToken,
   initialSelectedIds = [], initialAnnotations = {}, initialComments = {},
   initialRevisionSelectedIds = [], initialRevisionAnnotations = {}, initialRevisionComments = {},
-  submissionCount = 0,
+  submissionCount = 0, initialMemo = '',
 }: Props) {
   const [selections, setSelections] = useState<Set<string>>(new Set(initialSelectedIds))
   const [annotations, setAnnotations] = useState<Record<string, AnnotationPin[]>>(initialAnnotations)
@@ -61,6 +63,25 @@ export default function ClientGallery({
   const [noRevError, setNoRevError] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [showHelp, setShowHelp] = useState(false)
+  const [memo, setMemo] = useState(initialMemo)
+  const [zipProgress, setZipProgress] = useState<{ loaded: number; total: number } | null>(null)
+
+  async function handleBulkDownload() {
+    if (zipProgress || photos.length === 0) return
+    setZipProgress({ loaded: 0, total: photos.length })
+    try {
+      await downloadPhotosAsZip(
+        photos.map(p => ({ url: p.signedUrl, filename: p.filename })),
+        `${project.name || 'photos'}.zip`,
+        (loaded, total) => setZipProgress({ loaded, total })
+      )
+    } catch (e) {
+      console.error(e)
+      alert('일부 파일을 받지 못했어요. 다시 시도해 주세요.')
+    } finally {
+      setZipProgress(null)
+    }
+  }
 
   useEffect(() => {
     if (shouldShowHelpGuide()) setShowHelp(true)
@@ -584,6 +605,22 @@ export default function ClientGallery({
         )}
         <button
           type="button"
+          onClick={handleBulkDownload}
+          disabled={!!zipProgress || photos.length === 0}
+          aria-label="전체 다운로드"
+          title="전체 다운로드 (ZIP)"
+          style={{
+            background: '#f3f3f5', border: '1px solid #e0e0e5', color: '#0a0a0c',
+            padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700,
+            cursor: zipProgress ? 'wait' : 'pointer', opacity: zipProgress ? 0.6 : 1,
+          }}
+        >
+          {zipProgress
+            ? `📦 ${zipProgress.loaded}/${zipProgress.total}`
+            : `📦 전체 다운로드 (${photos.length})`}
+        </button>
+        <button
+          type="button"
           onClick={() => setShowHelp(true)}
           aria-label="사용 가이드"
           title="사용 가이드"
@@ -592,6 +629,34 @@ export default function ClientGallery({
             padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: 'pointer',
           }}
         >❔ 사용법</button>
+      </div>
+
+      {/* Project Memo */}
+      <div style={{ maxWidth: 1500, margin: '0 auto', padding: '12px 16px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 6, gap: 12, flexWrap: 'wrap',
+        }}>
+          <label htmlFor="project-memo" style={{ fontSize: 12, fontWeight: 800, color: '#0a0a0c' }}>
+            📝 전체 메모 (Project Memo)
+          </label>
+          <span style={{ fontSize: 11, color: '#8a8a95' }}>
+            이 메모는 리뷰 제출 시 작가님께 전달됩니다
+          </span>
+        </div>
+        <textarea
+          id="project-memo"
+          value={memo}
+          onChange={e => setMemo(e.target.value)}
+          placeholder="프로젝트 전체에 대한 의견, 수정 방향, 전달사항 등을 자유롭게 작성해주세요. (예: 전체적으로 밝기를 10% 올려주세요, 색감을 좀 더 따뜻하게 해주세요 등)"
+          rows={2}
+          style={{
+            width: '100%', padding: '10px 12px',
+            background: '#fafafa', border: '1px solid #e0e0e5', borderRadius: 8,
+            fontSize: 13, color: '#0a0a0c', fontFamily: 'inherit',
+            resize: 'vertical', minHeight: 56, outline: 'none', lineHeight: 1.5,
+          }}
+        />
       </div>
 
       {/* Gallery */}
@@ -653,6 +718,7 @@ export default function ClientGallery({
           selectedIds={selections}
           annotations={annotations}
           comments={comments}
+          memo={memo}
           shareToken={shareToken}
           onClose={() => setShowSubmitModal(false)}
           onSuccess={() => { setShowSubmitModal(false); setSubmittedKind('selection') }}

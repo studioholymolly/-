@@ -93,6 +93,7 @@ export interface Submission {
   selected_count: number
   total_count: number
   pin_count: number
+  memo: string | null
   created_at: string
 }
 

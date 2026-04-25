@@ -80,6 +80,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
   }
 
   const submissionCount = submissionsRes.data?.length ?? 0
+  const latestMemo = (submissionsRes.data?.[0] as { memo?: string | null } | undefined)?.memo ?? ''
 
   // Hydrate previous revision submission (re-render on refresh after submit)
   const revisionSelections = (revisionSelectionsRes.data ?? []) as RevisionSelection[]
@@ -118,6 +119,7 @@ export default async function ClientPage({ params }: { params: Promise<{ token: 
       initialRevisionAnnotations={initialRevisionAnnotations}
       initialRevisionComments={initialRevisionComments}
       submissionCount={submissionCount}
+      initialMemo={latestMemo}
     />
   )
 }

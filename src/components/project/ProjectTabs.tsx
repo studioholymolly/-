@@ -221,28 +221,41 @@ export default function ProjectTabs({ project, photos, retouchedPhotos, selectio
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {submissions.map((s, i) => {
                   const isLatest = i === 0
+                  const memo = s.memo?.trim()
                   return (
                     <div key={s.id} style={{
-                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '9px 12px', borderRadius: 8,
+                      display: 'flex', flexDirection: 'column', gap: 8,
+                      padding: '10px 12px', borderRadius: 8,
                       background: isLatest ? 'rgba(34,197,94,0.07)' : 'var(--s2)',
                       border: `1px solid ${isLatest ? 'rgba(34,197,94,0.3)' : 'var(--bd)'}`,
                     }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <span style={{
-                          background: isLatest ? '#22c55e' : 'var(--s3)',
-                          color: isLatest ? '#fff' : 'var(--mu)',
-                          fontSize: 10, fontWeight: 800,
-                          padding: '2px 8px', borderRadius: 10, minWidth: 40, textAlign: 'center',
-                        }}>{isLatest ? '최신' : `${submissions.length - i}회차`}</span>
-                        <span style={{ fontSize: 12, color: 'var(--tx)', fontWeight: 600 }}>
-                          {formatDateTime(s.created_at)}
-                        </span>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{
+                            background: isLatest ? '#22c55e' : 'var(--s3)',
+                            color: isLatest ? '#fff' : 'var(--mu)',
+                            fontSize: 10, fontWeight: 800,
+                            padding: '2px 8px', borderRadius: 10, minWidth: 40, textAlign: 'center',
+                          }}>{isLatest ? '최신' : `${submissions.length - i}회차`}</span>
+                          <span style={{ fontSize: 12, color: 'var(--tx)', fontWeight: 600 }}>
+                            {formatDateTime(s.created_at)}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--mu)' }}>
+                          <span>선택 <b style={{ color: '#22c55e' }}>{s.selected_count}</b> / {s.total_count}장</span>
+                          <span>메모 <b style={{ color: '#ef4444' }}>{s.pin_count}</b>개</span>
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 14, fontSize: 11, color: 'var(--mu)' }}>
-                        <span>선택 <b style={{ color: '#22c55e' }}>{s.selected_count}</b> / {s.total_count}장</span>
-                        <span>메모 <b style={{ color: '#ef4444' }}>{s.pin_count}</b>개</span>
-                      </div>
+                      {memo && (
+                        <div style={{
+                          background: 'var(--s3)', border: '1px solid var(--bd)',
+                          borderRadius: 6, padding: '8px 10px',
+                          fontSize: 12, color: 'var(--tx)', lineHeight: 1.55, whiteSpace: 'pre-wrap',
+                        }}>
+                          <span style={{ fontWeight: 700, color: 'var(--mu)', marginRight: 6 }}>📝 전체 메모</span>
+                          {memo}
+                        </div>
+                      )}
                     </div>
                   )
                 })}

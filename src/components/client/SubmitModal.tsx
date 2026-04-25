@@ -10,12 +10,13 @@ interface Props {
   selectedIds: Set<string>
   annotations: Record<string, AnnotationPin[]>
   comments: Record<string, string>
+  memo: string
   shareToken: string
   onClose: () => void
   onSuccess: () => void
 }
 
-export default function SubmitModal({ photos, selectedIds, annotations, comments, shareToken, onClose, onSuccess }: Props) {
+export default function SubmitModal({ photos, selectedIds, annotations, comments, memo, shareToken, onClose, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -27,7 +28,7 @@ export default function SubmitModal({ photos, selectedIds, annotations, comments
     setLoading(true)
     setError('')
     try {
-      const result = await submitSelections(shareToken, Array.from(selectedIds), annotations, comments)
+      const result = await submitSelections(shareToken, Array.from(selectedIds), annotations, comments, memo)
       if (result.error) {
         setError(result.error)
         setLoading(false)

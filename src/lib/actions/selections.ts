@@ -7,7 +7,8 @@ export async function submitSelections(
   shareToken: string,
   selectedPhotoIds: string[],
   annotations: Record<string, AnnotationPin[]>,
-  comments: Record<string, string> = {}
+  comments: Record<string, string> = {},
+  memo: string = ''
 ) {
   const supabase = await createClient()
 
@@ -81,13 +82,19 @@ export async function submitSelections(
     await supabase.from('annotations').insert(annotationRows)
   }
 
-  // Record this submission in history
-  await supabase.from('submissions').insert({
+  const submissionRow: Record<string, unknown> = {
     project_id: projectId,
     selected_count: selectedPhotoIds.length,
     total_count: totalCount ?? 0,
     pin_count: annotationRows.length,
-  })
+  }
+  const memoTrimmed = memo.trim()
+  if (memoTrimmed) submissionRow.memo = memoTrimmed
+  const { error: subErr } = await supabase.from('submissions').insert(submissionRow)
+  if (subErr && memoTrimmed) {
+    delete submissionRow.memo
+    await supabase.from('submissions').insert(submissionRow)
+  }
 
   // Count how many submissions existed before this one — to label notification accurately
   const { count: submissionCount } = await supabase
