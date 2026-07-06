@@ -355,21 +355,6 @@ body {
 .hm-step:hover .num { color: #777777; }
 .hm-step:hover p { color: #a8a8a8; }
 
-/* ---- pull quote ---- */
-.hm-quote {
-  text-align: center;
-  padding: clamp(72px, 11vh, 130px) 0;
-  border-top: 1px solid var(--hm-line);
-}
-.hm-quote .q {
-  font-size: clamp(24px, 3.4vw, 40px);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1.35;
-  margin: 0 0 20px;
-}
-.hm-quote .attr { font-size: 12px; color: var(--hm-gray); letter-spacing: 0.02em; }
-
 /* ---- outro ---- */
 .hm-outro {
   border-top: 1px solid var(--hm-line);

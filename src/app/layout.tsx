@@ -17,11 +17,11 @@ const archivo = Archivo({
 
 export const metadata: Metadata = {
   title: {
-    default: `${STUDIO_NAME} — 찍는 순간, 홀리몰리!`,
+    default: `${STUDIO_NAME} — Creative Studio`,
     template: `%s · ${STUDIO_NAME}`,
   },
   description:
-    '인물부터 브랜드까지, 촬영·셀렉·보정·전달의 전 과정을 함께하는 사진 스튜디오.',
+    '뷰티, 제품, F&B, 의류, 인물, 영상, BX 디자인 — 브랜드의 모든 장면을 만드는 크리에이티브 스튜디오.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

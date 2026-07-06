@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export type InquiryResult = { ok: true } | { error: string }
 
-const SHOOT_TYPES = ['프로필·증명', '브랜드·룩북', '제품', '스냅·행사', '기타'] as const
+const SHOOT_TYPES = ['뷰티', '제품', 'F&B', '의류', '인물', '영상', 'BX 디자인', '기타'] as const
 const BUDGETS = ['아직 미정', '~30만 원', '30~70만 원', '70~150만 원', '150만 원 이상'] as const
 
 export async function submitInquiry(formData: FormData): Promise<InquiryResult> {
@@ -19,7 +19,7 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
   const message = ((formData.get('message') as string) || '').trim()
 
   if (!SHOOT_TYPES.includes(shoot_type as (typeof SHOOT_TYPES)[number])) {
-    return { error: '촬영 종류를 선택해 주세요.' }
+    return { error: '작업 종류를 선택해 주세요.' }
   }
   if (!name || name.length > 100) {
     return { error: '성함을 확인해 주세요.' }

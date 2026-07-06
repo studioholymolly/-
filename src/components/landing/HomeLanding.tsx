@@ -6,28 +6,43 @@ import { STUDIO_NAME, STUDIO_SHORT_NAME } from '@/lib/brand'
 
 const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 
-const MARQUEE_ITEMS = ['Profile', 'Brand', 'Product', 'Lookbook', 'Snap', 'Holy Moly']
+const MARQUEE_ITEMS = ['Beauty', 'Product', 'F&B', 'Fashion', 'People', 'Film', 'BX Design']
 
 const SERVICES = [
   {
     num: '01',
-    title: '프로필 & 증명',
-    body: '나를 가장 나답게. 배우·아나운서 프로필부터 비즈니스 프로필까지, 카메라 앞이 어색한 분도 편안하게 이끌어 드립니다.',
+    title: '뷰티',
+    body: '코스메틱과 뷰티 브랜드의 질감, 컬러, 무드를 정교하게 담아냅니다.',
   },
   {
     num: '02',
-    title: '브랜드 & 룩북',
-    body: '브랜드의 결을 읽고 화보로 옮깁니다. 시즌 룩북, 캠페인, 콘텐츠용 화보까지 톤앤무드를 함께 설계합니다.',
-  },
-  {
-    num: '03',
-    title: '제품 촬영',
+    title: '제품',
     body: '스마트스토어부터 상세페이지까지, 제품이 팔리게 하는 컷을 만듭니다.',
   },
   {
+    num: '03',
+    title: 'F&B',
+    body: '시즐과 온도까지. 음식과 음료를 가장 맛있는 순간으로 기록합니다.',
+  },
+  {
     num: '04',
-    title: '스냅 & 행사',
-    body: '행사, 팝업, 브랜드 이벤트의 생생한 순간을 놓치지 않고 기록합니다.',
+    title: '의류',
+    body: '시즌 룩북, 캠페인, 커머스 화보까지 브랜드의 결을 화보로 옮깁니다.',
+  },
+  {
+    num: '05',
+    title: '인물',
+    body: '브랜드를 이끄는 사람들, 캠페인 속 인물을 자연스럽게 담습니다.',
+  },
+  {
+    num: '06',
+    title: '영상',
+    body: '브랜드 필름, 커머스 영상, 소셜 콘텐츠까지 무빙으로 확장합니다.',
+  },
+  {
+    num: '07',
+    title: 'BX 디자인',
+    body: '촬영을 넘어 브랜드 경험을 설계합니다. 비주얼 아이덴티티부터 콘텐츠 시스템까지.',
   },
 ]
 
@@ -73,23 +88,18 @@ const STEPS = [
 ]
 
 function KineticTitle({ text }: { text: string }) {
-  let letterIndex = 0
   return (
     <h1 className="hm-hero-title hm-display" aria-label={text}>
-      {text.split('').map((ch, i) => {
-        if (ch === ' ') return <span key={i}> </span>
-        const delay = `${0.035 * letterIndex++}s`
-        return (
-          <span
-            key={i}
-            aria-hidden="true"
-            className={`hm-letter${ch === '!' ? ' hm-bang' : ''}`}
-            style={{ animationDelay: delay }}
-          >
-            {ch}
-          </span>
-        )
-      })}
+      {text.split('').map((ch, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className="hm-letter"
+          style={{ animationDelay: `${0.035 * i}s` }}
+        >
+          {ch}
+        </span>
+      ))}
     </h1>
   )
 }
@@ -137,7 +147,7 @@ export default function HomeLanding() {
             <a href="#services" className="hm-hide-sm">Services</a>
             <a href="#process" className="hm-hide-sm">Process</a>
             <Link href="/inquiry" className="hm-btn hm-btn-primary hm-nav-cta">
-              촬영 문의
+              프로젝트 문의
             </Link>
           </div>
         </div>
@@ -145,20 +155,20 @@ export default function HomeLanding() {
 
       <header className="hm-hero">
         <div className="hm-container">
-          <span className="hm-label-xs">Photo Studio — {STUDIO_NAME}</span>
-          <KineticTitle text="HOLY MOLY!" />
+          <span className="hm-label-xs">Creative Studio — {STUDIO_NAME}</span>
+          <KineticTitle text="HOLYMOLLY" />
           <div className="hm-hero-foot">
             <div>
-              <p className="hm-hero-sub">찍는 순간, 나도 모르게 — 홀리몰리.</p>
+              <p className="hm-hero-sub">브랜드가 보여지는 모든 장면을 만듭니다.</p>
               <p className="hm-hero-body">
-                인물부터 브랜드까지, {STUDIO_SHORT_NAME}는 촬영에서 끝나지 않습니다.
-                온라인 셀렉, 리터칭, 전달까지 — 사진이 손에 쥐어지는 순간까지
-                전 과정을 함께합니다.
+                뷰티, 제품, F&amp;B, 의류, 인물 — 그리고 영상과 BX 디자인까지.
+                {' '}{STUDIO_SHORT_NAME}는 촬영에서 끝나지 않고 셀렉, 리터칭,
+                전달까지 전 과정을 함께합니다.
               </p>
             </div>
             <div className="hm-hero-ctas">
               <Link href="/inquiry" className="hm-btn hm-btn-primary">
-                촬영 문의하기
+                프로젝트 문의하기
               </Link>
               <a href="#process" className="hm-textlink">
                 프로세스 보기 ↓
@@ -182,7 +192,7 @@ export default function HomeLanding() {
         <div className="hm-container">
           <div className="hm-section-head hm-reveal">
             <span className="hm-label-xs">Services</span>
-            <h2>이런 촬영을 함께합니다</h2>
+            <h2>이런 작업을 함께합니다</h2>
           </div>
           <div className="hm-rows hm-reveal">
             {SERVICES.map(s => (
@@ -239,22 +249,13 @@ export default function HomeLanding() {
         </div>
       </section>
 
-      <section className="hm-quote">
-        <div className="hm-container hm-reveal">
-          <p className="q">&ldquo;홀리몰리&hellip;&rdquo;</p>
-          <p className="attr">완성본을 받아본 고객님들이 가장 자주 남기는 한마디</p>
-        </div>
-      </section>
-
       <section className="hm-outro">
         <div className="hm-container hm-reveal">
           <span className="hm-label-xs">Contact</span>
-          <h2 className="hm-display">
-            SAY HOLY MOLY<span className="ghost">!</span>
-          </h2>
+          <h2 className="hm-display">Start a Project</h2>
           <div className="hm-hero-ctas">
             <Link href="/inquiry" className="hm-btn hm-btn-primary">
-              촬영 문의하기
+              프로젝트 문의하기
             </Link>
             <a href={`mailto:${CONTACT_EMAIL}`} className="hm-textlink">
               {CONTACT_EMAIL}
@@ -268,13 +269,13 @@ export default function HomeLanding() {
           <div>
             <div className="brand">{STUDIO_NAME}</div>
             <div className="sub">
-              찍는 순간, 홀리몰리.
+              뷰티 · 제품 · F&amp;B · 의류 · 인물 · 영상 · BX 디자인
               <br />
-              사진의 처음부터 끝까지 함께하는 스튜디오.
+              브랜드의 모든 장면을 만드는 크리에이티브 스튜디오.
             </div>
           </div>
           <div className="hm-footer-links">
-            <Link href="/inquiry">촬영 문의</Link>
+            <Link href="/inquiry">프로젝트 문의</Link>
             <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             <Link href="/login" className="dim">
               Admin

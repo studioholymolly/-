@@ -7,7 +7,7 @@ import { STUDIO_SHORT_NAME } from '@/lib/brand'
 
 const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 
-const SHOOT_TYPES = ['프로필·증명', '브랜드·룩북', '제품', '스냅·행사', '기타']
+const SHOOT_TYPES = ['뷰티', '제품', 'F&B', '의류', '인물', '영상', 'BX 디자인', '기타']
 
 const BUDGETS = ['아직 미정', '~30만 원', '30~70만 원', '70~150만 원', '150만 원 이상']
 
@@ -20,7 +20,7 @@ export default function InquiryForm() {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     if (!shootType) {
-      setError('촬영 종류를 먼저 선택해 주세요.')
+      setError('작업 종류를 먼저 선택해 주세요.')
       return
     }
     setLoading(true)
@@ -70,8 +70,8 @@ export default function InquiryForm() {
   return (
     <form onSubmit={handleSubmit}>
       <div className="hm-field">
-        <span className="hm-label">어떤 촬영인가요?</span>
-        <div className="hm-intent-grid" role="radiogroup" aria-label="촬영 종류">
+        <span className="hm-label">어떤 작업인가요?</span>
+        <div className="hm-intent-grid" role="radiogroup" aria-label="작업 종류">
           {SHOOT_TYPES.map(t => (
             <label
               key={t}
@@ -118,7 +118,7 @@ export default function InquiryForm() {
 
       <div className="hm-field">
         <label className="hm-label" htmlFor="inq-date">
-          희망 촬영일 <span className="opt">(선택)</span>
+          희망 일정 <span className="opt">(선택)</span>
         </label>
         <input id="inq-date" name="preferred_date" type="date" className="hm-input" />
         <p className="hm-hint">아직 미정이라면 비워두셔도 돼요.</p>
@@ -146,7 +146,7 @@ export default function InquiryForm() {
           className="hm-textarea"
           required
           maxLength={4000}
-          placeholder="예) 5월 중 브랜드 룩북 촬영을 계획하고 있어요. 컷 수는 20컷 정도, 스튜디오 촬영 희망합니다."
+          placeholder="예) 신제품 런칭 화보와 상세페이지 컷을 준비하고 있어요. 9월 중 촬영 희망합니다."
         />
         <p className="hm-hint">떠오르는 대로 편하게 적어주세요. 형식은 없어요.</p>
       </div>

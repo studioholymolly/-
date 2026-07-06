@@ -4,8 +4,8 @@ import InquiryForm from '@/components/inquiry/InquiryForm'
 import { STUDIO_NAME } from '@/lib/brand'
 
 export const metadata: Metadata = {
-  title: '촬영 문의',
-  description: '스튜디오 홀리몰리 촬영 문의 — 몇 가지만 알려주시면 24시간 안에 답장드려요.',
+  title: '프로젝트 문의',
+  description: '스튜디오 홀리몰리 프로젝트 문의 — 몇 가지만 알려주시면 24시간 안에 답장드립니다.',
 }
 
 export default function InquiryPage() {
@@ -26,9 +26,7 @@ export default function InquiryPage() {
       <main className="hm-form-wrap">
         <div className="hm-form-head">
           <span className="hm-label-xs">Contact</span>
-          <div className="en hm-display">
-            SAY HOLY MOLY<span className="hm-bang">!</span>
-          </div>
+          <div className="en hm-display">New Project</div>
           <p>
             아래 몇 가지만 알려주시면, <strong>24시간 안에</strong> 답장드립니다.
             <br />
