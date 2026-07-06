@@ -37,11 +37,11 @@ export async function middleware(request: NextRequest) {
 
     // Protect studio routes
     if (!user && (pathname.startsWith('/dashboard') || pathname.startsWith('/projects'))) {
-      return NextResponse.redirect(new URL('/', request.url))
+      return NextResponse.redirect(new URL('/login', request.url))
     }
 
     // Redirect logged-in user away from login page
-    if (user && pathname === '/') {
+    if (user && pathname === '/login') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 

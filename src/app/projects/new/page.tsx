@@ -11,7 +11,7 @@ async function handleCreate(formData: FormData): Promise<void> {
 export default async function NewProjectPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>

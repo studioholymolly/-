@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 export async function createProject(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   const name = formData.get('name') as string
   const client_name = formData.get('client_name') as string
@@ -42,7 +42,7 @@ export async function createProject(formData: FormData) {
 export async function updateProject(projectId: string, formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   const name = formData.get('name') as string
   const client_name = formData.get('client_name') as string
@@ -74,7 +74,7 @@ export async function updateProject(projectId: string, formData: FormData) {
 export async function updateProjectStatus(projectId: string, status: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   await supabase
     .from('projects')
@@ -87,7 +87,7 @@ export async function updateProjectStatus(projectId: string, status: string) {
 export async function setDriveLink(projectId: string, driveLink: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   await supabase
     .from('projects')
@@ -101,7 +101,7 @@ export async function setDriveLink(projectId: string, driveLink: string) {
 export async function setAccessCode(projectId: string, code: string | null) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   const trimmed = (code ?? '').trim()
   const value = trimmed && /^\d{4}$/.test(trimmed) ? trimmed : null
@@ -130,7 +130,7 @@ export async function verifyAccessCode(shareToken: string, code: string) {
 export async function setDriveLinkRetouched(projectId: string, driveLink: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   await supabase
     .from('projects')
@@ -143,7 +143,7 @@ export async function setDriveLinkRetouched(projectId: string, driveLink: string
 export async function regenerateShareToken(projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   // 24 random bytes → 48 hex chars (matches the schema default)
   const bytes = new Uint8Array(24)
@@ -164,7 +164,7 @@ export async function regenerateShareToken(projectId: string) {
 export async function deleteProject(projectId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/')
+  if (!user) redirect('/login')
 
   await supabase
     .from('projects')
