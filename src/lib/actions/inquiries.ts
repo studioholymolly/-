@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 export type InquiryResult = { ok: true } | { error: string }
 
 const SHOOT_TYPES = ['뷰티', '제품', 'F&B', '의류', '인물', '영상', 'BX 디자인', '기타'] as const
-const BUDGETS = ['아직 미정', '~30만 원', '30~70만 원', '70~150만 원', '150만 원 이상'] as const
+const BUDGETS = ['150~300만 원', '300~500만 원', '500~1,000만 원', '1,000만 원 이상', '아직 미정'] as const
 
 export async function submitInquiry(formData: FormData): Promise<InquiryResult> {
   // Honeypot: bots fill every field; humans never see this one.
@@ -16,6 +16,7 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
   const contact = ((formData.get('contact') as string) || '').trim()
   const preferred_date = (formData.get('preferred_date') as string) || null
   const budget = (formData.get('budget') as string) || null
+  const reference_url = ((formData.get('reference_url') as string) || '').trim()
   const message = ((formData.get('message') as string) || '').trim()
 
   if (!SHOOT_TYPES.includes(shoot_type as (typeof SHOOT_TYPES)[number])) {
@@ -33,6 +34,9 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
   if (budget && !BUDGETS.includes(budget as (typeof BUDGETS)[number])) {
     return { error: '예산 범위를 다시 선택해 주세요.' }
   }
+  if (reference_url.length > 500) {
+    return { error: '참고 자료 링크가 너무 깁니다. (최대 500자)' }
+  }
 
   try {
     const supabase = await createClient()
@@ -42,6 +46,7 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
       contact,
       preferred_date: preferred_date || null,
       budget: budget || null,
+      reference_url: reference_url || null,
       message,
     })
     if (error) throw error

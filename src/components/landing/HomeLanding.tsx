@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { STUDIO_NAME, STUDIO_SHORT_NAME } from '@/lib/brand'
+import LogoSymbol from '@/components/brand/LogoSymbol'
 
 const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 
@@ -87,17 +88,22 @@ const STEPS = [
   },
 ]
 
-function KineticTitle({ text }: { text: string }) {
+function KineticTitle({ lines }: { lines: string[] }) {
+  let letterIndex = 0
   return (
-    <h1 className="hm-hero-title hm-display" aria-label={text}>
-      {text.split('').map((ch, i) => (
-        <span
-          key={i}
-          aria-hidden="true"
-          className="hm-letter"
-          style={{ animationDelay: `${0.035 * i}s` }}
-        >
-          {ch}
+    <h1 className="hm-hero-title hm-display hm-wordmark" aria-label={lines.join(' ')}>
+      {lines.map((line, li) => (
+        <span key={li} style={{ display: 'block' }}>
+          {line.split('').map((ch, i) => (
+            <span
+              key={i}
+              aria-hidden="true"
+              className="hm-letter"
+              style={{ animationDelay: `${0.035 * letterIndex++}s` }}
+            >
+              {ch}
+            </span>
+          ))}
         </span>
       ))}
     </h1>
@@ -139,9 +145,9 @@ export default function HomeLanding() {
     <div className="hm-page">
       <nav className="hm-nav">
         <div className="hm-container hm-nav-inner">
-          <Link href="/" className="hm-logo">
-            <span className="ko">{STUDIO_NAME}</span>
-            <span className="en hm-display">HOLYMOLLY</span>
+          <Link href="/" className="hm-logo" aria-label={STUDIO_NAME}>
+            <LogoSymbol size={30} />
+            <span className="hm-wordmark hm-display hm-hide-sm">STUDIO. HOLYMOLLY</span>
           </Link>
           <div className="hm-nav-links">
             <a href="#services" className="hm-hide-sm">Services</a>
@@ -156,7 +162,7 @@ export default function HomeLanding() {
       <header className="hm-hero">
         <div className="hm-container">
           <span className="hm-label-xs">Creative Studio — {STUDIO_NAME}</span>
-          <KineticTitle text="HOLYMOLLY" />
+          <KineticTitle lines={['STUDIO.', 'HOLYMOLLY']} />
           <div className="hm-hero-foot">
             <div>
               <p className="hm-hero-sub">브랜드가 보여지는 모든 장면을 만듭니다.</p>
@@ -251,6 +257,7 @@ export default function HomeLanding() {
 
       <section className="hm-outro">
         <div className="hm-container hm-reveal">
+          <LogoSymbol size={44} className="hm-outro-symbol" />
           <span className="hm-label-xs">Contact</span>
           <h2 className="hm-display">Start a Project</h2>
           <div className="hm-hero-ctas">
@@ -267,7 +274,13 @@ export default function HomeLanding() {
       <footer className="hm-footer">
         <div className="hm-container hm-footer-inner">
           <div>
-            <div className="brand">{STUDIO_NAME}</div>
+            <div className="hm-footer-brand-row">
+              <LogoSymbol size={34} />
+              <div>
+                <div className="brand hm-wordmark hm-display">STUDIO. HOLYMOLLY</div>
+                <div className="brand-ko">{STUDIO_NAME}</div>
+              </div>
+            </div>
             <div className="sub">
               뷰티 · 제품 · F&amp;B · 의류 · 인물 · 영상 · BX 디자인
               <br />
@@ -283,7 +296,7 @@ export default function HomeLanding() {
           </div>
         </div>
         <div className="hm-footer-mark hm-display" aria-hidden="true">
-          HOLYMOLLY
+          STUDIO. HOLYMOLLY
         </div>
       </footer>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import InquiryForm from '@/components/inquiry/InquiryForm'
+import LogoSymbol from '@/components/brand/LogoSymbol'
 import { STUDIO_NAME } from '@/lib/brand'
 
 export const metadata: Metadata = {
@@ -13,9 +14,9 @@ export default function InquiryPage() {
     <div className="hm-page">
       <nav className="hm-nav">
         <div className="hm-container hm-nav-inner">
-          <Link href="/" className="hm-logo">
-            <span className="ko">{STUDIO_NAME}</span>
-            <span className="en hm-display">HOLYMOLLY</span>
+          <Link href="/" className="hm-logo" aria-label={STUDIO_NAME}>
+            <LogoSymbol size={30} />
+            <span className="hm-wordmark hm-display hm-hide-sm">STUDIO. HOLYMOLLY</span>
           </Link>
           <div className="hm-nav-links">
             <Link href="/">← 홈으로</Link>

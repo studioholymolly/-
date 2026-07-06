@@ -17,10 +17,13 @@
 
 * { box-sizing: border-box; }
 
+/* Unified type system, app-wide: Jost (Futura-family, matches the
+   logotype) carries Latin & numerals; Noto Sans KR carries Hangul. */
 body {
   background: var(--bg);
   color: var(--tx);
-  font-family: var(--font-sans, 'Noto Sans KR'), 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+  font-family: var(--font-display, 'Jost'), var(--font-sans, 'Noto Sans KR'),
+    'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
 }
 
 ::-webkit-scrollbar { width: 5px; }
@@ -54,9 +57,15 @@ body {
 }
 
 .hm-display {
-  font-family: var(--font-display, 'Archivo'), 'Noto Sans KR', sans-serif;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display, 'Jost'), 'Noto Sans KR', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+}
+
+.hm-wordmark {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.04;
 }
 
 .hm-label-xs {
@@ -90,13 +99,13 @@ body {
 }
 .hm-logo {
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: center;
+  gap: 12px;
   text-decoration: none;
   color: var(--hm-ink);
 }
-.hm-logo .ko { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
-.hm-logo .en { font-size: 10px; letter-spacing: 0.18em; color: var(--hm-gray-3); }
+.hm-logo .hm-wordmark { font-size: 15px; letter-spacing: 0.08em; }
+.hm-logo svg { flex-shrink: 0; }
 .hm-nav-links { display: flex; align-items: center; gap: 30px; }
 .hm-nav-links a {
   font-size: 13px;
@@ -162,10 +171,11 @@ body {
 }
 .hm-hero .hm-label-xs { display: block; margin-bottom: 40px; }
 .hm-hero-title {
-  font-size: clamp(40px, 12.5vw, 220px);
-  line-height: 0.92;
+  font-size: clamp(38px, 11.5vw, 200px);
+  line-height: 1.02;
   margin: 0 0 clamp(36px, 6vh, 64px);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
   user-select: none;
 }
 .hm-hero-title .hm-letter {
@@ -361,15 +371,15 @@ body {
   padding: clamp(88px, 14vh, 170px) 0;
 }
 .hm-outro .hm-label-xs { display: block; margin-bottom: 34px; }
+.hm-outro-symbol { display: block; margin-bottom: 28px; }
 .hm-outro h2 {
   font-size: clamp(34px, 7vw, 110px);
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  font-weight: 400;
+  letter-spacing: 0.05em;
   line-height: 1;
   margin: 0 0 52px;
   text-transform: uppercase;
 }
-.hm-outro h2 .ghost { color: var(--hm-gray-3); }
 
 /* ---- footer: index columns + giant cropped wordmark ---- */
 .hm-footer {
@@ -385,7 +395,9 @@ body {
   flex-wrap: wrap;
   padding-bottom: clamp(48px, 8vh, 90px);
 }
-.hm-footer .brand { font-size: 15px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.01em; }
+.hm-footer-brand-row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.hm-footer .brand { font-size: 15px; margin-bottom: 2px; }
+.hm-footer .brand-ko { font-size: 12px; color: var(--hm-gray); }
 .hm-footer .sub { font-size: 12.5px; color: var(--hm-gray); line-height: 1.8; }
 .hm-footer a {
   color: var(--hm-ink);
@@ -398,14 +410,15 @@ body {
 .hm-footer-links { display: flex; flex-direction: column; gap: 13px; align-items: flex-start; }
 .hm-footer a.dim { color: var(--hm-gray-3); font-size: 12px; }
 .hm-footer-mark {
-  font-size: clamp(64px, 13vw, 220px);
-  line-height: 0.72;
+  font-size: 9.2vw;
+  line-height: 0.74;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   white-space: nowrap;
   color: var(--hm-ink);
   user-select: none;
   pointer-events: none;
-  transform: translateY(0.14em);
+  transform: translateY(0.13em);
 }
 
 /* ---- scroll reveal ----
@@ -507,6 +520,7 @@ body {
 }
 
 .hm-success { padding: 40px 0 24px; }
+.hm-success-symbol { display: block; margin-bottom: 26px; }
 .hm-success .mark {
   display: block;
   font-size: clamp(30px, 4.6vw, 44px);

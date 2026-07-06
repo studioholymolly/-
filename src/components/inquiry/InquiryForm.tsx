@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { submitInquiry } from '@/lib/actions/inquiries'
+import LogoSymbol from '@/components/brand/LogoSymbol'
 import { STUDIO_SHORT_NAME } from '@/lib/brand'
 
 const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 
 const SHOOT_TYPES = ['뷰티', '제품', 'F&B', '의류', '인물', '영상', 'BX 디자인', '기타']
 
-const BUDGETS = ['아직 미정', '~30만 원', '30~70만 원', '70~150만 원', '150만 원 이상']
+const BUDGETS = ['150~300만 원', '300~500만 원', '500~1,000만 원', '1,000만 원 이상', '아직 미정']
 
 export default function InquiryForm() {
   const [shootType, setShootType] = useState('')
@@ -39,6 +40,7 @@ export default function InquiryForm() {
   if (done) {
     return (
       <div className="hm-success">
+        <LogoSymbol size={48} className="hm-success-symbol" />
         <h2 className="mark">
           감사합니다.
           <br />
@@ -136,6 +138,23 @@ export default function InquiryForm() {
             ))}
           </select>
         </div>
+      </div>
+
+      <div className="hm-field">
+        <label className="hm-label" htmlFor="inq-reference">
+          참고 자료 <span className="opt">(선택)</span>
+        </label>
+        <input
+          id="inq-reference"
+          name="reference_url"
+          className="hm-input"
+          maxLength={500}
+          placeholder="기획안·레퍼런스 링크 (구글 드라이브, 노션 등)"
+          inputMode="url"
+        />
+        <p className="hm-hint">
+          PDF·PPT 등 파일은 링크로 공유해 주세요. 이메일로 직접 보내주셔도 됩니다.
+        </p>
       </div>
 
       <div className="hm-field">

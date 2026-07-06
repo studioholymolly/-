@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { signOut } from '@/lib/actions/auth'
+import LogoSymbol from '@/components/brand/LogoSymbol'
 import { STUDIO_SHORT_NAME } from '@/lib/brand'
 
 interface NavbarProps {
@@ -19,8 +20,8 @@ export default function Navbar({ unreadCount = 0 }: NavbarProps) {
       position: 'sticky', top: 0, zIndex: 50,
     }}>
       <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 20 }}>📷</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--tx)' }}>
+          <LogoSymbol size={26} />
           <span style={{ fontSize: 15, fontWeight: 800, color: 'var(--tx)' }}>{STUDIO_SHORT_NAME}</span>
         </div>
       </Link>

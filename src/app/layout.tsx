@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Noto_Sans_KR, Archivo } from 'next/font/google'
+import { Noto_Sans_KR, Jost } from 'next/font/google'
 import './globals.css'
 import { STUDIO_NAME } from '@/lib/brand'
 
@@ -9,7 +9,7 @@ const notoSansKr = Noto_Sans_KR({
   display: 'swap',
 })
 
-const archivo = Archivo({
+const jost = Jost({
   subsets: ['latin'],
   variable: '--font-display',
   display: 'swap',
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={`${notoSansKr.variable} ${archivo.variable}`}>
+    <html lang="ko" className={`${notoSansKr.variable} ${jost.variable}`}>
       <body>{children}</body>
     </html>
   )

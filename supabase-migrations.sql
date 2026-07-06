@@ -46,6 +46,7 @@ create table if not exists inquiries (
   contact        text not null,
   preferred_date date,
   budget         text,
+  reference_url  text,
   message        text not null,
   status         text not null default 'new',
   created_at     timestamptz not null default now()
@@ -60,3 +61,6 @@ create policy "inquiries_public_insert" on inquiries for insert with check (true
 
 drop policy if exists "inquiries_studio_read" on inquiries;
 create policy "inquiries_studio_read" on inquiries for select using (auth.role() = 'authenticated');
+
+-- 참고 자료 링크 (PDF/PPT는 드라이브·노션 링크로 공유; 기존 DB용)
+alter table inquiries add column if not exists reference_url text;

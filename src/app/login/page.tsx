@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { signIn } from '@/lib/actions/auth'
+import LogoSymbol from '@/components/brand/LogoSymbol'
 import { STUDIO_NAME } from '@/lib/brand'
 
 export default function LoginPage() {
@@ -38,10 +39,13 @@ export default function LoginPage() {
         maxWidth: 400,
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--tx)', marginBottom: 4 }}>
-            {STUDIO_NAME}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+            <LogoSymbol size={44} />
+          </div>
+          <h1 className="hm-wordmark hm-display" style={{ fontSize: 17, color: 'var(--tx)', marginBottom: 4 }}>
+            STUDIO. HOLYMOLLY
           </h1>
-          <p style={{ fontSize: 13, color: 'var(--mu)' }}>스튜디오 관리자 로그인</p>
+          <p style={{ fontSize: 13, color: 'var(--mu)' }}>{STUDIO_NAME} — 관리자 로그인</p>
         </div>
 
         <form onSubmit={handleSubmit}>
