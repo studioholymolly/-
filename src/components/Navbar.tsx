@@ -27,6 +27,13 @@ export default function Navbar({ unreadCount = 0 }: NavbarProps) {
       </Link>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+        <Link href="/?preview" style={{
+          color: 'var(--mu)', fontSize: 13, fontWeight: 600,
+          textDecoration: 'none',
+        }}>
+          사이트 보기 ↗
+        </Link>
+
         <Link href="/projects/new" style={{
           background: 'var(--vio)',
           color: '#fff', padding: '7px 14px',

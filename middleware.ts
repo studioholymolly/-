@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, searchParams } = request.nextUrl
 
   // If env vars not configured yet, just pass through
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -42,7 +42,11 @@ export async function middleware(request: NextRequest) {
 
     // Logged-in studio members land on the dashboard, as before the
     // public landing page existed: / and /login both go to /dashboard.
-    if (user && (pathname === '/' || pathname === '/login')) {
+    // /?preview 은 예외 — 대시보드의 '사이트 보기'가 랜딩을 열 때 사용.
+    if (
+      user &&
+      ((pathname === '/' && !searchParams.has('preview')) || pathname === '/login')
+    ) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
