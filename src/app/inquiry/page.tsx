@@ -15,7 +15,7 @@ export default function InquiryPage() {
         <div className="hm-container hm-nav-inner">
           <Link href="/" className="hm-logo">
             <span className="ko">{STUDIO_NAME}</span>
-            <span className="en hm-display">HOLYMOLLY!</span>
+            <span className="en hm-display">HOLYMOLLY</span>
           </Link>
           <div className="hm-nav-links">
             <Link href="/">← 홈으로</Link>
@@ -25,13 +25,14 @@ export default function InquiryPage() {
 
       <main className="hm-form-wrap">
         <div className="hm-form-head">
+          <span className="hm-label-xs">Contact</span>
           <div className="en hm-display">
             SAY HOLY MOLY<span className="hm-bang">!</span>
           </div>
           <p>
-            아래 몇 가지만 알려주시면, <strong>24시간 안에</strong> 답장드릴게요.
+            아래 몇 가지만 알려주시면, <strong>24시간 안에</strong> 답장드립니다.
             <br />
-            필수 항목은 딱 네 개예요.
+            필수 항목은 네 개뿐입니다.
           </p>
         </div>
         <InquiryForm />

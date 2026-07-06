@@ -38,7 +38,6 @@ export default function LoginPage() {
         maxWidth: 400,
       }}>
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
           <h1 style={{ fontSize: 20, fontWeight: 800, color: 'var(--tx)', marginBottom: 4 }}>
             {STUDIO_NAME}
           </h1>
@@ -90,7 +89,7 @@ export default function LoginPage() {
             disabled={loading}
             style={{
               width: '100%', padding: '12px',
-              background: loading ? '#5b21b6' : 'linear-gradient(135deg, #6d28d9, #7c3aed)',
+              background: loading ? '#444' : '#111',
               border: 'none', borderRadius: 8,
               color: '#fff', fontSize: 14, fontWeight: 700,
               cursor: loading ? 'not-allowed' : 'pointer',

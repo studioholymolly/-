@@ -7,13 +7,7 @@ import { STUDIO_SHORT_NAME } from '@/lib/brand'
 
 const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 
-const SHOOT_TYPES = [
-  { value: '프로필·증명', icon: '📸', label: '프로필·증명' },
-  { value: '브랜드·룩북', icon: '🧥', label: '브랜드·룩북' },
-  { value: '제품', icon: '🫙', label: '제품' },
-  { value: '스냅·행사', icon: '🎉', label: '스냅·행사' },
-  { value: '기타', icon: '💬', label: '기타' },
-]
+const SHOOT_TYPES = ['프로필·증명', '브랜드·룩북', '제품', '스냅·행사', '기타']
 
 const BUDGETS = ['아직 미정', '~30만 원', '30~70만 원', '70~150만 원', '150만 원 이상']
 
@@ -45,20 +39,26 @@ export default function InquiryForm() {
   if (done) {
     return (
       <div className="hm-success">
-        <div className="mark">🎉</div>
-        <h2>홀리몰리! 문의가 접수됐어요</h2>
-        <p>
-          보내주신 내용은 {STUDIO_SHORT_NAME}가 직접 확인해요.
+        <h2 className="mark">
+          감사합니다.
           <br />
-          <strong>24시간 안에</strong> 남겨주신 연락처로 답장드릴게요.
+          문의가 접수되었습니다.
+        </h2>
+        <p>
+          보내주신 내용은 {STUDIO_SHORT_NAME}가 직접 확인하고,
+          <br />
+          <strong>24시간 안에</strong> 남겨주신 연락처로 답장드립니다.
         </p>
         <ul className="hm-next-steps">
-          <li><span className="n">1</span>문의 내용 확인</li>
-          <li><span className="n">2</span>24시간 내 답장 &amp; 상담</li>
-          <li><span className="n">3</span>일정 조율 후 촬영 확정</li>
+          <li><span className="n hm-display">01</span>문의 내용 확인</li>
+          <li><span className="n hm-display">02</span>24시간 내 답장 &amp; 상담</li>
+          <li><span className="n hm-display">03</span>일정 조율 후 촬영 확정</li>
         </ul>
         <p style={{ fontSize: 13 }}>
-          급하신가요? <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--hm-vio)', fontWeight: 700 }}>{CONTACT_EMAIL}</a>
+          급하신가요?{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: 'var(--hm-ink)', fontWeight: 700, textDecoration: 'underline' }}>
+            {CONTACT_EMAIL}
+          </a>
         </p>
         <Link href="/" className="hm-btn hm-btn-ghost" style={{ marginTop: 8 }}>
           ← 홈으로
@@ -74,18 +74,17 @@ export default function InquiryForm() {
         <div className="hm-intent-grid" role="radiogroup" aria-label="촬영 종류">
           {SHOOT_TYPES.map(t => (
             <label
-              key={t.value}
-              className={`hm-intent${shootType === t.value ? ' is-selected' : ''}`}
+              key={t}
+              className={`hm-intent${shootType === t ? ' is-selected' : ''}`}
             >
               <input
                 type="radio"
                 name="shoot_type_radio"
-                value={t.value}
-                checked={shootType === t.value}
-                onChange={() => setShootType(t.value)}
+                value={t}
+                checked={shootType === t}
+                onChange={() => setShootType(t)}
               />
-              <div className="ic" aria-hidden="true">{t.icon}</div>
-              <div className="t">{t.label}</div>
+              <div className="t">{t}</div>
             </label>
           ))}
         </div>
@@ -129,12 +128,14 @@ export default function InquiryForm() {
         <label className="hm-label" htmlFor="inq-budget">
           예산 범위 <span className="opt">(선택)</span>
         </label>
-        <select id="inq-budget" name="budget" className="hm-select" defaultValue="">
-          <option value="">선택 안 함</option>
-          {BUDGETS.map(b => (
-            <option key={b} value={b}>{b}</option>
-          ))}
-        </select>
+        <div className="hm-select-wrap">
+          <select id="inq-budget" name="budget" className="hm-select" defaultValue="">
+            <option value="">선택 안 함</option>
+            {BUDGETS.map(b => (
+              <option key={b} value={b}>{b}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="hm-field">
