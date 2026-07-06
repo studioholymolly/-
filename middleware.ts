@@ -40,8 +40,9 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/login', request.url))
     }
 
-    // Redirect logged-in user away from login page
-    if (user && pathname === '/login') {
+    // Logged-in studio members land on the dashboard, as before the
+    // public landing page existed: / and /login both go to /dashboard.
+    if (user && (pathname === '/' || pathname === '/login')) {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
