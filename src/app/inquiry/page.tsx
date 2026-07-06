@@ -1,0 +1,41 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import InquiryForm from '@/components/inquiry/InquiryForm'
+import { STUDIO_NAME } from '@/lib/brand'
+
+export const metadata: Metadata = {
+  title: '촬영 문의',
+  description: '스튜디오 홀리몰리 촬영 문의 — 몇 가지만 알려주시면 24시간 안에 답장드려요.',
+}
+
+export default function InquiryPage() {
+  return (
+    <div className="hm-page">
+      <nav className="hm-nav">
+        <div className="hm-container hm-nav-inner">
+          <Link href="/" className="hm-logo">
+            <span className="ko">{STUDIO_NAME}</span>
+            <span className="en hm-display">HOLYMOLLY!</span>
+          </Link>
+          <div className="hm-nav-links">
+            <Link href="/">← 홈으로</Link>
+          </div>
+        </div>
+      </nav>
+
+      <main className="hm-form-wrap">
+        <div className="hm-form-head">
+          <div className="en hm-display">
+            SAY HOLY MOLY<span className="hm-bang">!</span>
+          </div>
+          <p>
+            아래 몇 가지만 알려주시면, <strong>24시간 안에</strong> 답장드릴게요.
+            <br />
+            필수 항목은 딱 네 개예요.
+          </p>
+        </div>
+        <InquiryForm />
+      </main>
+    </div>
+  )
+}
