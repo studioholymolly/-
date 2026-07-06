@@ -29,9 +29,9 @@ export default function InquiryPage() {
           <span className="hm-label-xs">Contact</span>
           <div className="en hm-display">New Project</div>
           <p>
-            아래 몇 가지만 알려주시면, <strong>24시간 안에</strong> 답장드립니다.
+            한 화면에 하나씩, 금방 끝나요.
             <br />
-            필수 항목은 네 개뿐입니다.
+            보내주시면 <strong>24시간 안에</strong> 답장드립니다.
           </p>
         </div>
         <InquiryForm />

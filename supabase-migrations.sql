@@ -42,9 +42,11 @@ alter table projects add column if not exists access_code text;
 create table if not exists inquiries (
   id             uuid primary key default gen_random_uuid(),
   shoot_type     text not null,
+  project_name   text,
   name           text not null,
   contact        text not null,
   preferred_date date,
+  delivery_date  date,
   budget         text,
   reference_url  text,
   message        text not null,
@@ -64,3 +66,7 @@ create policy "inquiries_studio_read" on inquiries for select using (auth.role()
 
 -- 참고 자료 링크 (PDF/PPT는 드라이브·노션 링크로 공유; 기존 DB용)
 alter table inquiries add column if not exists reference_url text;
+
+-- 노션 '새 촬영 문의(빠른 입력)' 폼과 항목 일치: 프로젝트명·납품 희망일 (기존 DB용)
+alter table inquiries add column if not exists project_name text;
+alter table inquiries add column if not exists delivery_date date;
