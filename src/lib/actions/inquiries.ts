@@ -12,15 +12,20 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
   if (formData.get('website')) return { ok: true }
 
   const shoot_type = (formData.get('shoot_type') as string) || ''
+  const project_name = ((formData.get('project_name') as string) || '').trim()
   const name = ((formData.get('name') as string) || '').trim()
   const contact = ((formData.get('contact') as string) || '').trim()
   const preferred_date = (formData.get('preferred_date') as string) || null
+  const delivery_date = (formData.get('delivery_date') as string) || null
   const budget = (formData.get('budget') as string) || null
   const reference_url = ((formData.get('reference_url') as string) || '').trim()
   const message = ((formData.get('message') as string) || '').trim()
 
   if (!SHOOT_TYPES.includes(shoot_type as (typeof SHOOT_TYPES)[number])) {
     return { error: '작업 종류를 선택해 주세요.' }
+  }
+  if (!project_name || project_name.length > 200) {
+    return { error: '프로젝트명(브랜드명)을 확인해 주세요.' }
   }
   if (!name || name.length > 100) {
     return { error: '성함을 확인해 주세요.' }
@@ -42,9 +47,11 @@ export async function submitInquiry(formData: FormData): Promise<InquiryResult> 
     const supabase = await createClient()
     const { error } = await supabase.from('inquiries').insert({
       shoot_type,
+      project_name,
       name,
       contact,
       preferred_date: preferred_date || null,
+      delivery_date: delivery_date || null,
       budget: budget || null,
       reference_url: reference_url || null,
       message,
