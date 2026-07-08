@@ -431,6 +431,49 @@ body {
 }
 .hm-js .hm-reveal.is-visible { opacity: 1; transform: none; }
 
+/* ---- about (company profile) ---- */
+.hm-about-hero { padding: clamp(72px, 12vh, 140px) 0 clamp(48px, 8vh, 90px); }
+.hm-about-hero .hm-label-xs { display: block; margin-bottom: 36px; }
+.hm-about-hero h1 {
+  font-size: clamp(34px, 7.5vw, 120px);
+  line-height: 1.02;
+  margin: 0 0 clamp(28px, 5vh, 48px);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.hm-lede {
+  font-size: clamp(19px, 2.6vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.55;
+  max-width: 26em;
+  margin: 0 0 28px;
+}
+.hm-lede-sub {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--hm-gray);
+  max-width: 560px;
+  margin: 0;
+}
+.hm-facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--hm-ink);
+  border-left: 1px solid var(--hm-line);
+}
+@media (max-width: 900px) { .hm-facts { grid-template-columns: repeat(2, 1fr); } }
+.hm-fact {
+  border-right: 1px solid var(--hm-line);
+  border-bottom: 1px solid var(--hm-line);
+  padding: 26px 24px 34px;
+}
+.hm-fact .hm-label-xs { display: block; margin-bottom: 16px; }
+.hm-fact .v { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.6; }
+.hm-fact .s { font-size: 12.5px; color: var(--hm-gray); line-height: 1.7; margin-top: 6px; }
+.hm-fact a { color: inherit; text-decoration: none; }
+.hm-fact a:hover { opacity: 0.5; }
+
 /* ---- inquiry form: editorial page, underline inputs ---- */
 .hm-form-wrap { max-width: 640px; margin: 0 auto; padding: clamp(64px, 10vh, 110px) 24px 140px; }
 .hm-form-head { margin-bottom: 64px; }
