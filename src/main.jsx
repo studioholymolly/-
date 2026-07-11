@@ -6746,7 +6746,8 @@ function OE() {
     e = Me(),
     n = Fa(),
     [s, r] = E.useState("deals"),
-    [i, o] = E.useState(!1);
+    [i, o] = E.useState(!1),
+    [de, setDe] = E.useState(null); // 편집 중인 거래 행
   return a.jsxs(a.Fragment, {
     children: [
       a.jsxs("div", {
@@ -6828,11 +6829,12 @@ function OE() {
               }),
         ],
       }),
-      s === "deals" && a.jsx(vg, { deals: e.deals }),
+      s === "deals" && a.jsx(vg, { deals: e.deals, onEdit: setDe }),
       s === "recv" &&
         a.jsx(vg, {
           deals: e.deals.filter((l) => l.balance > 0),
           recvOnly: !0,
+          onEdit: setDe,
         }),
       s === "expenses" && a.jsx(IE, { s: e, m: n }),
       i === "deal" &&
@@ -6840,6 +6842,15 @@ function OE() {
           onClose: () => o(!1),
           onSave: (l) => {
             (xn("deals", l, t.id), o(!1));
+          },
+        }),
+      de &&
+        a.jsx($E, {
+          initial: de,
+          title: "거래 수정 (금액 · 관리자 전용)",
+          onClose: () => setDe(null),
+          onSave: (l) => {
+            (nn("deals", de.id, l), setDe(null));
           },
         }),
       i === "exp" &&
@@ -6881,7 +6892,7 @@ function Wo({ cls: t, label: e, v: n, sub: s, trend: r, strong: i }) {
     ],
   });
 }
-function vg({ deals: t, recvOnly: e }) {
+function vg({ deals: t, recvOnly: e, onEdit: oe }) {
   return a.jsx("div", {
     className: "tbl-wrap",
     children: a.jsxs("table", {
@@ -6963,11 +6974,27 @@ function vg({ deals: t, recvOnly: e }) {
                       }),
                     }),
                     a.jsx("td", {
-                      children: a.jsx("button", {
-                        className: "btn ghost sm",
-                        onClick: () => ei("deals", n.id),
-                        style: { color: "var(--ink-3)" },
-                        children: "✕",
+                      children: a.jsxs("div", {
+                        style: { display: "flex", gap: 2 },
+                        children: [
+                          oe &&
+                            a.jsx("button", {
+                              className: "btn ghost sm",
+                              onClick: () => oe(n),
+                              title: "수정",
+                              children: "✎",
+                            }),
+                          a.jsx("button", {
+                            className: "btn ghost sm",
+                            onClick: () =>
+                              window.confirm(
+                                `'${n.project}' 거래를 삭제할까요?`,
+                              ) && ei("deals", n.id),
+                            style: { color: "var(--ink-3)" },
+                            title: "삭제",
+                            children: "✕",
+                          }),
+                        ],
                       }),
                     }),
                   ],
@@ -7200,22 +7227,36 @@ function qo({ label: t, v: e, bold: n }) {
     ],
   });
 }
-function $E({ onClose: t, onSave: e }) {
-  const [n, s] = E.useState({
-      project: "",
-      client: "",
-      amount: 0,
-      outsource: 0,
-      deposit: 0,
-      balance: 0,
-      taxInvoice: !1,
-      status: "계약금대기",
-      month: new Date().toISOString().slice(0, 7),
-    }),
+function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
+  const [n, s] = E.useState(
+      dj
+        ? {
+            project: dj.project || "",
+            client: dj.client || "",
+            amount: dj.amount || 0,
+            outsource: dj.outsource || 0,
+            deposit: dj.deposit || 0,
+            balance: dj.balance || 0,
+            taxInvoice: !!dj.taxInvoice,
+            status: dj.status || "계약금대기",
+            month: dj.month || new Date().toISOString().slice(0, 7),
+          }
+        : {
+            project: "",
+            client: "",
+            amount: 0,
+            outsource: 0,
+            deposit: 0,
+            balance: 0,
+            taxInvoice: !1,
+            status: "계약금대기",
+            month: new Date().toISOString().slice(0, 7),
+          },
+    ),
     r = (i, o) => (l) =>
       s({ ...n, [i]: o ? Number(l.target.value || 0) : l.target.value });
   return a.jsxs(bn, {
-    title: "새 거래 (금액 · 관리자 전용)",
+    title: dt || "새 거래 (금액 · 관리자 전용)",
     onClose: t,
     footer: a.jsxs(a.Fragment, {
       children: [
@@ -7223,7 +7264,7 @@ function $E({ onClose: t, onSave: e }) {
         a.jsx("button", {
           className: "btn primary sm",
           onClick: () => n.project && e(n),
-          children: "추가",
+          children: dj ? "저장" : "추가",
         }),
       ],
     }),
@@ -7310,6 +7351,18 @@ function $E({ onClose: t, onSave: e }) {
                 onChange: r("balance", !0),
               }),
             ],
+          }),
+        ],
+      }),
+      a.jsxs("div", {
+        children: [
+          a.jsx("label", { className: "fl", children: "상태" }),
+          a.jsx("select", {
+            value: n.status,
+            onChange: r("status"),
+            children: [
+              ...new Set(["계약금대기", "잔금대기", "정산완료", n.status]),
+            ].map((i) => a.jsx("option", { children: i }, i)),
           }),
         ],
       }),
