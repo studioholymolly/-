@@ -12208,6 +12208,50 @@ function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r, initial: 
 // 고객사 분류 — 노션 고객사 DB의 파이프라인과 동일 (문의→거래중→거래완료)
 const CLIENT_KINDS = ["문의", "거래중", "거래완료", "휴면"];
 const CLIENT_SOURCES = ["인스타그램", "소개", "검색", "재의뢰", "기타"];
+// ── 노션 👥 고객사 DB 1회 이관 (2026-07-11) ──
+// 관리자 첫 접속 시 자동 실행. 완료 후 config 플래그로 재실행을 막고,
+// 같은 이름의 고객사가 이미 있으면 건너뜁니다.
+const NOTION_CLIENT_SEED = [
+  { name: "시아리", kind: "거래중" },
+  { name: "잇츠스킨", kind: "거래중" },
+  { name: "아이리버", kind: "거래중", contact: "김유나", phone: "010-3375-0508", email: "olivia@astellnkern.com" },
+  { name: "코니바이에린", kind: "거래중", contact: "김지수, 김은수", phone: "010-4942-5539", email: "zysoo@konnybaby.com" },
+  { name: "동원에프앤비", kind: "거래중", contact: "윤지은", phone: "010-2173-3995", email: "zenny1114@dongwon.com" },
+  { name: "페이지로그", kind: "거래중", contact: "최장호", phone: "010-9059-7035", email: "phaselog@soonuniverse.com" },
+  { name: "제떼", kind: "거래중", contact: "백지승", phone: "010-5553-7297", email: "simeon@zette.co.kr" },
+  { name: "모뉴", kind: "거래중", contact: "송희경", phone: "010-7612-0563", email: "shk@wavewayinc.com" },
+  { name: "바나날", kind: "거래중", contact: "김남경", email: "nkkim0102@mediquitous.com" },
+  { name: "커브드", kind: "거래중", contact: "양채빈", phone: "010-9551-7395", email: "cb.yang@kurved.kr" },
+  { name: "TWW", kind: "거래중", contact: "이다능, 김은화" },
+];
+function importNotionClients(uid) {
+  if (!uid || ae().notionClientsImported) return;
+  const seen = new Set(I.clients.map((c) => (c.name || "").trim()));
+  const rows = NOTION_CLIENT_SEED.filter((c) => c.name && !seen.has(c.name));
+  rows.forEach((c) => {
+    const s = {
+      id: G(),
+      createdBy: uid,
+      contact: "",
+      phone: "",
+      email: "",
+      category: "",
+      source: "기타",
+      instagram: "",
+      kakao: "",
+      bizno: "",
+      taxEmail: "",
+      note: "",
+      shoots: 0,
+      lastAt: X(),
+      ...c,
+    };
+    ((I = { ...I, clients: [...I.clients, s] }), Zr("clients", s));
+  });
+  (qe(),
+    rows.length && pt(uid, `노션 고객사 DB 이관: ${rows.length}곳`),
+    Lt({ notionClientsImported: !0 }));
+}
 function uT() {
   return a.jsx(jf, {
     title: "고객사 DB",
@@ -12434,6 +12478,10 @@ function gT() {
     [i, o] = E.useState("home"),
     [l, c] = E.useState(!1),
     [u, h] = E.useState(!1);
+  // 노션 고객사 DB 1회 이관 — 데이터 로드 후 관리자 세션에서 실행
+  E.useEffect(() => {
+    r.loaded && n && t && importNotionClients(t.id);
+  }, [r.loaded, n, t]);
   if (
     (E.useEffect(() => {
       function N(C) {
