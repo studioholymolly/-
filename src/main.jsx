@@ -6982,7 +6982,10 @@ function OE() {
             children: [
               ["deals", "거래·정산"],
               ["recv", "미수금"],
-              ["expenses", "지출·손익"],
+              ["고정 지출", "고정 지출"],
+              ["변동 지출", "변동 지출"],
+              ["외주비", "외주비"],
+              ["외주 3.3비", "외주 3.3비"],
             ].map(([l, c]) =>
               a.jsx(
                 "button",
@@ -7012,7 +7015,7 @@ function OE() {
             ],
           }),
           a.jsx("span", { className: "sp" }),
-          s !== "expenses"
+          !EXP_CATS.includes(s)
             ? a.jsx("button", {
                 className: "btn primary sm",
                 onClick: () => o("deal"),
@@ -7032,8 +7035,8 @@ function OE() {
           recvOnly: !0,
           onEdit: setDe,
         }),
-      s === "expenses" &&
-        a.jsx(IE, { s: { expenses: scopedExp }, m: n, user: t.id }),
+      EXP_CATS.includes(s) &&
+        a.jsx(IE, { s: { expenses: scopedExp }, m: n, user: t.id, cat: s }),
       i === "deal" &&
         a.jsx($E, {
           onClose: () => o(!1),
@@ -7052,6 +7055,8 @@ function OE() {
         }),
       i === "exp" &&
         a.jsx(DE, {
+          initialCat: EXP_CATS.includes(s) ? s : "고정 지출",
+          initialMonth: mo === "전체" ? X().slice(0, 7) : mo,
           onClose: () => o(!1),
           onSave: (l) => {
             (xn("expenses", l, t.id), o(!1));
@@ -7258,18 +7263,28 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
     }),
   });
 }
-function IE({ s: t, m: e, user: xu }) {
+// ── 지출 구분 4종 (기존 데이터의 고정비/변동비 표기와 자동 호환) ──
+const EXP_CATS = ["고정 지출", "변동 지출", "외주비", "외주 3.3비"];
+const EXP_ALIAS = {
+  "고정 지출": ["고정 지출", "고정비"],
+  "변동 지출": ["변동 지출", "변동비"],
+  외주비: ["외주비"],
+  "외주 3.3비": ["외주 3.3비", "외주 3.3%"],
+};
+function expCatCanon(cat) {
+  for (const k of EXP_CATS) if (EXP_ALIAS[k].includes(cat)) return k;
+  return cat || "변동 지출";
+}
+function expCatRows(rows, canon) {
+  return rows.filter((n) => (EXP_ALIAS[canon] || [canon]).includes(n.cat));
+}
+function IE({ s: t, m: e, user: xu, cat: xcat }) {
   // 지출 항목 인라인 편집 — ✎ 로 행을 열고, 저장 시 nn()으로 동기화
   const [xEdit, setXEdit] = E.useState(null); // 편집 중인 행 id
   const [xDraft, setXDraft] = E.useState({});
-  // 고정비/변동비 분리 탭 + 소계
-  const [xCat, setXCat] = E.useState("전체");
-  const xRows =
-    xCat === "전체" ? t.expenses : t.expenses.filter((n) => n.cat === xCat);
-  const xSum = (cat) =>
-    t.expenses
-      .filter((n) => n.cat === cat)
-      .reduce((l, c) => l + (c.amount || 0), 0);
+  const xRows = expCatRows(t.expenses, xcat);
+  const xSum = (canon) =>
+    expCatRows(t.expenses, canon).reduce((l, c) => l + (c.amount || 0), 0);
   // 지난달 고정비 반복 등록: 이번 달에 같은 이름이 없을 때만 복사
   const xThisMonth = X().slice(0, 7);
   const xPrevMonth = (() => {
@@ -7277,8 +7292,8 @@ function IE({ s: t, m: e, user: xu }) {
     return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
   })();
   // 복사 로직은 월 필터와 무관하게 전체 지출(I.expenses)을 기준으로 판단
-  const xPrevFixed = I.expenses.filter(
-    (n) => n.cat === "고정비" && n.month === xPrevMonth,
+  const xPrevFixed = expCatRows(I.expenses, "고정 지출").filter(
+    (n) => n.month === xPrevMonth,
   );
   const xCopyFixed = () => {
     const cur = new Set(
@@ -7297,18 +7312,23 @@ function IE({ s: t, m: e, user: xu }) {
           id: G(),
           createdBy: xu,
           name: n.name,
-          cat: "고정비",
+          cat: "고정 지출",
           month: xThisMonth,
           amount: n.amount,
         };
         ((I = { ...I, expenses: [s2, ...I.expenses] }), Zr("expenses", s2));
       }),
       qe(),
-      pt(xu, `고정비 반복 등록: ${rows.length}건 (${xThisMonth})`));
+      pt(xu, `고정 지출 반복 등록: ${rows.length}건 (${xThisMonth})`));
   };
   const xStart = (n) => {
     setXEdit(n.id);
-    setXDraft({ name: n.name, cat: n.cat, month: n.month, amount: n.amount });
+    setXDraft({
+      name: n.name,
+      cat: expCatCanon(n.cat),
+      month: n.month,
+      amount: n.amount,
+    });
   };
   const xSave = () => {
     xDraft.name &&
@@ -7329,32 +7349,22 @@ function IE({ s: t, m: e, user: xu }) {
           flexWrap: "wrap",
         },
         children: [
-          ["전체", "고정비", "변동비"].map((n) =>
-            a.jsxs(
-              "button",
-              {
-                className: "btn sm" + (xCat === n ? " primary" : ""),
-                onClick: () => setXCat(n),
-                children: [
-                  n,
-                  n !== "전체" &&
-                    a.jsx("span", {
-                      className: "num",
-                      style: { fontSize: 11, opacity: 0.75 },
-                      children: "₩" + ve(xSum(n)),
-                    }),
-                ],
-              },
-              n,
-            ),
-          ),
-          a.jsx("span", { className: "sp" }),
-          a.jsx("button", {
-            className: "btn sm",
-            onClick: xCopyFixed,
-            title: `지난달(${xPrevMonth}) 고정비를 이번 달로 복사`,
-            children: "↻ 지난달 고정비 불러오기",
+          a.jsxs("span", {
+            className: "pill mid",
+            children: [
+              xcat,
+              " 합계 ",
+              a.jsx("span", { className: "num", children: "₩" + ve(xSum(xcat)) }),
+            ],
           }),
+          a.jsx("span", { className: "sp" }),
+          xcat === "고정 지출" &&
+            a.jsx("button", {
+              className: "btn sm",
+              onClick: xCopyFixed,
+              title: `지난달(${xPrevMonth}) 고정 지출을 이번 달로 복사`,
+              children: "↻ 지난달 고정 지출 불러오기",
+            }),
         ],
       }),
       a.jsx("div", {
@@ -7395,15 +7405,14 @@ function IE({ s: t, m: e, user: xu }) {
                             }),
                           }),
                           a.jsx("td", {
-                            children: a.jsxs("select", {
+                            children: a.jsx("select", {
                               value: xDraft.cat,
                               onChange: (s) =>
                                 setXDraft({ ...xDraft, cat: s.target.value }),
-                              style: { width: 90 },
-                              children: [
-                                a.jsx("option", { children: "고정비" }),
-                                a.jsx("option", { children: "변동비" }),
-                              ],
+                              style: { width: 110 },
+                              children: EXP_CATS.map((s) =>
+                                a.jsx("option", { children: s }, s),
+                              ),
                             }),
                           }),
                           a.jsx("td", {
@@ -7464,8 +7473,11 @@ function IE({ s: t, m: e, user: xu }) {
                           a.jsx("td", {
                             children: a.jsx("span", {
                               className:
-                                "pill " + (n.cat === "고정비" ? "line" : "mid"),
-                              children: n.cat,
+                                "pill " +
+                                (expCatCanon(n.cat) === "고정 지출"
+                                  ? "line"
+                                  : "mid"),
+                              children: expCatCanon(n.cat),
                             }),
                           }),
                           a.jsx("td", { className: "mut", children: n.month }),
@@ -7517,9 +7529,11 @@ function IE({ s: t, m: e, user: xu }) {
             ],
           }),
           a.jsx(qo, { label: "매출 (입금)", v: e.revenue }),
-          a.jsx(qo, { label: "− 외주비", v: -e.outsource }),
-          a.jsx(qo, { label: "− 고정비", v: -xSum("고정비") }),
-          a.jsx(qo, { label: "− 변동비", v: -xSum("변동비") }),
+          a.jsx(qo, { label: "− 외주송금 (거래)", v: -e.outsource }),
+          a.jsx(qo, { label: "− 고정 지출", v: -xSum("고정 지출") }),
+          a.jsx(qo, { label: "− 변동 지출", v: -xSum("변동 지출") }),
+          a.jsx(qo, { label: "− 외주비", v: -xSum("외주비") }),
+          a.jsx(qo, { label: "− 외주 3.3비", v: -xSum("외주 3.3비") }),
           a.jsx("div", {
             style: { borderTop: "1px solid var(--line)", margin: "8px 0" },
           }),
@@ -7531,7 +7545,7 @@ function IE({ s: t, m: e, user: xu }) {
               children: ["마진율 ", Math.round((e.net / e.revenue) * 100), "%"],
             }),
           // 고정비 커버율: (매출−외주−변동비) ÷ 고정비 — 100% 이상이면 고정비를 덮음
-          xSum("고정비") > 0 &&
+          xSum("고정 지출") > 0 &&
             a.jsxs("div", {
               className: "mut",
               style: { fontSize: 12, marginTop: 2, textAlign: "right" },
@@ -7540,8 +7554,12 @@ function IE({ s: t, m: e, user: xu }) {
                 Math.max(
                   0,
                   Math.round(
-                    ((e.revenue - e.outsource - xSum("변동비")) /
-                      xSum("고정비")) *
+                    ((e.revenue -
+                      e.outsource -
+                      xSum("변동 지출") -
+                      xSum("외주비") -
+                      xSum("외주 3.3비")) /
+                      xSum("고정 지출")) *
                       100,
                   ),
                 ),
@@ -7794,12 +7812,12 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
     ],
   });
 }
-function DE({ onClose: t, onSave: e }) {
+function DE({ onClose: t, onSave: e, initialCat: dc, initialMonth: dm }) {
   const [n, s] = E.useState({
       name: "",
-      cat: "고정비",
+      cat: dc || "고정 지출",
       amount: 0,
-      month: "2026-07",
+      month: dm || X().slice(0, 7),
     }),
     r = (i, o) => (l) =>
       s({ ...n, [i]: o ? Number(l.target.value || 0) : l.target.value });
@@ -7838,8 +7856,7 @@ function DE({ onClose: t, onSave: e }) {
                 value: n.cat,
                 onChange: r("cat"),
                 children: [
-                  a.jsx("option", { children: "고정비" }),
-                  a.jsx("option", { children: "변동비" }),
+                  EXP_CATS.map((i) => a.jsx("option", { children: i }, i)),
                 ],
               }),
             ],
