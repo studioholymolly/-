@@ -1461,12 +1461,18 @@ function Fa() {
     n = t.deals.reduce((l, c) => l + (c.balance || 0), 0),
     s = t.deals.reduce((l, c) => l + (c.outsource || 0), 0),
     r = t.expenses.reduce((l, c) => l + (c.amount || 0), 0),
-    i = e - s - r,
+    // 지출로 자동 연동된 거래의 외주송금은 지출에서만 차감 (이중 차감 방지)
+    d = new Set(t.expenses.filter((x) => x.dealId).map((x) => x.dealId)),
+    u = t.deals
+      .filter((x) => !d.has(x.id))
+      .reduce((l, c) => l + (c.outsource || 0), 0),
+    i = e - u - r,
     o = t.deals.filter((l) => l.deposit > 0 && !l.taxInvoice).length;
   return {
     revenue: e,
     receivable: n,
     outsource: s,
+    outUnsynced: u,
     expense: r,
     net: i,
     noTax: o,
@@ -6754,14 +6760,43 @@ function moMetrics(deals, expenses) {
     rc = deals.reduce((l, c) => l + (c.balance || 0), 0),
     os = deals.reduce((l, c) => l + (c.outsource || 0), 0),
     ex = expenses.reduce((l, c) => l + (c.amount || 0), 0);
+  // 거래의 외주송금이 지출 행으로 자동 연동된 건은 지출 쪽에서만 차감
+  // (이중 차감 방지). 연동 안 된 옛 거래의 외주송금만 따로 뺀다.
+  const synced = new Set(
+    I.expenses.filter((x) => x.dealId).map((x) => x.dealId),
+  );
+  const osUn = deals
+    .filter((d) => !synced.has(d.id))
+    .reduce((l, c) => l + (c.outsource || 0), 0);
   return {
     revenue: rv,
     receivable: rc,
     outsource: os,
+    outUnsynced: osUn,
     expense: ex,
-    net: rv - os - ex,
+    net: rv - osUn - ex,
     noTax: deals.filter((l) => l.deposit > 0 && !l.taxInvoice).length,
   };
+}
+// 거래의 외주송금 ↔ 지출(외주비/외주 3.3비) 자동 동기화
+function syncDealOutsource(d, uid) {
+  const ex = I.expenses.find((x) => x.dealId === d.id);
+  const cat = d.outSettle === "외주비" ? "외주비" : "외주 3.3비";
+  if ((d.outsource || 0) > 0) {
+    const base = {
+      name: `외주송금 · ${d.project}`,
+      cat,
+      month: d.month || X().slice(0, 7),
+      amount: d.outsource,
+      dealId: d.id,
+      auto: !0,
+    };
+    if (ex) nn("expenses", ex.id, base);
+    else {
+      const s = { id: G(), createdBy: uid, ...base };
+      ((I = { ...I, expenses: [s, ...I.expenses] }), Zr("expenses", s), qe());
+    }
+  } else if (ex) ei("expenses", ex.id);
 }
 // ── 월별 추이 차트: 입금(막대) · 순이익(선) — 최근 12개월, 계절성 파악용 ──
 function MonthlyTrend({ deals, expenses }) {
@@ -7041,7 +7076,9 @@ function OE() {
         a.jsx($E, {
           onClose: () => o(!1),
           onSave: (l) => {
-            (xn("deals", l, t.id), o(!1));
+            (xn("deals", l, t.id),
+              syncDealOutsource(I.deals[0], t.id),
+              o(!1));
           },
         }),
       de &&
@@ -7050,7 +7087,9 @@ function OE() {
           title: "거래 수정 (금액 · 관리자 전용)",
           onClose: () => setDe(null),
           onSave: (l) => {
-            (nn("deals", de.id, l), setDe(null));
+            (nn("deals", de.id, l),
+              syncDealOutsource({ ...de, ...l, id: de.id }, t.id),
+              setDe(null));
           },
         }),
       i === "exp" &&
@@ -7229,10 +7268,19 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
                             }),
                           a.jsx("button", {
                             className: "btn ghost sm",
-                            onClick: () =>
-                              window.confirm(
-                                `'${n.project}' 거래를 삭제할까요?`,
-                              ) && ei("deals", n.id),
+                            onClick: () => {
+                              if (
+                                !window.confirm(
+                                  `'${n.project}' 거래를 삭제할까요?`,
+                                )
+                              )
+                                return;
+                              // 자동 연동된 외주 지출 행도 함께 삭제
+                              const ax = I.expenses.find(
+                                (x) => x.dealId === n.id,
+                              );
+                              (ax && ei("expenses", ax.id), ei("deals", n.id));
+                            },
                             style: { color: "var(--ink-3)" },
                             title: "삭제",
                             children: "✕",
@@ -7466,9 +7514,19 @@ function IE({ s: t, m: e, user: xu, cat: xcat }) {
                       "tr",
                       {
                         children: [
-                          a.jsx("td", {
+                          a.jsxs("td", {
                             style: { fontWeight: 650 },
-                            children: n.name,
+                            children: [
+                              n.name,
+                              n.auto &&
+                                a.jsx("span", {
+                                  className: "tag mid",
+                                  style: { marginLeft: 7 },
+                                  title:
+                                    "거래의 외주송금에서 자동 생성 — 거래를 수정하면 함께 갱신됩니다",
+                                  children: "자동",
+                                }),
+                            ],
                           }),
                           a.jsx("td", {
                             children: a.jsx("span", {
@@ -7529,7 +7587,11 @@ function IE({ s: t, m: e, user: xu, cat: xcat }) {
             ],
           }),
           a.jsx(qo, { label: "매출 (입금)", v: e.revenue }),
-          a.jsx(qo, { label: "− 외주송금 (거래)", v: -e.outsource }),
+          e.outUnsynced > 0 &&
+            a.jsx(qo, {
+              label: "− 외주송금 (지출 미연동 거래)",
+              v: -e.outUnsynced,
+            }),
           a.jsx(qo, { label: "− 고정 지출", v: -xSum("고정 지출") }),
           a.jsx(qo, { label: "− 변동 지출", v: -xSum("변동 지출") }),
           a.jsx(qo, { label: "− 외주비", v: -xSum("외주비") }),
@@ -7555,7 +7617,7 @@ function IE({ s: t, m: e, user: xu, cat: xcat }) {
                   0,
                   Math.round(
                     ((e.revenue -
-                      e.outsource -
+                      e.outUnsynced -
                       xSum("변동 지출") -
                       xSum("외주비") -
                       xSum("외주 3.3비")) /
@@ -7568,7 +7630,7 @@ function IE({ s: t, m: e, user: xu, cat: xcat }) {
             }),
           // 손익분기: 외주비+지출을 넘는 입금이 들어와야 흑자
           (() => {
-            const bep = e.outsource + e.expense;
+            const bep = e.outUnsynced + e.expense;
             if (!bep) return null;
             const pct = Math.min(100, Math.round((e.revenue / bep) * 100));
             return a.jsxs("div", {
@@ -7584,7 +7646,7 @@ function IE({ s: t, m: e, user: xu, cat: xcat }) {
                   children: [
                     a.jsx("span", {
                       className: "mut",
-                      children: "손익분기 매출 (외주+지출)",
+                      children: "손익분기 매출 (지출 합계 기준)",
                     }),
                     a.jsxs("span", {
                       className: "num",
@@ -7653,6 +7715,7 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
             taxInvoice: !!dj.taxInvoice,
             status: dj.status || "계약금대기",
             month: dj.month || new Date().toISOString().slice(0, 7),
+            outSettle: dj.outSettle || "외주 3.3비",
           }
         : {
             project: "",
@@ -7664,6 +7727,7 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
             taxInvoice: !1,
             status: "계약금대기",
             month: new Date().toISOString().slice(0, 7),
+            outSettle: "외주 3.3비",
           },
     ),
     r = (i, o) => (l) =>
@@ -7746,6 +7810,33 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
                 inputMode: "numeric",
                 value: ve(n.outsource),
                 onChange: rWon("outsource"),
+              }),
+              a.jsxs("div", {
+                style: { display: "flex", alignItems: "center", gap: 6, marginTop: 6 },
+                children: [
+                  a.jsx("select", {
+                    value: n.outSettle,
+                    onChange: r("outSettle"),
+                    style: { fontSize: 12, padding: "5px 8px" },
+                    title: "외주송금이 지출 탭에 자동 등록될 분류",
+                    children: [
+                      a.jsx("option", {
+                        value: "외주 3.3비",
+                        children: "정산 3.3% (원천징수)",
+                      }),
+                      a.jsx("option", {
+                        value: "외주비",
+                        children: "정산 계산서",
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+              a.jsx("div", {
+                className: "mut3",
+                style: { fontSize: 11, marginTop: 4, lineHeight: 1.5 },
+                children:
+                  "저장하면 이 금액이 지출의 외주비/외주 3.3비 탭에 자동 등록·갱신됩니다.",
               }),
             ],
           }),
