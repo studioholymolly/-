@@ -6836,7 +6836,7 @@ function OE() {
           recvOnly: !0,
           onEdit: setDe,
         }),
-      s === "expenses" && a.jsx(IE, { s: e, m: n }),
+      s === "expenses" && a.jsx(IE, { s: e, m: n, user: t.id }),
       i === "deal" &&
         a.jsx($E, {
           onClose: () => o(!1),
@@ -6892,6 +6892,17 @@ function Wo({ cls: t, label: e, v: n, sub: s, trend: r, strong: i }) {
     ],
   });
 }
+// 미수금 경과일: 귀속 월의 말일 기준 D+일수 (회수 확률은 90일부터 급락)
+function dealAging(n) {
+  if (!n.month) return null;
+  const [y, m] = n.month.split("-").map(Number);
+  if (!y || !m) return null;
+  const end = new Date(y, m, 0);
+  const days = Math.floor((new Date(X() + "T00:00:00") - end) / 864e5);
+  return days <= 0
+    ? { label: "당월", level: "normal" }
+    : { label: "D+" + days, level: days > 90 ? "over" : days > 30 ? "soon" : "normal" };
+}
 function vg({ deals: t, recvOnly: e, onEdit: oe }) {
   return a.jsx("div", {
     className: "tbl-wrap",
@@ -6906,6 +6917,7 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
               a.jsx("th", { className: "r", children: "거래금액" }),
               a.jsx("th", { className: "r", children: "외주송금" }),
               a.jsx("th", { className: "r", children: "순매출" }),
+              a.jsx("th", { className: "r", children: e ? "경과" : "마진" }),
               a.jsx("th", {
                 className: "r",
                 children: e ? "미수 잔금" : "입금",
@@ -6940,6 +6952,35 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
                       className: "r",
                       style: { fontWeight: 750 },
                       children: a.jsx(yn, { v: n.amount - n.outsource }),
+                    }),
+                    a.jsx("td", {
+                      className: "r",
+                      children: e
+                        ? (() => {
+                            const g = dealAging(n);
+                            return g
+                              ? a.jsx("span", {
+                                  className: "dd " + g.level,
+                                  children: g.label,
+                                })
+                              : "";
+                          })()
+                        : (() => {
+                            if (!n.amount) return "";
+                            const p = Math.round(
+                              ((n.amount - (n.outsource || 0)) / n.amount) *
+                                100,
+                            );
+                            // 에이전시 건전 마진 기준 50% 미만이면 경고 표시
+                            return a.jsxs("span", {
+                              className: "num",
+                              style: {
+                                fontWeight: 700,
+                                color: p < 50 ? "var(--ink)" : "var(--ink-3)",
+                              },
+                              children: [p < 50 ? "⚠ " : "", p, "%"],
+                            });
+                          })(),
                     }),
                     a.jsx("td", {
                       className: "r",
@@ -7005,7 +7046,7 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
             t.length === 0 &&
               a.jsx("tr", {
                 children: a.jsx("td", {
-                  colSpan: 9,
+                  colSpan: 10,
                   style: {
                     textAlign: "center",
                     color: "var(--ink-3)",
@@ -7020,10 +7061,53 @@ function vg({ deals: t, recvOnly: e, onEdit: oe }) {
     }),
   });
 }
-function IE({ s: t, m: e }) {
+function IE({ s: t, m: e, user: xu }) {
   // 지출 항목 인라인 편집 — ✎ 로 행을 열고, 저장 시 nn()으로 동기화
   const [xEdit, setXEdit] = E.useState(null); // 편집 중인 행 id
   const [xDraft, setXDraft] = E.useState({});
+  // 고정비/변동비 분리 탭 + 소계
+  const [xCat, setXCat] = E.useState("전체");
+  const xRows =
+    xCat === "전체" ? t.expenses : t.expenses.filter((n) => n.cat === xCat);
+  const xSum = (cat) =>
+    t.expenses
+      .filter((n) => n.cat === cat)
+      .reduce((l, c) => l + (c.amount || 0), 0);
+  // 지난달 고정비 반복 등록: 이번 달에 같은 이름이 없을 때만 복사
+  const xThisMonth = X().slice(0, 7);
+  const xPrevMonth = (() => {
+    const [y, m] = xThisMonth.split("-").map(Number);
+    return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
+  })();
+  const xPrevFixed = t.expenses.filter(
+    (n) => n.cat === "고정비" && n.month === xPrevMonth,
+  );
+  const xCopyFixed = () => {
+    const cur = new Set(
+      t.expenses.filter((n) => n.month === xThisMonth).map((n) => n.name),
+    );
+    const rows = xPrevFixed.filter((n) => !cur.has(n.name));
+    if (!rows.length) {
+      window.alert("복사할 지난달 고정비가 없거나 이미 모두 등록되어 있어요.");
+      return;
+    }
+    window.confirm(
+      `지난달(${xPrevMonth}) 고정비 ${rows.length}건을 이번 달(${xThisMonth})로 복사할까요?`,
+    ) &&
+      (rows.forEach((n) => {
+        const s2 = {
+          id: G(),
+          createdBy: xu,
+          name: n.name,
+          cat: "고정비",
+          month: xThisMonth,
+          amount: n.amount,
+        };
+        ((I = { ...I, expenses: [s2, ...I.expenses] }), Zr("expenses", s2));
+      }),
+      qe(),
+      pt(xu, `고정비 반복 등록: ${rows.length}건 (${xThisMonth})`));
+  };
   const xStart = (n) => {
     setXEdit(n.id);
     setXDraft({ name: n.name, cat: n.cat, month: n.month, amount: n.amount });
@@ -7038,6 +7122,43 @@ function IE({ s: t, m: e }) {
   };
   return a.jsxs(a.Fragment, {
     children: [
+      a.jsxs("div", {
+        style: {
+          display: "flex",
+          gap: 6,
+          marginBottom: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        },
+        children: [
+          ["전체", "고정비", "변동비"].map((n) =>
+            a.jsxs(
+              "button",
+              {
+                className: "btn sm" + (xCat === n ? " primary" : ""),
+                onClick: () => setXCat(n),
+                children: [
+                  n,
+                  n !== "전체" &&
+                    a.jsx("span", {
+                      className: "num",
+                      style: { fontSize: 11, opacity: 0.75 },
+                      children: "₩" + ve(xSum(n)),
+                    }),
+                ],
+              },
+              n,
+            ),
+          ),
+          a.jsx("span", { className: "sp" }),
+          a.jsx("button", {
+            className: "btn sm",
+            onClick: xCopyFixed,
+            title: `지난달(${xPrevMonth}) 고정비를 이번 달로 복사`,
+            children: "↻ 지난달 고정비 불러오기",
+          }),
+        ],
+      }),
       a.jsx("div", {
         className: "tbl-wrap",
         style: { marginBottom: 18 },
@@ -7056,7 +7177,7 @@ function IE({ s: t, m: e }) {
               }),
             }),
             a.jsx("tbody", {
-              children: t.expenses.map((n) =>
+              children: xRows.map((n) =>
                 xEdit === n.id
                   ? a.jsxs(
                       "tr",
@@ -7188,22 +7309,98 @@ function IE({ s: t, m: e }) {
       }),
       a.jsxs("div", {
         className: "card",
-        style: { padding: 18, maxWidth: 420 },
+        style: { padding: 18, maxWidth: 460 },
         children: [
           a.jsxs("div", {
             className: "tile-h",
             children: [
               a.jsx("span", { className: "ic", children: "◐" }),
-              a.jsx("span", { className: "t", children: "7월 손익 요약" }),
+              a.jsx("span", { className: "t", children: "손익 요약" }),
             ],
           }),
           a.jsx(qo, { label: "매출 (입금)", v: e.revenue }),
           a.jsx(qo, { label: "− 외주비", v: -e.outsource }),
-          a.jsx(qo, { label: "− 지출", v: -e.expense }),
+          a.jsx(qo, { label: "− 고정비", v: -xSum("고정비") }),
+          a.jsx(qo, { label: "− 변동비", v: -xSum("변동비") }),
           a.jsx("div", {
             style: { borderTop: "1px solid var(--line)", margin: "8px 0" },
           }),
           a.jsx(qo, { label: "= 순이익", v: e.net, bold: !0 }),
+          e.revenue > 0 &&
+            a.jsxs("div", {
+              className: "mut",
+              style: { fontSize: 12, marginTop: 2, textAlign: "right" },
+              children: ["마진율 ", Math.round((e.net / e.revenue) * 100), "%"],
+            }),
+          // 고정비 커버율: (매출−외주−변동비) ÷ 고정비 — 100% 이상이면 고정비를 덮음
+          xSum("고정비") > 0 &&
+            a.jsxs("div", {
+              className: "mut",
+              style: { fontSize: 12, marginTop: 2, textAlign: "right" },
+              children: [
+                "고정비 커버율 ",
+                Math.max(
+                  0,
+                  Math.round(
+                    ((e.revenue - e.outsource - xSum("변동비")) /
+                      xSum("고정비")) *
+                      100,
+                  ),
+                ),
+                "%",
+              ],
+            }),
+          // 손익분기: 외주비+지출을 넘는 입금이 들어와야 흑자
+          (() => {
+            const bep = e.outsource + e.expense;
+            if (!bep) return null;
+            const pct = Math.min(100, Math.round((e.revenue / bep) * 100));
+            return a.jsxs("div", {
+              style: { marginTop: 12 },
+              children: [
+                a.jsxs("div", {
+                  style: {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    fontSize: 12,
+                    marginBottom: 5,
+                  },
+                  children: [
+                    a.jsx("span", {
+                      className: "mut",
+                      children: "손익분기 매출 (외주+지출)",
+                    }),
+                    a.jsxs("span", {
+                      className: "num",
+                      style: { fontWeight: 700 },
+                      children: ["₩", ve(bep), " · ", pct, "%"],
+                    }),
+                  ],
+                }),
+                a.jsx("div", {
+                  className: "pbar",
+                  style: { margin: 0 },
+                  children: a.jsx("div", {
+                    className: "track",
+                    children: a.jsx("div", {
+                      className: "fillb" + (e.revenue >= bep ? "" : " mid"),
+                      style: { width: pct + "%" },
+                    }),
+                  }),
+                }),
+                e.revenue < bep &&
+                  a.jsxs("div", {
+                    className: "mut3",
+                    style: { fontSize: 11.5, marginTop: 5 },
+                    children: [
+                      "흑자까지 ₩",
+                      ve(bep - e.revenue),
+                      " 입금 남았어요",
+                    ],
+                  }),
+              ],
+            });
+          })(),
         ],
       }),
     ],
