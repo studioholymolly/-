@@ -12010,11 +12010,16 @@ function jf({
   fields: r,
   defaults: i,
   render: o,
+  filterKey: fk,
+  filterOptions: fo,
 }) {
   const { user: l } = Et(),
     c = Me(),
     [u, h] = E.useState(!1),
-    d = c[n];
+    [ed, setEd] = E.useState(null),
+    [ft, setFt] = E.useState("전체"),
+    d0 = c[n],
+    d = fk && ft !== "전체" ? d0.filter((f) => f[fk] === ft) : d0;
   return a.jsxs(a.Fragment, {
     children: [
       a.jsxs("div", {
@@ -12034,6 +12039,29 @@ function jf({
           }),
         ],
       }),
+      fk &&
+        a.jsx("div", {
+          style: { display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" },
+          children: ["전체", ...(fo || [])].map((f) =>
+            a.jsxs(
+              "button",
+              {
+                className: "btn sm" + (ft === f ? " primary" : ""),
+                onClick: () => setFt(f),
+                children: [
+                  f,
+                  f !== "전체" &&
+                    a.jsx("span", {
+                      className: "mut3",
+                      style: { fontSize: 11 },
+                      children: d0.filter((m) => m[fk] === f).length,
+                    }),
+                ],
+              },
+              f,
+            ),
+          ),
+        }),
       a.jsx("div", {
         className: "tbl-wrap",
         children: a.jsxs("table", {
@@ -12072,11 +12100,26 @@ function jf({
                       ),
                       a.jsx("td", { children: a.jsx(Kr, { id: f.createdBy }) }),
                       a.jsx("td", {
-                        children: a.jsx("button", {
-                          className: "btn ghost sm",
-                          onClick: () => ei(n, f.id),
-                          style: { color: "var(--ink-3)" },
-                          children: "✕",
+                        children: a.jsxs("div", {
+                          style: { display: "flex", gap: 2 },
+                          children: [
+                            a.jsx("button", {
+                              className: "btn ghost sm",
+                              onClick: () => setEd(f),
+                              title: "수정",
+                              children: "✎",
+                            }),
+                            a.jsx("button", {
+                              className: "btn ghost sm",
+                              onClick: () =>
+                                window.confirm(
+                                  `'${f.name || f.title || ""}' 항목을 삭제할까요?`,
+                                ) && ei(n, f.id),
+                              style: { color: "var(--ink-3)" },
+                              title: "삭제",
+                              children: "✕",
+                            }),
+                          ],
                         }),
                       }),
                     ],
@@ -12098,14 +12141,26 @@ function jf({
             (xn(n, f, l.id), h(!1));
           },
         }),
+      ed &&
+        a.jsx(cT, {
+          title: t,
+          fields: r,
+          defaults: i,
+          initial: ed,
+          onClose: () => setEd(null),
+          onSave: (f) => {
+            (nn(n, ed.id, f), setEd(null));
+          },
+        }),
     ],
   });
 }
-function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r }) {
-  const [i, o] = E.useState(n),
+function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r, initial: ci }) {
+  // ci(수정 대상 행)가 있으면 수정 모드로 동작
+  const [i, o] = E.useState(ci ? { ...n, ...ci } : n),
     l = (c) => (u) => o({ ...i, [c]: u.target.value });
   return a.jsx(bn, {
-    title: `${t} 추가`,
+    title: ci ? `${t} 수정` : `${t} 추가`,
     onClose: s,
     footer: a.jsxs(a.Fragment, {
       children: [
@@ -12113,7 +12168,7 @@ function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r }) {
         a.jsx("button", {
           className: "btn primary sm",
           onClick: () => r(i),
-          children: "추가",
+          children: ci ? "저장" : "추가",
         }),
       ],
     }),
@@ -12131,11 +12186,18 @@ function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r }) {
                     a.jsx("option", { children: u }, u),
                   ),
                 })
-              : a.jsx("input", {
-                  value: i[c.k],
-                  placeholder: c.ph || "",
-                  onChange: l(c.k),
-                }),
+              : c.type === "textarea"
+                ? a.jsx("textarea", {
+                    value: i[c.k],
+                    rows: 3,
+                    placeholder: c.ph || "",
+                    onChange: l(c.k),
+                  })
+                : a.jsx("input", {
+                    value: i[c.k],
+                    placeholder: c.ph || "",
+                    onChange: l(c.k),
+                  }),
           ],
         },
         c.k,
@@ -12143,36 +12205,96 @@ function cT({ title: t, fields: e, defaults: n, onClose: s, onSave: r }) {
     ),
   });
 }
+// 고객사 분류 — 노션 고객사 DB의 파이프라인과 동일 (문의→거래중→거래완료)
+const CLIENT_KINDS = ["문의", "거래중", "거래완료", "휴면"];
+const CLIENT_SOURCES = ["인스타그램", "소개", "검색", "재의뢰", "기타"];
 function uT() {
   return a.jsx(jf, {
     title: "고객사 DB",
     hint: "브랜드 히스토리 · 재방문 (누적 매출은 관리자 매출 페이지)",
     coll: "clients",
+    filterKey: "kind",
+    filterOptions: CLIENT_KINDS,
     columns: [
       { k: "name", label: "브랜드" },
       { k: "contact", label: "담당자" },
-      { k: "kind", label: "구분" },
+      { k: "phone", label: "연락처" },
+      { k: "email", label: "이메일" },
+      { k: "kind", label: "분류" },
+      { k: "category", label: "업종" },
       { k: "shoots", label: "촬영수", r: !0 },
       { k: "lastAt", label: "최근 접점" },
     ],
     render: (t, e) =>
       t === "kind"
         ? a.jsx("span", {
-            className: "pill " + (e.kind === "신규" ? "solid" : "line"),
-            children: e.kind,
+            className:
+              "pill " +
+              (e.kind === "거래중" || e.kind === "신규"
+                ? "solid"
+                : e.kind === "문의"
+                  ? "mid"
+                  : "line"),
+            children: e.kind || "",
           })
-        : e[t],
+        : t === "email" && e.email
+          ? a.jsx("a", {
+              href: `mailto:${e.email}`,
+              style: { textDecoration: "none", color: "var(--ink-2)" },
+              children: e.email,
+            })
+          : t === "phone" && e.phone
+            ? a.jsx("a", {
+                href: `tel:${e.phone}`,
+                className: "num",
+                style: { textDecoration: "none", color: "var(--ink-2)" },
+                children: e.phone,
+              })
+            : t === "category" && e.category
+              ? a.jsx("span", { className: "tag mid", children: e.category })
+              : e[t],
     fields: [
       { k: "name", label: "브랜드명", ph: "예: 마뗑킴" },
-      { k: "contact", label: "담당자" },
-      { k: "kind", label: "구분", options: ["신규", "기존"] },
+      { k: "contact", label: "담당자 이름 · 직함", ph: "예: 김지수 매니저" },
+      { k: "phone", label: "연락처 (휴대폰)", ph: "010-0000-0000" },
+      { k: "email", label: "이메일", ph: "contact@brand.com" },
+      { k: "kind", label: "분류", options: CLIENT_KINDS },
+      {
+        k: "category",
+        label: "업종 · 카테고리",
+        options: ["뷰티", "제품", "F&B", "의류", "인물", "기타"],
+      },
+      { k: "source", label: "유입 경로", options: CLIENT_SOURCES },
+      { k: "instagram", label: "인스타그램", ph: "@brand_official" },
+      { k: "kakao", label: "카카오톡 채널 · ID", ph: "채널명 또는 ID" },
+      { k: "bizno", label: "사업자등록번호 (세금계산서)", ph: "000-00-00000" },
+      {
+        k: "taxEmail",
+        label: "세금계산서 수신 이메일",
+        ph: "회계 담당 이메일 (담당자와 다르면)",
+      },
+      {
+        k: "note",
+        label: "메모 (선호 톤·주의사항·결제 조건)",
+        type: "textarea",
+        ph: "예: 보정은 내추럴 톤 선호, 월말 정산",
+      },
     ],
     defaults: {
       name: "",
       contact: "",
-      kind: "신규",
+      phone: "",
+      email: "",
+      kind: "문의",
+      category: "뷰티",
+      source: "인스타그램",
+      instagram: "",
+      kakao: "",
+      bizno: "",
+      taxEmail: "",
+      note: "",
       shoots: 0,
-      lastAt: "2026-07-05",
+      lastAt: X(),
     },
   });
 }
