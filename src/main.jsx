@@ -7236,7 +7236,7 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
             amount: dj.amount || 0,
             outsource: dj.outsource || 0,
             deposit: dj.deposit || 0,
-            balance: dj.balance || 0,
+            balance: Math.max(0, (dj.amount || 0) - (dj.deposit || 0)),
             taxInvoice: !!dj.taxInvoice,
             status: dj.status || "계약금대기",
             month: dj.month || new Date().toISOString().slice(0, 7),
@@ -7254,7 +7254,17 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
           },
     ),
     r = (i, o) => (l) =>
-      s({ ...n, [i]: o ? Number(l.target.value || 0) : l.target.value });
+      s({ ...n, [i]: o ? Number(l.target.value || 0) : l.target.value }),
+    // 원화 표기 입력: 5,995,000 형태로 보여주고 숫자만 저장.
+    // 미수 잔금 = 거래금액 − 입금 (자동 계산)
+    wonParse = (l) => Number(String(l).replace(/[^0-9]/g, "") || 0),
+    rWon = (i) => (l) => {
+      const c = wonParse(l.target.value),
+        u = { ...n, [i]: c };
+      ((i === "amount" || i === "deposit") &&
+        (u.balance = Math.max(0, (u.amount || 0) - (u.deposit || 0))),
+        s(u));
+    };
   return a.jsxs(bn, {
     title: dt || "새 거래 (금액 · 관리자 전용)",
     onClose: t,
@@ -7306,21 +7316,23 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
         children: [
           a.jsxs("div", {
             children: [
-              a.jsx("label", { className: "fl", children: "거래금액" }),
+              a.jsx("label", { className: "fl", children: "거래금액 (원)" }),
               a.jsx("input", {
-                type: "number",
-                value: n.amount,
-                onChange: r("amount", !0),
+                className: "num",
+                inputMode: "numeric",
+                value: ve(n.amount),
+                onChange: rWon("amount"),
               }),
             ],
           }),
           a.jsxs("div", {
             children: [
-              a.jsx("label", { className: "fl", children: "외주송금" }),
+              a.jsx("label", { className: "fl", children: "외주송금 (원)" }),
               a.jsx("input", {
-                type: "number",
-                value: n.outsource,
-                onChange: r("outsource", !0),
+                className: "num",
+                inputMode: "numeric",
+                value: ve(n.outsource),
+                onChange: rWon("outsource"),
               }),
             ],
           }),
@@ -7333,22 +7345,28 @@ function $E({ onClose: t, onSave: e, initial: dj, title: dt }) {
             children: [
               a.jsx("label", {
                 className: "fl",
-                children: "입금(계약금+잔금)",
+                children: "입금(계약금+잔금) (원)",
               }),
               a.jsx("input", {
-                type: "number",
-                value: n.deposit,
-                onChange: r("deposit", !0),
+                className: "num",
+                inputMode: "numeric",
+                value: ve(n.deposit),
+                onChange: rWon("deposit"),
               }),
             ],
           }),
           a.jsxs("div", {
             children: [
-              a.jsx("label", { className: "fl", children: "미수 잔금" }),
+              a.jsx("label", {
+                className: "fl",
+                children: "미수 잔금 (자동: 거래금액 − 입금)",
+              }),
               a.jsx("input", {
-                type: "number",
-                value: n.balance,
-                onChange: r("balance", !0),
+                className: "num",
+                value: ve(n.balance),
+                readOnly: !0,
+                tabIndex: -1,
+                style: { background: "var(--g1)", color: "var(--ink-2)" },
               }),
             ],
           }),
