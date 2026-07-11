@@ -6741,13 +6741,192 @@ function Ci({ t, actor: e }) {
     ],
   });
 }
+// ── 월 스코프 재무 지표 (월 선택 필터용) ──
+function moLabel(m) {
+  return m === "전체" ? "전체" : Number(m.slice(5)) + "월";
+}
+function moFilter(rows, m) {
+  const cur = X().slice(0, 7);
+  return m === "전체" ? rows : rows.filter((d) => (d.month || cur) === m);
+}
+function moMetrics(deals, expenses) {
+  const rv = deals.reduce((l, c) => l + (c.deposit || 0), 0),
+    rc = deals.reduce((l, c) => l + (c.balance || 0), 0),
+    os = deals.reduce((l, c) => l + (c.outsource || 0), 0),
+    ex = expenses.reduce((l, c) => l + (c.amount || 0), 0);
+  return {
+    revenue: rv,
+    receivable: rc,
+    outsource: os,
+    expense: ex,
+    net: rv - os - ex,
+    noTax: deals.filter((l) => l.deposit > 0 && !l.taxInvoice).length,
+  };
+}
+// ── 월별 추이 차트: 입금(막대) · 순이익(선) — 최근 12개월, 계절성 파악용 ──
+function MonthlyTrend({ deals, expenses }) {
+  const cur = X().slice(0, 7);
+  const months = [
+    ...new Set(
+      [...deals.map((d) => d.month || cur), ...expenses.map((d) => d.month || cur)].filter(Boolean),
+    ),
+  ]
+    .sort()
+    .slice(-12);
+  if (months.length < 2) return null;
+  const pts = months.map((m) => {
+    const k = moMetrics(moFilter(deals, m), moFilter(expenses, m));
+    return { m, rev: k.revenue, net: k.net };
+  });
+  const W = 72 * pts.length + 24,
+    H = 190,
+    padT = 16,
+    plotH = 128;
+  const maxV = Math.max(1, ...pts.map((p) => Math.max(p.rev, p.net, 0)));
+  const minV = Math.min(0, ...pts.map((p) => p.net));
+  const y = (v) => padT + ((maxV - v) / (maxV - minV || 1)) * plotH;
+  const zeroY = y(0);
+  const line = pts
+    .map((p, x) => `${x * 72 + 48},${y(p.net)}`)
+    .join(" ");
+  return a.jsxs("div", {
+    className: "tile",
+    style: { marginBottom: 18, overflowX: "auto" },
+    children: [
+      a.jsxs("div", {
+        className: "tile-h",
+        children: [
+          a.jsx("span", { className: "ic", children: "∿" }),
+          a.jsx("span", { className: "t", children: "월별 추이 — 입금·순이익 (최근 12개월)" }),
+          a.jsx("span", { className: "sp" }),
+          a.jsxs("span", {
+            className: "legend",
+            children: [
+              a.jsxs("span", {
+                children: [a.jsx("i", { className: "lg lg-shoot" }), " 입금"],
+              }),
+              a.jsxs("span", {
+                children: [a.jsx("i", { className: "lg lg-due" }), " 순이익"],
+              }),
+            ],
+          }),
+        ],
+      }),
+      a.jsxs("svg", {
+        viewBox: `0 0 ${W} ${H}`,
+        style: { width: Math.min(W, 900), maxWidth: "100%", display: "block" },
+        children: [
+          // 0 기준선
+          a.jsx("line", {
+            x1: 12,
+            x2: W - 12,
+            y1: zeroY,
+            y2: zeroY,
+            stroke: "var(--g3)",
+            strokeWidth: 1,
+          }),
+          pts.map((p, x) =>
+            a.jsxs("g", {
+              children: [
+                // 입금 막대
+                a.jsxs("rect", {
+                  x: x * 72 + 30,
+                  y: Math.min(y(p.rev), zeroY),
+                  width: 20,
+                  height: Math.max(2, Math.abs(zeroY - y(p.rev))),
+                  rx: 3,
+                  fill: "var(--ink)",
+                  children: [
+                    a.jsx("title", {
+                      children: `${p.m} 입금 ₩${ve(p.rev)}`,
+                    }),
+                  ],
+                }),
+                // 월 라벨 + 금액
+                a.jsx("text", {
+                  x: x * 72 + 48,
+                  y: H - 24,
+                  textAnchor: "middle",
+                  fontSize: 11,
+                  fill: "var(--ink-3)",
+                  fontFamily: "var(--mono)",
+                  children: moLabel(p.m),
+                }),
+                a.jsx("text", {
+                  x: x * 72 + 48,
+                  y: H - 8,
+                  textAnchor: "middle",
+                  fontSize: 10,
+                  fill: p.net < 0 ? "var(--ink)" : "var(--ink-4)",
+                  fontFamily: "var(--mono)",
+                  fontWeight: p.net < 0 ? 800 : 500,
+                  children:
+                    (p.net < 0 ? "−" : "") + "₩" + ve(Math.abs(p.net)),
+                }),
+              ],
+            }, p.m),
+          ),
+          // 순이익 선 + 점
+          a.jsx("polyline", {
+            points: line,
+            fill: "none",
+            stroke: "var(--fill-mid)",
+            strokeWidth: 2,
+          }),
+          pts.map((p, x) =>
+            a.jsxs("circle", {
+              cx: x * 72 + 48,
+              cy: y(p.net),
+              r: 4,
+              fill: p.net < 0 ? "#fff" : "var(--ink)",
+              stroke: "var(--ink)",
+              strokeWidth: 1.5,
+              children: [
+                a.jsx("title", { children: `${p.m} 순이익 ₩${ve(p.net)}` }),
+              ],
+            }, p.m),
+          ),
+        ],
+      }),
+    ],
+  });
+}
 function OE() {
   const { user: t } = Et(),
     e = Me(),
-    n = Fa(),
     [s, r] = E.useState("deals"),
     [i, o] = E.useState(!1),
-    [de, setDe] = E.useState(null); // 편집 중인 거래 행
+    [de, setDe] = E.useState(null), // 편집 중인 거래 행
+    [mo, setMo] = E.useState(X().slice(0, 7)); // 월 선택 필터
+  const moAll = [
+    ...new Set(
+      [
+        X().slice(0, 7),
+        ...e.deals.map((d) => d.month),
+        ...e.expenses.map((d) => d.month),
+      ].filter(Boolean),
+    ),
+  ]
+    .sort()
+    .reverse();
+  const scopedDeals = moFilter(e.deals, mo),
+    scopedExp = moFilter(e.expenses, mo),
+    n = moMetrics(scopedDeals, scopedExp);
+  // 전월 대비 입금 증감
+  const prevMo = (() => {
+    if (mo === "전체") return null;
+    const [py, pm] = mo.split("-").map(Number);
+    return pm === 1 ? `${py - 1}-12` : `${py}-${String(pm - 1).padStart(2, "0")}`;
+  })();
+  const prevRev = prevMo
+    ? moMetrics(moFilter(e.deals, prevMo), []).revenue
+    : 0;
+  const revTrend =
+    prevMo && prevRev > 0 && n.revenue !== prevRev
+      ? (n.revenue > prevRev ? "▲ " : "▼ ") +
+        Math.abs(Math.round(((n.revenue - prevRev) / prevRev) * 100)) +
+        "%"
+      : void 0;
   return a.jsxs(a.Fragment, {
     children: [
       a.jsxs("div", {
@@ -6769,31 +6948,32 @@ function OE() {
         children: [
           a.jsx(Wo, {
             cls: "col3",
-            label: "7월 입금(매출)",
+            label: `${moLabel(mo)} 입금(매출)`,
             v: n.revenue,
-            trend: "▲ 18%",
+            trend: revTrend,
           }),
           a.jsx(Wo, {
             cls: "col3",
-            label: "미수금",
+            label: `${moLabel(mo)} 미수금`,
             v: n.receivable,
-            sub: `${e.deals.filter((l) => l.balance > 0).length}건 잔액`,
+            sub: `${scopedDeals.filter((l) => l.balance > 0).length}건 잔액`,
             strong: !0,
           }),
           a.jsx(Wo, {
             cls: "col3",
-            label: "외주비",
+            label: `${moLabel(mo)} 외주비`,
             v: n.outsource,
             sub: "3.3%·계산서",
           }),
           a.jsx(Wo, {
             cls: "col3",
-            label: "월 순이익",
+            label: `${moLabel(mo)} 순이익`,
             v: n.net,
             sub: "매출−외주−지출",
           }),
         ],
       }),
+      a.jsx(MonthlyTrend, { deals: e.deals, expenses: e.expenses }),
       a.jsxs("div", {
         className: "ph",
         children: [
@@ -6815,6 +6995,22 @@ function OE() {
               ),
             ),
           }),
+          a.jsx("select", {
+            value: mo,
+            onChange: (l) => setMo(l.target.value),
+            style: { width: 130, flex: "none" },
+            title: "월 선택",
+            children: [
+              a.jsx("option", { value: "전체", children: "전체 기간" }, "전체"),
+              ...moAll.map((l) =>
+                a.jsx(
+                  "option",
+                  { value: l, children: l.replace("-", "년 ") + "월" },
+                  l,
+                ),
+              ),
+            ],
+          }),
           a.jsx("span", { className: "sp" }),
           s !== "expenses"
             ? a.jsx("button", {
@@ -6829,14 +7025,15 @@ function OE() {
               }),
         ],
       }),
-      s === "deals" && a.jsx(vg, { deals: e.deals, onEdit: setDe }),
+      s === "deals" && a.jsx(vg, { deals: scopedDeals, onEdit: setDe }),
       s === "recv" &&
         a.jsx(vg, {
-          deals: e.deals.filter((l) => l.balance > 0),
+          deals: scopedDeals.filter((l) => l.balance > 0),
           recvOnly: !0,
           onEdit: setDe,
         }),
-      s === "expenses" && a.jsx(IE, { s: e, m: n, user: t.id }),
+      s === "expenses" &&
+        a.jsx(IE, { s: { expenses: scopedExp }, m: n, user: t.id }),
       i === "deal" &&
         a.jsx($E, {
           onClose: () => o(!1),
@@ -7079,12 +7276,13 @@ function IE({ s: t, m: e, user: xu }) {
     const [y, m] = xThisMonth.split("-").map(Number);
     return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, "0")}`;
   })();
-  const xPrevFixed = t.expenses.filter(
+  // 복사 로직은 월 필터와 무관하게 전체 지출(I.expenses)을 기준으로 판단
+  const xPrevFixed = I.expenses.filter(
     (n) => n.cat === "고정비" && n.month === xPrevMonth,
   );
   const xCopyFixed = () => {
     const cur = new Set(
-      t.expenses.filter((n) => n.month === xThisMonth).map((n) => n.name),
+      I.expenses.filter((n) => n.month === xThisMonth).map((n) => n.name),
     );
     const rows = xPrevFixed.filter((n) => !cur.has(n.name));
     if (!rows.length) {
