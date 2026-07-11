@@ -10451,57 +10451,70 @@ function sT({
                         a.jsxs(
                           "div",
                           {
-                            className: "ed-str-row",
+                            className: "docs-item",
+                            style: { marginBottom: 6 },
                             children: [
-                              a.jsx("select", {
-                                value: d.cat,
-                                onChange: (m) =>
-                                  pcPatchItem(gi, ii, { cat: m.target.value }),
-                                style: { width: 92, flex: "none" },
-                                title: "구분 (견적서 표기)",
-                                children: QE.map((m) =>
-                                  a.jsx("option", { children: m }, m),
-                                ),
-                              }),
-                              a.jsx("input", {
-                                value: d.name,
-                                onChange: (m) =>
-                                  pcPatchItem(gi, ii, { name: m.target.value }),
-                                placeholder: "품명 (예: 하프데이_포토그래퍼)",
-                              }),
-                              a.jsx("input", {
-                                value: d.desc,
-                                onChange: (m) =>
-                                  pcPatchItem(gi, ii, { desc: m.target.value }),
-                                placeholder: "설명",
-                                style: { width: 150, flex: "none" },
-                              }),
-                              a.jsx("input", {
-                                className: "num",
-                                type: "number",
-                                min: "0",
-                                step: "10000",
-                                value: d.price,
-                                onChange: (m) =>
-                                  pcPatchItem(gi, ii, {
-                                    price: Number(m.target.value || 0),
+                              a.jsxs("div", {
+                                className: "docs-item-row1",
+                                children: [
+                                  a.jsx("select", {
+                                    value: d.cat,
+                                    onChange: (m) =>
+                                      pcPatchItem(gi, ii, {
+                                        cat: m.target.value,
+                                      }),
+                                    style: { width: 96, flex: "none" },
+                                    title: "구분 (견적서 표기)",
+                                    children: QE.map((m) =>
+                                      a.jsx("option", { children: m }, m),
+                                    ),
                                   }),
-                                title: "단가 (0이면 '별도' 표기)",
-                                style: { width: 104, flex: "none" },
+                                  a.jsx("input", {
+                                    value: d.name,
+                                    onChange: (m) =>
+                                      pcPatchItem(gi, ii, {
+                                        name: m.target.value,
+                                      }),
+                                    placeholder: "품명 (예: 하프데이_포토그래퍼)",
+                                  }),
+                                  a.jsx("button", {
+                                    className: "btn sm ghost",
+                                    title: "이 항목 삭제",
+                                    onClick: () =>
+                                      (!d.name ||
+                                        window.confirm(
+                                          `'${d.name.replace("_", " · ")}' 항목을 단가표에서 삭제할까요?`,
+                                        )) &&
+                                      pcDelItem(gi, ii),
+                                    children: "✕",
+                                  }),
+                                ],
                               }),
-                              a.jsx("div", {
-                                className: "ed-str-btns",
-                                children: a.jsx("button", {
-                                  className: "btn sm ghost",
-                                  title: "이 항목 삭제",
-                                  onClick: () =>
-                                    (!d.name ||
-                                      window.confirm(
-                                        `'${d.name.replace("_", " · ")}' 항목을 단가표에서 삭제할까요?`,
-                                      )) &&
-                                    pcDelItem(gi, ii),
-                                  children: "✕",
-                                }),
+                              a.jsxs("div", {
+                                className: "docs-item-row2",
+                                children: [
+                                  a.jsx("input", {
+                                    value: d.desc,
+                                    onChange: (m) =>
+                                      pcPatchItem(gi, ii, {
+                                        desc: m.target.value,
+                                      }),
+                                    placeholder: "설명 (예: 4시간 기준)",
+                                  }),
+                                  a.jsx("input", {
+                                    className: "num",
+                                    type: "number",
+                                    min: "0",
+                                    step: "10000",
+                                    value: d.price,
+                                    onChange: (m) =>
+                                      pcPatchItem(gi, ii, {
+                                        price: Number(m.target.value || 0),
+                                      }),
+                                    title: "단가 (0이면 '별도' 표기)",
+                                    style: { width: 130, flex: "none" },
+                                  }),
+                                ],
                               }),
                             ],
                           },
