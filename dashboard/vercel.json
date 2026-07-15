@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "echo prebuilt-static-no-build",
+  "outputDirectory": ".",
+  "installCommand": "echo no-deps",
+  "rewrites": [
+    { "source": "/((?!api/|assets/|brand/|favicon.ico).*)", "destination": "/index.html" }
+  ]
+}
