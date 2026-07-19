@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """studioholymolly.com의 실제 콘텐츠(사진 URL·수치·클라이언트)로
 인쇄용(PDF 저장) HTML 회사소개서를 생성한다. 16:9 페이지, 모노크롬 시스템.
-갤러리 브랜드 월 7페이지로 고유 브랜드 159개 전부 노출, 총 사진 ~237컷."""
+대표(케이스) 페이지 뒤에 같은 카테고리 갤러리(10컷/페이지, 원본 비율 유지)가 이어지는 구성."""
 import json
 
 d = json.load(open('profile_data.json'))
-cases, logos, cover, gal_pages, strip = d['cases'], d['logos'], d['cover'], d['gal_pages'], d['strip']
+sections, logos, cover, strip = d['sections'], d['logos'], d['cover'], d['strip']
 
 CAT_KO = {'BEAUTY': 'Beauty', 'F&B': 'F&B', 'PRODUCT': 'Product', 'MODEL': 'Model', 'LIFESTYLE': 'Lifestyle'}
 
@@ -104,8 +104,11 @@ pages.append(f'''
   <div class="filmstrip">{strip_imgs}</div>
 </section>''')
 
-# ---------- 케이스 6 (대표 1 + 서브 4) ----------
-for i, cs in enumerate(cases):
+# ---------- 카테고리 섹션: 대표(케이스) 1p + 같은 카테고리 갤러리(10컷/페이지, 원본비율) ----------
+ci = 0
+for sec in sections:
+    cs = sec['case']
+    ci += 1
     subs = ''.join(f'<img src="{u}" alt="">' for u in cs['subs'])
     pages.append(f'''
 <section class="pg case">
@@ -113,20 +116,19 @@ for i, cs in enumerate(cases):
   <div class="case-side">
     <div class="case-subs">{subs}</div>
     <div class="case-cap">
-      <span class="cc">{CAT_KO.get(cs['cat'], cs['cat']).upper()} — CASE {i+1:02d}</span>
+      <span class="cc">{CAT_KO.get(cs['cat'], cs['cat']).upper()} — CASE {ci:02d}</span>
       <h3>{esc(cs['name'])}</h3>
       <p>{esc(cs['desc'])} · 납품 {cs['count']}컷</p>
     </div>
   </div>
   <div class="case-pageno">{n():02d}</div>
 </section>''')
-
-# ---------- 갤러리 브랜드 월 ----------
-for label, gi, gn, items in gal_pages:
-    cells = ''.join(f'<div class="gcellimg"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
-    pages.append(f'''
+    gn_total = len(sec['galleries'])
+    for gi, items in enumerate(sec['galleries'], 1):
+        cells = ''.join(f'<div class="gph"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
+        pages.append(f'''
 <section class="pg gal">
-  {meta_bar(f'PHOTO INDEX — {label} ({gi}/{gn})', n())}
+  {meta_bar(f"{cs['cat']} — {sec['brand_count']} BRANDS ({gi}/{gn_total})", n())}
   <div class="galgrid">{cells}</div>
 </section>''')
 
@@ -271,10 +273,10 @@ grid-template-columns:repeat(8,1fr);gap:2.5mm}
 .case-pageno{position:absolute;right:10mm;bottom:6mm;font-size:8.5pt;letter-spacing:.22em;color:var(--gray3)}
 /* gallery brand wall */
 .gal{padding-bottom:9mm}
-.galgrid{margin-top:5mm;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(4,1fr);
-gap:1.8mm;height:156mm}
-.gcellimg{overflow:hidden;background:#eceae7}
-.gcellimg img{width:100%;height:100%;object-fit:cover;display:block}
+.galgrid{margin-top:5mm;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(2,1fr);
+gap:3.5mm;height:156mm}
+.gph{display:flex;align-items:center;justify-content:center;background:#f1f0ee;overflow:hidden}
+.gph img{max-width:100%;max-height:100%;object-fit:contain;display:block}
 /* clients */
 .clients{margin-top:9mm;display:grid;grid-template-columns:repeat(6,1fr);gap:.3mm;background:var(--line);
 border:.3mm solid var(--line)}
