@@ -1,23 +1,30 @@
 # -*- coding: utf-8 -*-
 """studioholymolly.com의 실제 콘텐츠(사진 URL·수치·클라이언트)로
-인쇄용(PDF 저장) HTML 회사소개서를 생성한다. 16:9 페이지, 모노크롬 시스템."""
+인쇄용(PDF 저장) HTML 회사소개서를 생성한다. 16:9 페이지, 모노크롬 시스템.
+갤러리 브랜드 월 7페이지로 고유 브랜드 159개 전부 노출, 총 사진 ~237컷."""
 import json
 
 d = json.load(open('profile_data.json'))
-cases, logos, cover = d['cases'], d['logos'], d['cover']
+cases, logos, cover, gal_pages, strip = d['cases'], d['logos'], d['cover'], d['gal_pages'], d['strip']
 
 CAT_KO = {'BEAUTY': 'Beauty', 'F&B': 'F&B', 'PRODUCT': 'Product', 'MODEL': 'Model', 'LIFESTYLE': 'Lifestyle'}
 
 def esc(s):
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
 
+pages = []
+pno = 0
+def n():
+    global pno
+    pno += 1
+    return pno
+
 def meta_bar(label, num, dark=False):
     cls = ' dark' if dark else ''
     return f'''<div class="meta{cls}"><span>{label}</span><span>{num:02d}</span></div><div class="metaline{cls}"></div>'''
 
-pages = []
-
-# ---------- 01 커버: 3분할 풀블리드 ----------
+# ---------- 01 커버 ----------
+n()
 pages.append(f'''
 <section class="pg cover">
   <div class="cover-imgs">
@@ -37,19 +44,19 @@ pages.append(f'''
   </div>
 </section>''')
 
-# ---------- 02 매니페스토 (블랙) ----------
+# ---------- 02 매니페스토 ----------
 pages.append(f'''
 <section class="pg dark">
-  {meta_bar('PERSPECTIVE', 2, True)}
+  {meta_bar('PERSPECTIVE', n(), True)}
   <div class="manifesto">
     <p>컷 한 장을 찍는 일보다,<br>그 컷이 브랜드 안에서 어떻게<br>보일지를 먼저 생각합니다.</p>
   </div>
 </section>''')
 
-# ---------- 03 Who We Are + 스탯 ----------
+# ---------- 03 Who We Are ----------
 pages.append(f'''
 <section class="pg">
-  {meta_bar('WHO WE ARE', 3)}
+  {meta_bar('WHO WE ARE', n())}
   <div class="who">
     <div class="who-l">
       <h2>서울 역삼,<br>비주얼 디렉션 스튜디오.</h2>
@@ -66,7 +73,7 @@ pages.append(f'''
   </div>
 </section>''')
 
-# ---------- 04 What We Do (실제 작업 수) ----------
+# ---------- 04 What We Do ----------
 svc = [
     ('01', 'Beauty', '102 WORKS', '제형과 컬러, 클로즈업에서 무너지지 않는 디테일. 뷰티는 홀리몰리의 출발점입니다.'),
     ('02', 'F&B', '65 WORKS', '시즐과 온도, 먹는 순간. 음식을 가장 맛있는 장면으로 기록합니다.'),
@@ -77,25 +84,27 @@ svc = [
 ]
 rows = ''.join(f'''
     <div class="row">
-      <span class="num">{n}</span><h3>{t}</h3><span class="cnt">{cn}</span><p>{ds}</p>
-    </div>''' for n, t, cn, ds in svc)
+      <span class="num">{s0}</span><h3>{s1}</h3><span class="cnt">{s2}</span><p>{s3}</p>
+    </div>''' for s0, s1, s2, s3 in svc)
 pages.append(f'''
 <section class="pg">
-  {meta_bar('WHAT WE DO', 4)}
+  {meta_bar('WHAT WE DO', n())}
   <div class="rows">{rows}</div>
 </section>''')
 
-# ---------- 05 WORKS 디바이더 (블랙) ----------
+# ---------- 05 WORKS 디바이더 + 필름 스트립 ----------
+strip_imgs = ''.join(f'<img src="{u}" alt="">' for u in strip)
 pages.append(f'''
 <section class="pg dark">
-  {meta_bar('SELECTED WORKS', 5, True)}
+  {meta_bar('SELECTED WORKS', n(), True)}
   <div class="worksdiv">
     <h2>WORKS&nbsp;→</h2>
     <p>말보다 컷이 빠릅니다. 전체 작업물은 studioholymolly.com에서.</p>
   </div>
+  <div class="filmstrip">{strip_imgs}</div>
 </section>''')
 
-# ---------- 06–11 케이스 6 ----------
+# ---------- 케이스 6 (대표 1 + 서브 4) ----------
 for i, cs in enumerate(cases):
     subs = ''.join(f'<img src="{u}" alt="">' for u in cs['subs'])
     pages.append(f'''
@@ -109,20 +118,29 @@ for i, cs in enumerate(cases):
       <p>{esc(cs['desc'])} · 납품 {cs['count']}컷</p>
     </div>
   </div>
-  <div class="case-pageno">{6+i:02d}</div>
+  <div class="case-pageno">{n():02d}</div>
 </section>''')
 
-# ---------- 12 클라이언트 로고 월 ----------
-logo_cells = ''.join(f'<div class="clogo"><img src="{l["image"]}" alt="{esc(l["name"])}" title="{esc(l["name"])}"></div>' for l in logos[:24])
+# ---------- 갤러리 브랜드 월 ----------
+for label, gi, gn, items in gal_pages:
+    cells = ''.join(f'<div class="gcellimg"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
+    pages.append(f'''
+<section class="pg gal">
+  {meta_bar(f'PHOTO INDEX — {label} ({gi}/{gn})', n())}
+  <div class="galgrid">{cells}</div>
+</section>''')
+
+# ---------- 클라이언트 로고 월 ----------
+logo_cells = ''.join(f'<div class="clogo"><img src="{l["image"]}" alt="{esc(l["name"])}" title="{esc(l["name"])}" loading="lazy"></div>' for l in logos[:24])
 big_names = '바세린 · 딥디크 · 애경산업 · 빙그레 · 풀무원 · 오리온 · 동서식품 · 서울우유 · 동원F&B · 케라시스 · 멜릭서 · DOLE 외 120+ 브랜드'
 pages.append(f'''
 <section class="pg">
-  {meta_bar('CLIENTS — WITH HOLYMOLLY', 12)}
+  {meta_bar('CLIENTS — WITH HOLYMOLLY', n())}
   <div class="clients">{logo_cells}</div>
   <p class="clients-line">{big_names}</p>
 </section>''')
 
-# ---------- 13 Why Holymolly ----------
+# ---------- Why ----------
 why = [
     ('01', '디렉션이 있는 촬영', '찍기 전에 설계합니다. 레퍼런스부터 무드보드, 세팅 계획까지 — 촬영은 기획의 마지막 단계입니다.'),
     ('02', '질감에 강한 스튜디오', '뷰티의 제형, F&B의 시즐, 패브릭의 결. 클로즈업에서 무너지지 않는 디테일.'),
@@ -130,15 +148,15 @@ why = [
     ('04', '원본부터 다른 퀄리티', '톤 정리만 거친 원본을 그대로 보여드릴 수 있는 촬영. 보정은 마지막 손질입니다.'),
 ]
 cells = ''.join(f'''
-    <div class="wcell"><span class="num">{n}</span><div><h3>{t}</h3><p>{p}</p></div></div>''' for n, t, p in why)
+    <div class="wcell"><span class="num">{w0}</span><div><h3>{w1}</h3><p>{w2}</p></div></div>''' for w0, w1, w2 in why)
 pages.append(f'''
 <section class="pg">
-  {meta_bar('WHY HOLYMOLLY', 13)}
+  {meta_bar('WHY HOLYMOLLY', n())}
   <h2 class="sec-title">홀리몰리와 찍으면 다른 것</h2>
   <div class="whygrid">{cells}</div>
 </section>''')
 
-# ---------- 14 Process (블랙) ----------
+# ---------- Process ----------
 proc = [
     ('01', '상담 · 기획', '24시간 안에 답장합니다. 목적과 무드를 듣고 레퍼런스 · 세팅 · 견적을 제안합니다.'),
     ('02', '촬영', '역삼 스튜디오 또는 로케이션. 현장에서 컷을 함께 확인하며 진행합니다.'),
@@ -146,15 +164,15 @@ proc = [
     ('04', '전달', '고해상도 완성본을 일정에 맞춰 구글 드라이브로 전달합니다.'),
 ]
 cols = ''.join(f'''
-    <div class="pcol"><span class="bignum">{n}</span><h3>{t}</h3><p>{p}</p></div>''' for n, t, p in proc)
+    <div class="pcol"><span class="bignum">{p0}</span><h3>{p1}</h3><p>{p2}</p></div>''' for p0, p1, p2 in proc)
 pages.append(f'''
 <section class="pg dark">
-  {meta_bar('HOW WE WORK', 14, True)}
+  {meta_bar('HOW WE WORK', n(), True)}
   <h2 class="sec-title wh">상담부터 전달까지, 네 걸음</h2>
   <div class="procgrid">{cols}</div>
 </section>''')
 
-# ---------- 15 진행 안내 (FAQ 기반) ----------
+# ---------- 진행 안내 ----------
 guide = [
     ('원본은 다음 날, 무료', '촬영 원본(JPG)은 기본 무료로, 촬영 다음 날 구글 드라이브 링크로 전달됩니다. RAW · PSD는 요청 시 별도 제공.'),
     ('보정본은 7일 이내', '셀렉하신 날로부터 7일 이내에 정밀 보정본을 전달합니다. 급한 일정은 ASAP 긴급 보정 옵션으로 단축 납품이 가능합니다.'),
@@ -162,18 +180,18 @@ guide = [
     ('카톡으로 편하게', '카카오톡 채널 @스튜디오홀리몰리에서 1:1 상담으로 바로 진행 상황을 주고받을 수 있습니다.'),
 ]
 gcells = ''.join(f'''
-    <div class="gcell"><h3>{t}</h3><p>{p}</p></div>''' for t, p in guide)
+    <div class="gcell"><h3>{g0}</h3><p>{g1}</p></div>''' for g0, g1 in guide)
 pages.append(f'''
 <section class="pg">
-  {meta_bar('WORKING WITH US', 15)}
+  {meta_bar('WORKING WITH US', n())}
   <h2 class="sec-title">이렇게 진행됩니다</h2>
   <div class="guidegrid">{gcells}</div>
 </section>''')
 
-# ---------- 16 Contact (블랙) ----------
+# ---------- Contact ----------
 pages.append(f'''
 <section class="pg dark contactpg">
-  {meta_bar('CONTACT', 16, True)}
+  {meta_bar('CONTACT', n(), True)}
   <div class="contact-main"><h2>START<br>A PROJECT&nbsp;→</h2></div>
   <div class="contactgrid">
     <div><span>EMAIL</span><b>studio.holymolly@gmail.com</b></div>
@@ -232,22 +250,31 @@ padding:5.4mm 0;border-bottom:.3mm solid var(--line)}
 .row h3{font-size:16.5pt;font-weight:800;letter-spacing:-.01em}
 .row .cnt{font-size:8pt;letter-spacing:.18em;color:var(--gray3)}
 .row p{font-size:9.5pt;color:var(--gray);line-height:1.6}
-/* works divider */
-.worksdiv{margin-top:26mm}
-.worksdiv h2{font-size:95pt;font-weight:400;letter-spacing:.08em}
-.worksdiv p{margin-top:10mm;color:var(--dgray);font-size:11pt}
+/* works divider + filmstrip */
+.worksdiv{margin-top:14mm}
+.worksdiv h2{font-size:82pt;font-weight:400;letter-spacing:.08em}
+.worksdiv p{margin-top:7mm;color:var(--dgray);font-size:11pt}
+.filmstrip{position:absolute;left:12mm;right:12mm;bottom:11mm;display:grid;
+grid-template-columns:repeat(8,1fr);gap:2.5mm}
+.filmstrip img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
 /* case */
 .case{padding:0}
-.case-main{position:absolute;left:0;top:0;bottom:0;width:64%}
+.case-main{position:absolute;left:0;top:0;bottom:0;width:60%}
 .case-main img{width:100%;height:100%;object-fit:cover;display:block}
-.case-side{position:absolute;right:0;top:0;bottom:0;width:36%;padding:8mm 10mm;display:flex;flex-direction:column}
-.case-subs{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
-.case-subs img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
-.case-cap{margin-top:auto;border-top:.5mm solid var(--ink);padding-top:5mm}
+.case-side{position:absolute;right:0;top:0;bottom:0;width:40%;padding:8mm 10mm;display:flex;flex-direction:column}
+.case-subs{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm}
+.case-subs img{width:100%;aspect-ratio:4/4.6;object-fit:cover;display:block}
+.case-cap{margin-top:auto;border-top:.5mm solid var(--ink);padding-top:4.5mm}
 .case-cap .cc{font-size:8pt;letter-spacing:.22em;color:var(--gray)}
-.case-cap h3{font-size:21pt;font-weight:800;margin:2.5mm 0}
+.case-cap h3{font-size:20pt;font-weight:800;margin:2mm 0}
 .case-cap p{font-size:9.5pt;color:var(--gray);line-height:1.6}
 .case-pageno{position:absolute;right:10mm;bottom:6mm;font-size:8.5pt;letter-spacing:.22em;color:var(--gray3)}
+/* gallery brand wall */
+.gal{padding-bottom:9mm}
+.galgrid{margin-top:5mm;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(4,1fr);
+gap:1.8mm;height:156mm}
+.gcellimg{overflow:hidden;background:#eceae7}
+.gcellimg img{width:100%;height:100%;object-fit:cover;display:block}
 /* clients */
 .clients{margin-top:9mm;display:grid;grid-template-columns:repeat(6,1fr);gap:.3mm;background:var(--line);
 border:.3mm solid var(--line)}
@@ -310,7 +337,7 @@ html = f'''<!DOCTYPE html>
 <body>
 <div class="printbar">
   <b>STUDIO HOLYMOLLY 회사소개서</b>
-  <span>PDF로 저장: 아래 버튼 → 대상 "PDF로 저장" → 여백 "없음" · "배경 그래픽" 체크</span>
+  <span>PDF로 저장: 사진이 모두 뜬 뒤 버튼 클릭 → 대상 "PDF로 저장" → 여백 "없음" · "배경 그래픽" 체크</span>
   <button onclick="window.print()">PDF로 저장</button>
 </div>
 {''.join(pages)}
