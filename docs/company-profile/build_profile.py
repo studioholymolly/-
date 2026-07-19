@@ -2,7 +2,8 @@
 """studioholymolly.com의 실제 콘텐츠(사진 URL·수치·클라이언트)로
 인쇄용(PDF 저장) HTML 회사소개서를 생성한다. 16:9 페이지, 모노크롬 시스템.
 대표(케이스) 페이지 뒤에 같은 카테고리 갤러리(10컷/페이지, 원본 비율 유지)가 이어지는 구성."""
-import json
+import json, os
+LITE = os.environ.get('LITE') == '1'
 
 d = json.load(open('profile_data.json'))
 sections, logos, cover, strip = d['sections'], d['logos'], d['cover'], d['strip']
@@ -124,7 +125,7 @@ for sec in sections:
   <div class="case-pageno">{n():02d}</div>
 </section>''')
     gn_total = len(sec['galleries'])
-    for gi, items in enumerate(sec['galleries'], 1):
+    for gi, items in enumerate(sec['galleries'] if not LITE else [], 1):
         cells = ''.join(f'<div class="gph"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
         pages.append(f'''
 <section class="pg gal">
@@ -327,6 +328,36 @@ font-size:13px;display:flex;gap:18px;align-items:center}
 }
 '''
 
+LITE_JS = '''<script>
+async function litePrint() {
+  const st = document.getElementById('pbStatus');
+  const imgs = [...document.querySelectorAll('.pg img')].filter(im => !im.src.startsWith('data:'));
+  let fail = 0, done = 0;
+  for (const im of imgs) {
+    try {
+      const src = im.currentSrc || im.src;
+      const big = new Image();
+      big.crossOrigin = 'anonymous';
+      await new Promise((res, rej) => { big.onload = res; big.onerror = rej;
+        big.src = src + (src.includes('?') ? '&' : '?') + 'lite=1'; });
+      const M = 1000, r = Math.min(1, M / Math.max(big.naturalWidth, big.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(big.naturalWidth * r); c.height = Math.round(big.naturalHeight * r);
+      c.getContext('2d').drawImage(big, 0, 0, c.width, c.height);
+      im.src = c.toDataURL('image/jpeg', 0.62);
+    } catch (e) { fail++; }
+    done++;
+    st.textContent = '이미지 최적화 중 ' + done + '/' + imgs.length + ' — 완료되면 저장 창이 열립니다';
+  }
+  if (fail > imgs.length / 2) {
+    st.textContent = '경량화가 차단되어 일반 저장으로 진행합니다. 저장 후 ilovepdf.com의 PDF 압축으로 4MB 이하로 줄여주세요.';
+  } else {
+    st.textContent = '최적화 완료 — 대상 "PDF로 저장" · 여백 "없음" · "배경 그래픽" 체크';
+  }
+  setTimeout(() => window.print(), 400);
+}
+</script>'''
+
 html = f'''<!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -338,13 +369,16 @@ html = f'''<!DOCTYPE html>
 </head>
 <body>
 <div class="printbar">
-  <b>STUDIO HOLYMOLLY 회사소개서</b>
-  <span>PDF로 저장: 사진이 모두 뜬 뒤 버튼 클릭 → 대상 "PDF로 저장" → 여백 "없음" · "배경 그래픽" 체크</span>
+  <b>STUDIO HOLYMOLLY 회사소개서{' (요약본)' if LITE else ''}</b>
+  <span id="pbStatus">PDF로 저장: 사진이 모두 뜬 뒤 버튼 클릭 → 대상 "PDF로 저장" → 여백 "없음" · "배경 그래픽" 체크</span>
+  {'<button onclick="litePrint()">경량 PDF 저장 (4MB 이하)</button>' if LITE else ''}
   <button onclick="window.print()">PDF로 저장</button>
 </div>
+{LITE_JS if LITE else ''}
 {''.join(pages)}
 </body>
 </html>'''
 
-open('STUDIO-HOLYMOLLY_Profile_2026.html', 'w').write(html)
-print('saved, pages:', html.count('class="pg'))
+out = 'STUDIO-HOLYMOLLY_Profile_2026_PDF.html' if LITE else 'STUDIO-HOLYMOLLY_Profile_2026.html'
+open(out, 'w').write(html)
+print('saved', out, ', pages:', html.count('class="pg'))
