@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STUDIO HOLYMOLLY — 브랜드가 보여지는 모든 장면을 만듭니다</title>
+<meta name="description" content="서울 역삼 비주얼 디렉션 스튜디오. 사진·영상·BX 디자인까지, 하나의 무드로 이어지는 장면을 설계합니다.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/favicon-192.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="STUDIO HOLYMOLLY">
+<meta property="og:description" content="브랜드가 보여지는 모든 장면을 만듭니다 — 서울 역삼 비주얼 디렉션 스튜디오">
+<meta property="og:image" content="https://studioholymolly.vercel.app/assets/og.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<section class="hero" id="hero">
+  <div class="hero-bg" id="heroBg"></div>
+  <div class="hero-shade"></div>
+  <h1 class="sr-only">STUDIO HOLYMOLLY — 커머셜 사진·영상 스튜디오</h1>
+  <div class="hero-content">
+    <div class="hero-logo"><img src="/assets/logo-stack.png" alt="STUDIO HOLYMOLLY"></div>
+    <p id="heroSubtitle"></p>
+    <div class="meta" id="heroMeta"></div>
+  </div>
+</section>
+
+<div class="marquee">
+  <div class="track" id="marqueeTrack"></div>
+</div>
+
+<section class="intro reveal" id="about">
+  <p id="introText"></p>
+</section>
+
+<div id="services"></div>
+
+<div class="section-head reveal" id="workHead">
+  <h2>Selected Work</h2>
+  <span class="idx">(01 — PHOTO)</span>
+</div>
+
+<section class="workslide" id="workSlideWrap" aria-label="Selected Work">
+  <div class="wstrack" id="workSlide"></div>
+</section>
+<div class="workmore reveal" id="workMore">
+  <a href="/photo">View All Works →</a>
+</div>
+
+<section class="stats" id="stats"></section>
+
+<div id="homeClients" hidden>
+  <div class="section-head reveal" style="padding-top:120px">
+    <h2>Clients</h2>
+    <span class="idx">(WITH HOLYMOLLY)</span>
+  </div>
+  <div class="clients" id="homeClientsGrid"></div>
+</div>
+
+<div id="homeReviews" hidden>
+  <div class="section-head reveal" style="padding-top:120px">
+    <h2>Reviews</h2>
+    <span class="idx">(CLIENT VOICES)</span>
+  </div>
+  <p class="sec-lead reveal">눈에 보이는 결과물의 차이를 경험한 브랜드들이 다시 홀리몰리를 찾습니다.<br>클라이언트가 직접 남긴 후기를 확인해 보세요.</p>
+  <div class="reviews" id="reviewsGrid"></div>
+</div>
+
+<div id="video" hidden>
+  <div class="section-head reveal" style="padding-top:120px">
+    <h2>Video</h2>
+    <span class="idx">(02 — MOTION)</span>
+  </div>
+  <section class="videoslide" aria-label="Video">
+    <div class="vstrack" id="videoSlide"></div>
+  </section>
+  <div class="workmore reveal">
+    <a href="/video">View All Videos →</a>
+  </div>
+</div>
+
+<section class="cta" id="contact">
+  <img class="cta-symbol reveal" src="/assets/symbol-bk.png" alt="">
+  <h2 class="reveal" id="ctaHeading"></h2>
+  <a class="pill reveal" id="ctaButton" href="#"></a>
+</section>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+let heroTimer = null;
+function initHeroSlides(slides) {
+  const bg = document.getElementById("heroBg");
+  if (heroTimer) { clearInterval(heroTimer); heroTimer = null; }
+  if (!slides.length) { bg.innerHTML = ""; return; }
+  bg.innerHTML = slides.map((s, i) =>
+    `<img src="${HM.esc(s.image)}" alt="" ${i === 0 ? 'class="on"' : ""} loading="${i === 0 ? "eager" : "lazy"}">`).join("");
+  document.getElementById("hero").classList.add("has-slides");
+  if (slides.length > 1) {
+    let cur = 0;
+    const imgs = bg.querySelectorAll("img");
+    heroTimer = setInterval(() => {
+      imgs[cur].classList.remove("on");
+      cur = (cur + 1) % imgs.length;
+      imgs[cur].classList.add("on");
+    }, 2500);
+  }
+}
+
+HM.boot("home", c => {
+  document.getElementById("heroSubtitle").textContent = c.hero.subtitle || "";
+  document.getElementById("heroMeta").textContent = c.hero.meta || "";
+
+  const track = document.getElementById("marqueeTrack");
+  const marqueeLogos = (c.clients || []).filter(l => l.image);
+  const words = marqueeLogos.length
+    ? marqueeLogos.map(l => `<span class="mq-logo"><img src="${HM.esc(l.image)}" alt="${HM.esc(l.name || "client")}" loading="lazy"></span>`).join("")
+    : (c.marquee || []).map((w, i) => i % 2 ? `<span><em>${HM.esc(w)}</em></span>` : `<span>${HM.esc(w)}</span>`).join("");
+  track.innerHTML = words + words;
+  // 로고 개수에 비례해 속도 유지 (기본 텍스트는 30s)
+  if (marqueeLogos.length) track.style.animationDuration = Math.max(30, marqueeLogos.length * 4) + "s";
+
+  // intro: *별표* 감싼 부분은 스크롤 시 서서히 선명해지는 강조
+  document.getElementById("introText").innerHTML =
+    HM.esc(c.intro || "").replace(/\*(.+?)\*/g, '<em class="intro-em">$1</em>');
+
+  // selected work — 가로 자동 슬라이드 (전체 목록은 /photo)
+  const allBrands = HM.getBrands(c);
+  document.getElementById("workHead").hidden = allBrands.length === 0;
+  document.getElementById("workSlideWrap").hidden = allBrands.length === 0;
+  document.getElementById("workMore").hidden = allBrands.length === 0;
+  if (allBrands.length) {
+    const picks = allBrands.slice(0, 14);
+    const reps = Math.max(1, Math.ceil(8 / picks.length)); // 적어도 8칸을 채워 끊김 없는 루프
+    const half = Array.from({ length: reps }, () => picks).flat();
+    const cell = b => `
+      <div class="wslide" role="button" tabindex="0" aria-label="${HM.esc(b.name)} 사진 보기">
+        <div class="frame">
+          <img src="${HM.esc(b.photos[0].image)}" alt="${HM.esc(b.name)}" loading="lazy">
+          ${b.photos.length > 1 ? `<span class="nbadge">${b.photos.length} PHOTOS</span>` : ""}
+        </div>
+        <div class="wname"><h3>${HM.esc(b.name)}</h3></div>
+      </div>`;
+    const strip = document.getElementById("workSlide");
+    strip.innerHTML = half.map(cell).join("") + half.map(cell).join("");
+    strip.style.animationDuration = (half.length * 2.5) + "s";
+    strip.querySelectorAll(".wslide").forEach((el, k) => {
+      const b = half[k % half.length];
+      el.addEventListener("click", () => HM.openLightbox(b));
+      el.addEventListener("keydown", e => { if (e.key === "Enter") HM.openLightbox(b); });
+    });
+  }
+
+  // photography / videography service intro
+  // Videography 이미지 우선순위: 어드민 지정 대표컷 > 첫 유튜브 영상 썸네일 > 사진 폴백
+  const photoImg = c.services?.photoImage || allBrands[0]?.photos[0]?.image || "";
+  const firstVid = (c.videos || []).find(v => v.youtubeId);
+  const videoImg = c.services?.videoImage
+    || (firstVid ? `https://i.ytimg.com/vi/${firstVid.youtubeId}/hqdefault.jpg` : "")
+    || allBrands[1]?.photos[0]?.image || photoImg;
+  document.getElementById("services").innerHTML = [
+    { eyebrow: "다양한 감각과 무드를 담다", title: "Photography", desc: "브랜드의 무드를 깊이 있게 읽고, 뷰티의 제형부터 F&B의 시즐까지 클로즈업에서도 무너지지 않는 디테일로 담습니다. 보기 좋은 사진을 넘어, 제품이 팔리게 하는 컷을 만듭니다.", href: "/photo", img: photoImg, rev: false },
+    { eyebrow: "기획부터 촬영, 후반까지", title: "Videography", desc: "숏폼·SNS 콘텐츠부터 커머스 영상, 브랜드 필름까지. 사진과 같은 무드를 무빙으로 확장해 브랜드만의 영상을 완성합니다.", href: "/video", img: videoImg, rev: true }
+  ].map(s => `
+    <section class="svc reveal ${s.rev ? "rev" : ""}">
+      <div class="img">${s.img ? `<img src="${HM.esc(s.img)}" alt="${s.title}" loading="lazy">` : ""}</div>
+      <div>
+        <div class="eyebrow">${HM.esc(s.eyebrow)}</div>
+        <h2>${s.title}</h2>
+        <p class="desc">${HM.esc(s.desc)}</p>
+        <a class="pill-link" href="${s.href}">View Works →</a>
+      </div>
+    </section>`).join("");
+
+  // clients on home
+  const clients = (c.clients || []).filter(l => l.image);
+  document.getElementById("homeClients").hidden = clients.length === 0;
+  document.getElementById("homeClientsGrid").innerHTML = clients.map(l =>
+    `<div class="clogo reveal"><img src="${HM.esc(l.image)}" alt="${HM.esc(l.name || "client")}" loading="lazy"></div>`).join("");
+
+  HM.fillStats(c, document.getElementById("stats"));
+
+  // client reviews
+  const reviews = (c.reviews || []).filter(r => r && (r.text || "").trim());
+  document.getElementById("homeReviews").hidden = reviews.length === 0;
+  document.getElementById("reviewsGrid").innerHTML = reviews.map(r => `
+    <div class="review reveal">
+      <div class="rfrom">From. <b>${HM.esc(r.brand || "")}</b></div>
+      <p class="rtext">${HM.esc(r.text).replace(/\n/g, "<br>")}</p>
+    </div>`).join("");
+
+  const vidCount = HM.renderVideoStrip(c, document.getElementById("videoSlide"));
+  document.getElementById("video").hidden = vidCount === 0;
+
+  const ctaH = document.getElementById("ctaHeading");
+  ctaH.innerHTML = HM.esc(c.cta.heading || "").replace(/\n/g, "<br>");
+  const btn = document.getElementById("ctaButton");
+  btn.textContent = c.cta.buttonText || "문의하기";
+  btn.href = "/contact";
+
+  const heroSlides = (c.heroSlides || []).filter(s => s && s.image);
+  initHeroSlides(heroSlides.length ? heroSlides : allBrands.slice(0, 5).map(b => ({ image: b.photos[0].image })));
+});
+</script>
+</body>
+</html>

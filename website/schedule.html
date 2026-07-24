@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Schedule — STUDIO HOLYMOLLY</title>
+<meta name="description" content="스튜디오 홀리몰리 촬영 스케줄과 오시는 길 — 서울 강남구 역삼동 783-2 B1.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<main class="page-main">
+  <div class="page-head reveal">
+    <h1>Schedule</h1>
+    <span class="idx">(STUDIO CALENDAR)</span>
+  </div>
+
+  <div class="cal-section reveal" id="calSection" hidden>
+    <div class="cal-wrap">
+      <iframe id="calFrame" src="" title="스튜디오 스케줄" frameborder="0" scrolling="no"></iframe>
+    </div>
+    <p class="map-addr">비어 있는 날짜는 촬영 예약이 가능합니다. 원하는 일정을 Contact 페이지로 문의해 주세요.</p>
+  </div>
+  <p class="empty-page" id="calEmpty" hidden>스케줄 캘린더를 준비 중입니다. 촬영 일정은 Contact 페이지에서 문의해 주세요.</p>
+
+  <div id="mapSection" class="reveal" hidden>
+    <div class="section-head" style="padding-top:40px">
+      <h2>Location</h2>
+      <span class="idx">(오시는 길)</span>
+    </div>
+    <div class="map-wrap">
+      <iframe id="mapFrame" src="" title="오시는 길" loading="lazy"></iframe>
+    </div>
+    <p class="map-addr" id="mapAddr"></p>
+  </div>
+</main>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+HM.boot("schedule", c => {
+  const calUrl = (c.calendar && c.calendar.embedUrl) || "";
+  if (calUrl) {
+    document.getElementById("calFrame").src = calUrl;
+    document.getElementById("calSection").hidden = false;
+  } else {
+    document.getElementById("calEmpty").hidden = false;
+  }
+
+  const loc = c.footer.location || "";
+  if (loc) {
+    document.getElementById("mapSection").hidden = false;
+    document.getElementById("mapFrame").src = "https://maps.google.com/maps?q=" + encodeURIComponent(loc) + "&hl=ko&z=16&output=embed";
+    document.getElementById("mapAddr").textContent = loc;
+  }
+});
+</script>
+</body>
+</html>
