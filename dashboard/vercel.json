@@ -5,6 +5,7 @@
   "outputDirectory": ".",
   "installCommand": "echo no-deps",
   "rewrites": [
+    { "source": "/ads", "destination": "/ads.html" },
     { "source": "/((?!api/|assets/|brand/|favicon.ico).*)", "destination": "/index.html" }
   ]
 }
