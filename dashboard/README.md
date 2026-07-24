@@ -1,18 +1,21 @@
-# 스튜디오 홀리몰리 운영 대시보드 (재배포본)
+# 홀리몰리 운영 대시보드 — 원본 소스
 
-`holymolly-ops.vercel.app` 대시보드를 기존과 동일하게 재배포하기 위한 정적 빌드 결과물입니다.
-배포된 프로덕션 번들을 복원하고 **견적서 항목만 촬영비 5 / 외주 5 두 구역(최대 10개)**으로 패치했습니다.
+`holymolly-ops.vercel.app`(Vercel 프로젝트 `holymolly-dashboard`, Root Directory=`dashboard`)로 배포되는
+Vite + React 앱의 **원본 소스**입니다. 이전에는 빌드 결과물(번들)만 이 저장소에 있었지만,
+이제 소스가 정식으로 여기 있으므로 **번들 패치 없이 소스를 고치고 push하면 Vercel이 빌드**합니다.
 
 ## 구성
-- `index.html`, `assets/*` — 실제 프로덕션 빌드 (견적서 5/5 패치 반영)
-- `ads.html` — **광고 효율 화면** — 메타 광고 성과 분석: KPI·일별 추이·캠페인별 CTR/클릭 비용·예산 배분 vs 클릭 성과·게재 위치(릴스/피드/스토리)별 효율·캠페인 상세 테이블. 대시보드의 **'메타 광고' 탭 안에 자동 표시**되며(아래 ads-tab.js), `/ads`로 단독 접속도 가능. 별도 빌드 없이 단독 HTML로 동작, `api/meta.js` 프록시 사용
-- `assets/ads-tab.js` — '메타 광고' 탭이 열리면 기존 탭 내용 대신 광고 효율 화면(`/ads?embed=1`)을 그 자리에 띄우는 스크립트. 빌드된 번들은 수정하지 않음 (번들 소스가 저장소에 없어 DOM 오버레이 방식 사용)
-- `api/env.js` — Supabase 공개 설정을 Vercel 환경변수에서 런타임 주입 (키는 저장소에 미포함)
-- `api/meta.js` — 메타 광고 프록시 (관측 동작 기반 복원) — 기간 프리셋(`preset=last_7d|last_30d|last_90d`)과 게재 위치 분석(`q=placement`) 지원
-- `brand/*` — 로고
-- `vercel.json` — 빌드 없이 정적 + 서버리스 함수로 서빙
+- `src/` — 대시보드 SPA (탭별 페이지는 `src/pages/`)
+- `api/` — Vercel 서버리스 함수: `meta.js`(메타 광고 프록시 · `q=all&preset=last_7d|last_30d|last_90d`, 게재 위치 `placement` 포함), `brand-mood.js`, `inquiry-upload.js`, `notify-inquiry.js`
+- `public/brand/` — 로고 에셋
+- `__*_test.html` + `src/__*Test.jsx` — 페이지별 목데이터 하네스 (`npx vite` 후 `/__ads_test.html` 등, 배포에는 미포함)
 
-## Vercel 설정
-- **Root Directory**: `dashboard`
-- Framework: Other (vercel.json에서 `framework: null`로 지정)
-- 필요한 환경변수: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `META_AD_ACCOUNT_ID`, `META_ACCESS_TOKEN`
+## 로컬 개발
+```bash
+npm install
+npx vite        # http://localhost:5473
+npx vite build  # dist/
+```
+
+## 환경변수 (Vercel 프로젝트에 설정됨)
+`META_ACCESS_TOKEN`, `META_AD_ACCOUNT_ID` — 메타 광고 프록시용. Supabase는 공개 anon 키 폴백 내장(RLS 보호).
