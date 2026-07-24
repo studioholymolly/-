@@ -1,11 +1,15 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "buildCommand": "echo prebuilt-static-no-build",
-  "outputDirectory": ".",
-  "installCommand": "echo no-deps",
+  "headers": [
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/ads", "destination": "/ads.html" },
-    { "source": "/((?!api/|assets/|brand/|favicon.ico).*)", "destination": "/index.html" }
+    { "source": "/inquiry", "destination": "/index.html" },
+    { "source": "/planner", "destination": "/index.html" },
+    { "source": "/reference", "destination": "/index.html" }
   ]
 }
