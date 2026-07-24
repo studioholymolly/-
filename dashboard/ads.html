@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>광고 효율 · 스튜디오 홀리몰리</title>
+<link rel="icon" href="/brand/simbol-bk.png" />
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#f4f4f5; --panel:#ffffff; --panel2:#fafafa;
+    --ink:#0a0a0a; --ink2:#52514e; --mu:#898781;
+    --grid:#e1e0d9; --axis:#c3c2b7; --line:#e5e5e7;
+    /* dataviz 카테고리 팔레트 (light) */
+    --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300;
+    --other:#9d9da4; --good:#006300; --active:#0ca30c;
+    --font:-apple-system,BlinkMacSystemFont,"Pretendard","Apple SD Gothic Neo","Malgun Gothic","Segoe UI",sans-serif;
+    --sh:0 1px 2px rgba(10,10,10,.04),0 6px 20px -12px rgba(10,10,10,.12);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      color-scheme: dark;
+      --bg:#0d0d0d; --panel:#1a1a19; --panel2:#222220;
+      --ink:#ffffff; --ink2:#c3c2b7; --mu:#898781;
+      --grid:#2c2c2a; --axis:#383835; --line:#2c2c2a;
+      --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300;
+      --other:#75757b; --good:#0ca30c;
+      --sh:none;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.5;letter-spacing:-.01em;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 16px 48px}
+  header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+  header img{width:26px;height:26px}
+  @media (prefers-color-scheme: dark){ header img{filter:invert(1)} }
+  header h1{font-size:20px;font-weight:800;margin:0}
+  header .sub{font-size:12.5px;color:var(--mu)}
+  header .links{margin-left:auto;display:flex;gap:8px}
+  .btn{display:inline-block;padding:7px 12px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;text-decoration:none;color:var(--ink2)}
+  .btn:hover{border-color:var(--axis)}
+
+  /* 필터 행 — 모든 섹션의 기간을 한 번에 바꿈 */
+  .filters{display:flex;align-items:center;gap:6px;margin:14px 0 18px}
+  .filters .lbl{font-size:12px;color:var(--mu);margin-right:2px}
+  .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer;font-family:inherit}
+  .chip.on{border-color:var(--ink);color:var(--ink);font-weight:700}
+  .meta-note{margin-left:auto;font-size:11.5px;color:var(--mu)}
+  @media (max-width:640px){ .meta-note{display:none} }
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:16px 18px;min-width:0}
+  .card h2{font-size:13.5px;font-weight:700;margin:0 0 2px}
+  .card .hint{font-size:11.5px;color:var(--mu);margin:0 0 12px}
+
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}
+  @media (max-width:900px){ .kpis{grid-template-columns:repeat(3,1fr)} }
+  @media (max-width:520px){ .kpis{grid-template-columns:repeat(2,1fr)} }
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--sh);min-width:0}
+  .kpi .lb{font-size:11.5px;color:var(--mu)}
+  .kpi .v{font-size:20px;font-weight:700;margin-top:2px;white-space:nowrap}
+  .kpi .h{font-size:10.5px;color:var(--mu);margin-top:3px;line-height:1.35}
+  .kpi svg{display:block;margin-top:6px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+  @media (max-width:760px){ .grid2{grid-template-columns:1fr} }
+  .stack{display:grid;gap:14px;margin-bottom:14px}
+
+  /* 가로 막대 */
+  .hb-row{display:flex;align-items:center;gap:8px;padding:3px 0}
+  .hb-lb{flex:0 0 108px;font-size:12px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}
+  .hb-track{flex:1;position:relative;height:16px;min-width:0}
+  .hb-bar{position:absolute;left:0;top:0;height:16px;border-radius:0 4px 4px 0;background:var(--s1);min-width:2px}
+  .hb-val{flex:0 0 64px;font-size:11.5px;color:var(--ink2);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hb-row:hover .hb-lb{color:var(--ink)}
+
+  /* 비중 스택 바 */
+  .share-lb{font-size:11.5px;color:var(--mu);margin:10px 0 5px}
+  .share-bar{display:flex;gap:2px;height:20px;border-radius:5px;overflow:hidden}
+  .share-seg{min-width:3px}
+  .share-legend{margin-top:12px;width:100%;border-collapse:collapse;font-size:12px}
+  .share-legend th{text-align:right;font-weight:500;color:var(--mu);font-size:11px;padding:3px 0 5px 10px;white-space:nowrap}
+  .share-legend th:first-child{text-align:left;padding-left:0}
+  .share-legend td{padding:3.5px 0 3.5px 10px;text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2);border-top:1px solid var(--line);white-space:nowrap}
+  .share-legend td:first-child{text-align:left;padding-left:0;color:var(--ink);max-width:0;width:52%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sw{display:inline-block;width:9px;height:9px;border-radius:2.5px;margin-right:7px;vertical-align:0}
+
+  /* 일별 차트 */
+  .dual{position:relative}
+  .dual .pane-lb{font-size:11.5px;color:var(--mu);margin:2px 0 4px}
+  .dual svg{display:block;width:100%}
+  .xline{position:absolute;top:0;width:1px;background:var(--axis);pointer-events:none;display:none}
+  .tip{position:absolute;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:9px;box-shadow:var(--sh);padding:8px 11px;font-size:12px;pointer-events:none;display:none;white-space:nowrap}
+  .tip .t-date{color:var(--mu);font-size:11px;margin-bottom:3px}
+  .tip .t-row{display:flex;align-items:center;gap:7px}
+  .tip .t-key{display:inline-block;width:10px;height:2.5px;border-radius:2px}
+  .tip .t-v{font-weight:700}
+  .tip .t-n{color:var(--ink2)}
+
+  /* 테이블 */
+  .tbl-wrap{overflow-x:auto}
+  table.tbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:640px}
+  .tbl th{font-size:11px;font-weight:600;color:var(--mu);text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .tbl th:nth-child(-n+3){text-align:left}
+  .tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;color:var(--ink2);white-space:nowrap}
+  .tbl td:nth-child(-n+3){text-align:left}
+  .tbl tr:last-child td{border-bottom:none}
+  .tbl .cname{color:var(--ink);font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  .thumb{width:36px;height:36px;border-radius:8px;object-fit:cover;display:block;border:1px solid var(--line)}
+  .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:1px}
+  .st{font-size:11.5px}
+
+  .glossary{font-size:11.5px;color:var(--mu);line-height:1.7;margin-top:18px}
+  .glossary b{color:var(--ink2);font-weight:600}
+
+  .notice{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--ink2)}
+  .notice b{color:var(--ink)}
+  .loading{opacity:.5;pointer-events:none}
+  .fade{transition:opacity .2s}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="/brand/simbol-bk.png" alt="" />
+    <div>
+      <h1>광고 효율</h1>
+      <div class="sub">인스타그램·페이스북 광고 성과를 쉬운 그래프로 — 전 팀원 공개</div>
+    </div>
+    <div class="links">
+      <a class="btn" href="/">← 운영 대시보드</a>
+      <a class="btn" href="https://adsmanager.facebook.com/adsmanager/manage/campaigns" target="_blank" rel="noopener">광고 관리자 ↗</a>
+    </div>
+  </header>
+
+  <div class="filters" id="filters">
+    <span class="lbl">기간</span>
+    <button class="chip" data-p="last_7d">최근 7일</button>
+    <button class="chip on" data-p="last_30d">최근 30일</button>
+    <button class="chip" data-p="last_90d">최근 90일</button>
+    <span class="meta-note" id="acct-note"></span>
+  </div>
+
+  <div id="app" class="fade">
+    <div class="notice">광고 데이터를 불러오는 중…</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict'
+  const $ = s => document.querySelector(s)
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+
+  const state = { preset: 'last_30d', d: null, currency: 'KRW', fx: null }
+
+  // ── 숫자 포맷 ──────────────────────────────────────────
+  const comma = n => Math.round(n).toLocaleString('ko-KR')
+  const won = n => '₩' + comma(n)
+  const compact = n => {
+    n = +n || 0
+    if (n >= 1e8) return (n / 1e8).toFixed(1).replace(/\.0$/, '') + '억'
+    if (n >= 1e4) { const m = n / 1e4; return (m >= 100 ? Math.round(m) : m.toFixed(1).replace(/\.0$/, '')) + '만' }
+    return comma(n)
+  }
+  const wonCompact = n => '₩' + compact(n)
+  const pct = n => (Math.round((+n || 0) * 100) / 100) + '%'
+  const toKRW = v => { v = +v || 0; return state.currency === 'USD' && state.fx ? v * state.fx : v }
+  const money = n => (state.currency !== 'USD' || state.fx) ? won(n) : '$' + comma(n)
+  const moneyC = n => (state.currency !== 'USD' || state.fx) ? wonCompact(n) : '$' + compact(n)
+
+  // 축 눈금 — 깔끔한 수로 반올림
+  function niceTicks(max, count) {
+    if (!(max > 0)) return [0, 1]
+    const raw = max / count
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)))
+    const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || raw
+    const ticks = []
+    for (let v = 0; v <= max + step * 0.001; v += step) ticks.push(v)
+    if (ticks[ticks.length - 1] < max) ticks.push(ticks[ticks.length - 1] + step)
+    return ticks
+  }
+
+  // ── API ────────────────────────────────────────────────
+  const api = q => fetch('/api/meta?q=' + q + '&preset=' + state.preset).then(r => r.json()).catch(() => null)
+
+  async function load() {
+    const app = $('#app')
+    if (state.d) app.classList.add('loading')
+    const [overview, summary, daily, campaigns, ads, placement, fx] = await Promise.all([
+      api('overview'), api('summary'), api('daily'), api('campaigns'), api('ads'), api('placement'), state.fx ? Promise.resolve(null) : api('fx'),
+    ])
+    if (fx && fx.krw) state.fx = fx.krw
+    if (overview && overview.account) state.currency = overview.account.currency || 'KRW'
+
+    if (!overview || overview.connected === false) {
+      app.classList.remove('loading')
+      app.innerHTML = '<div class="notice"><b>광고 계정이 아직 연결되지 않았습니다.</b><br/>' +
+        (overview && overview.message ? esc(overview.message) + '<br/>' : '') +
+        '<span style="font-size:12px">Vercel 환경변수 META_ACCESS_TOKEN, META_AD_ACCOUNT_ID를 확인해 주세요.</span></div>'
+      return
+    }
+
+    state.d = {
+      account: overview.account || null,
+      summary: (summary && summary.summary) || null,
+      daily: (daily && daily.daily) || [],
+      campaigns: (campaigns && campaigns.campaigns) || [],
+      ads: (ads && ads.ads) || [],
+      placement: (placement && placement.placement) || [],
+    }
+    render()
+    app.classList.remove('loading')
+  }
+
+  // ── 렌더 ───────────────────────────────────────────────
+  const PRESET_LB = { last_7d: '최근 7일', last_30d: '최근 30일', last_90d: '최근 90일' }
+  const SLOTS = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)', 'var(--s5)', 'var(--s6)']
+
+  function render() {
+    const d = state.d
+    if (d.account) $('#acct-note').textContent = '계정: ' + d.account.name + ' · 5분마다 갱신'
+
+    $('#app').innerHTML =
+      '<div class="kpis" id="kpis"></div>' +
+      '<div class="stack"><div class="card" id="daily-card"><h2>일별 추이</h2><p class="hint">' + PRESET_LB[state.preset] + ' · 날마다 얼마 쓰고, 얼마나 클릭됐나</p><div id="daily"></div></div></div>' +
+      '<div class="grid2">' +
+        '<div class="card"><h2>캠페인별 클릭률 (CTR)</h2><p class="hint" id="ctr-hint"></p><div id="ctr-bars"></div></div>' +
+        '<div class="card"><h2>캠페인별 링크 클릭 비용</h2><p class="hint" id="cpc-hint"></p><div id="cpc-bars"></div></div>' +
+      '</div>' +
+      '<div class="stack"><div class="card"><h2>예산 배분 vs 클릭 성과</h2><p class="hint">돈을 쓰는 캠페인에서 클릭이 나오고 있나 — 클릭 비중이 지출 비중보다 크면 효율이 좋은 캠페인</p><div id="share"></div></div></div>' +
+      '<div class="grid2">' +
+        '<div class="card"><h2>게재 위치별 지출</h2><p class="hint">릴스·피드·스토리 중 어디에 돈이 쓰였나</p><div id="pl-spend"></div></div>' +
+        '<div class="card"><h2>게재 위치별 링크 클릭률</h2><p class="hint">어디에 나간 광고가 클릭으로 이어졌나 — 높을수록 좋음</p><div id="pl-ctr"></div></div>' +
+      '</div>' +
+      '<div class="stack"><div class="card"><h2>캠페인 상세</h2><p class="hint">' + PRESET_LB[state.preset] + ' 성과 · 썸네일 클릭 = 인스타그램에서 보기</p><div class="tbl-wrap" id="tbl"></div></div></div>' +
+      '<div class="glossary" id="glossary"></div>'
+
+    renderKpis()
+    renderDaily()
+    renderCampaignBars()
+    renderShare()
+    renderPlacement()
+    renderTable()
+    $('#glossary').innerHTML =
+      '<b>용어</b> · <b>도달</b> 광고가 닿은 사람 수(같은 사람이 여러 번 봐도 1명) · <b>노출</b> 광고가 화면에 뜬 총 횟수 · ' +
+      '<b>빈도</b> 한 사람이 평균 몇 번 봤는지(노출÷도달) · <b>CTR</b> 본 것 중 클릭으로 이어진 비율(1~2% 준수, 3%↑ 아주 좋음) · ' +
+      '<b>링크 클릭</b> 광고를 눌러 프로필·사이트로 실제 이동한 횟수 · <b>링크 클릭 비용</b> 이동 1회를 얻는 데 든 돈(낮을수록 좋음)'
+  }
+
+  function sparkline(values, w, h) {
+    if (!values || values.length < 2) return ''
+    const max = Math.max.apply(null, values.concat([1]))
+    const pts = values.map((v, i) => (i / (values.length - 1) * w).toFixed(1) + ',' + (h - 2 - v / max * (h - 4)).toFixed(1)).join(' ')
+    return '<svg width="' + w + '" height="' + h + '" viewBox="0 0 ' + w + ' ' + h + '" aria-hidden="true"><polyline points="' + pts + '" fill="none" stroke="var(--mu)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/></svg>'
+  }
+
+  function renderKpis() {
+    const s = state.d.summary || {}
+    const daily = state.d.daily
+    const spend = toKRW(s.spend)
+    const freq = +s.frequency || 0
+    const kpis = [
+      { lb: '광고비', v: money(spend), h: PRESET_LB[state.preset] + ' 총 지출', spark: daily.map(r => toKRW(+r.spend || 0)) },
+      { lb: '도달', v: compact(+s.reach || 0), h: '광고가 닿은 사람 수 (중복 제외)' },
+      { lb: '노출', v: compact(+s.impressions || 0), h: freq ? '빈도 ' + freq.toFixed(1) + '회 — 한 사람이 평균 ' + Math.round(freq * 10) / 10 + '번 봄' : '광고가 화면에 뜬 총 횟수' },
+      { lb: '링크 클릭', v: comma(+s.inline_link_clicks || 0), h: '프로필·사이트로 이동한 횟수', spark: daily.map(r => +r.inline_link_clicks || 0) },
+      { lb: '클릭률 (CTR)', v: pct(s.ctr), h: '1~2%면 준수 · 3% 이상 아주 좋음' },
+      { lb: '링크 클릭 비용', v: money(toKRW(s.cost_per_inline_link_click)), h: '이동 1회당 비용 — 낮을수록 좋음' },
+    ]
+    $('#kpis').innerHTML = kpis.map(k =>
+      '<div class="kpi"><div class="lb">' + k.lb + '</div><div class="v">' + esc(k.v) + '</div><div class="h">' + k.h + '</div>' +
+      (k.spark ? sparkline(k.spark, 64, 22) : '') + '</div>'
+    ).join('')
+  }
+
+  // 일별: 지출(막대) + 링크 클릭(선) — 축이 다르므로 한 그래프에 겹치지 않고 위아래로 나란히
+  function renderDaily() {
+    const el = $('#daily')
+    const rows = (state.d.daily || []).slice().sort((a, b) => a.date_start < b.date_start ? -1 : 1)
+    if (!rows.length) { el.innerHTML = '<p class="hint">기간 내 집행된 광고가 없어요.</p>'; return }
+
+    // 빠진 날짜는 0으로 채움
+    const byDate = {}
+    rows.forEach(r => { byDate[r.date_start] = r })
+    const days = []
+    const start = new Date(rows[0].date_start + 'T00:00:00')
+    const end = new Date(rows[rows.length - 1].date_start + 'T00:00:00')
+    for (let t = new Date(start); t <= end; t.setDate(t.getDate() + 1)) {
+      const key = t.toISOString().slice(0, 10)
+      const r = byDate[key] || {}
+      days.push({ date: key, spend: toKRW(+r.spend || 0), clicks: +r.inline_link_clicks || 0 })
+    }
+
+    const W = Math.max(280, el.clientWidth || 600)
+    const PAD_L = 46, PAD_R = 8, PLOT_H = 130, AXIS_H = 20
+    const plotW = W - PAD_L - PAD_R
+    const n = days.length
+    const slot = plotW / n
+    const barW = Math.min(24, Math.max(2, slot - 2))
+
+    function panel(values, color, fmt, kind) {
+      const max = Math.max.apply(null, values.concat([1]))
+      const ticks = niceTicks(max, 3)
+      const tmax = ticks[ticks.length - 1]
+      const y = v => PLOT_H - v / tmax * (PLOT_H - 8)
+      let g = ''
+      ticks.forEach(t => {
+        const ty = y(t)
+        g += '<line x1="' + PAD_L + '" y1="' + ty.toFixed(1) + '" x2="' + (W - PAD_R) + '" y2="' + ty.toFixed(1) + '" stroke="var(--grid)" stroke-width="1"/>'
+        g += '<text x="' + (PAD_L - 6) + '" y="' + (ty + 3.5).toFixed(1) + '" text-anchor="end" font-size="10" fill="var(--mu)" style="font-variant-numeric:tabular-nums">' + compact(t) + '</text>'
+      })
+      let marks = ''
+      if (kind === 'bar') {
+        values.forEach((v, i) => {
+          if (!v) return
+          const x = PAD_L + i * slot + (slot - barW) / 2
+          const top = y(v), h = PLOT_H - top
+          const r = Math.min(4, h, barW / 2)
+          marks += '<path d="M' + x.toFixed(1) + ' ' + PLOT_H + ' V' + (top + r).toFixed(1) +
+            ' Q' + x.toFixed(1) + ' ' + top.toFixed(1) + ' ' + (x + r).toFixed(1) + ' ' + top.toFixed(1) +
+            ' H' + (x + barW - r).toFixed(1) +
+            ' Q' + (x + barW).toFixed(1) + ' ' + top.toFixed(1) + ' ' + (x + barW).toFixed(1) + ' ' + (top + r).toFixed(1) +
+            ' V' + PLOT_H + ' Z" fill="' + color + '"/>'
+        })
+      } else {
+        const px = i => PAD_L + i * slot + slot / 2
+        const pts = values.map((v, i) => px(i).toFixed(1) + ',' + y(v).toFixed(1))
+        marks += '<polygon points="' + pts.join(' ') + ' ' + px(n - 1).toFixed(1) + ',' + PLOT_H + ' ' + px(0).toFixed(1) + ',' + PLOT_H + '" fill="' + color + '" opacity="0.1"/>'
+        marks += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+        const li = n - 1
+        marks += '<circle cx="' + px(li).toFixed(1) + '" cy="' + y(values[li]).toFixed(1) + '" r="4" fill="' + color + '" stroke="var(--panel)" stroke-width="2"/>'
+      }
+      // x축 날짜 라벨 ~5개
+      let xl = ''
+      const every = Math.max(1, Math.ceil(n / 5))
+      days.forEach((dv, i) => {
+        if (i % every !== 0 && i !== n - 1) return
+        if (i !== n - 1 && (n - 1 - i) < every * 0.5) return
+        const dd = new Date(dv.date + 'T00:00:00')
+        xl += '<text x="' + (PAD_L + i * slot + slot / 2).toFixed(1) + '" y="' + (PLOT_H + 14) + '" text-anchor="middle" font-size="10" fill="var(--mu)">' + (dd.getMonth() + 1) + '/' + dd.getDate() + '</text>'
+      })
+      g += '<line x1="' + PAD_L + '" y1="' + PLOT_H + '" x2="' + (W - PAD_R) + '" y2="' + PLOT_H + '" stroke="var(--axis)" stroke-width="1"/>'
+      return '<svg width="' + W + '" height="' + (PLOT_H + AXIS_H) + '" viewBox="0 0 ' + W + ' ' + (PLOT_H + AXIS_H) + '">' + g + marks + xl + '</svg>'
+    }
+
+    el.innerHTML = '<div class="dual" id="dual">' +
+      '<div class="pane-lb"><span class="sw" style="background:var(--s1)"></span>지출</div>' + panel(days.map(x => x.spend), 'var(--s1)', moneyC, 'bar') +
+      '<div class="pane-lb" style="margin-top:8px"><span class="sw" style="background:var(--s2);height:3px;border-radius:2px;vertical-align:2px"></span>링크 클릭</div>' + panel(days.map(x => x.clicks), 'var(--s2)', comma, 'line') +
+      '<div class="xline" id="xline"></div><div class="tip" id="dtip"></div></div>'
+
+    // 크로스헤어 + 툴팁 — 가장 가까운 날짜에 스냅, 두 지표를 한 번에
+    const dual = $('#dual'), xline = $('#xline'), tip = $('#dtip')
+    tip.innerHTML = '<div class="t-date"></div>' +
+      '<div class="t-row"><span class="t-key" style="background:var(--s1)"></span><span class="t-v" data-k="spend"></span><span class="t-n">지출</span></div>' +
+      '<div class="t-row"><span class="t-key" style="background:var(--s2)"></span><span class="t-v" data-k="clicks"></span><span class="t-n">링크 클릭</span></div>'
+    function onMove(ev) {
+      const rect = dual.getBoundingClientRect()
+      const mx = ev.clientX - rect.left
+      const i = Math.max(0, Math.min(n - 1, Math.round((mx - PAD_L - slot / 2) / slot)))
+      const cx = PAD_L + i * slot + slot / 2
+      xline.style.display = 'block'
+      xline.style.left = cx + 'px'
+      xline.style.height = rect.height + 'px'
+      const dv = days[i]
+      const dd = new Date(dv.date + 'T00:00:00')
+      tip.querySelector('.t-date').textContent = (dd.getMonth() + 1) + '월 ' + dd.getDate() + '일 (' + '일월화수목금토'[dd.getDay()] + ')'
+      tip.querySelector('[data-k=spend]').textContent = money(dv.spend)
+      tip.querySelector('[data-k=clicks]').textContent = comma(dv.clicks) + '회'
+      tip.style.display = 'block'
+      const tw = tip.offsetWidth
+      tip.style.left = Math.min(rect.width - tw - 4, Math.max(4, cx + (cx > rect.width / 2 ? -tw - 12 : 12))) + 'px'
+      tip.style.top = Math.max(4, ev.clientY - rect.top - 30) + 'px'
+    }
+    dual.addEventListener('pointermove', onMove)
+    dual.addEventListener('pointerleave', () => { xline.style.display = 'none'; tip.style.display = 'none' })
+  }
+
+  // 가로 막대 패널 (HTML) — 값은 막대 끝에 직접 표기
+  function hbars(el, items, fmt, color) {
+    if (!items.length) { el.innerHTML = '<p class="hint">표시할 데이터가 없어요.</p>'; return }
+    const max = Math.max.apply(null, items.map(x => x.value).concat([0.0001]))
+    el.innerHTML = items.map(it =>
+      '<div class="hb-row" title="' + esc(it.title || it.label) + '">' +
+        '<div class="hb-lb">' + esc(it.label) + '</div>' +
+        '<div class="hb-track"><div class="hb-bar" style="width:' + Math.max(1, it.value / max * 100).toFixed(1) + '%;background:' + (it.color || color || 'var(--s1)') + '"></div></div>' +
+        '<div class="hb-val">' + esc(fmt(it.value)) + '</div>' +
+      '</div>'
+    ).join('')
+  }
+
+  function campaignsWithInsights() {
+    return (state.d.campaigns || [])
+      .map(c => ({ c, ins: c.insights && c.insights.data && c.insights.data[0] }))
+      .filter(x => x.ins && +x.ins.impressions > 0)
+  }
+
+  function renderCampaignBars() {
+    const rows = campaignsWithInsights()
+    const ctr = rows.map(x => ({ label: x.c.name, title: x.c.name, value: +x.ins.ctr || 0 }))
+      .sort((a, b) => b.value - a.value).slice(0, 10)
+    const cpc = rows.filter(x => +x.ins.inline_link_clicks > 0)
+      .map(x => ({ label: x.c.name, title: x.c.name, value: toKRW(+x.ins.cost_per_inline_link_click || 0) }))
+      .sort((a, b) => a.value - b.value).slice(0, 10)
+    const avgCtr = ctr.length ? ctr.reduce((s, x) => s + x.value, 0) / ctr.length : 0
+    const s = state.d.summary || {}
+    $('#ctr-hint').textContent = '길수록 좋음 · 평균 ' + pct(avgCtr)
+    $('#cpc-hint').textContent = '이동 1회당 비용, 짧을수록 좋음 · 전체 평균 ' + money(toKRW(s.cost_per_inline_link_click))
+    hbars($('#ctr-bars'), ctr, pct, 'var(--s1)')
+    hbars($('#cpc-bars'), cpc, money, 'var(--s1)')
+  }
+
+  // 지출 비중 vs 클릭 비중 — 캠페인 색은 고정 슬롯, 6개 초과는 '기타'로 접기
+  function renderShare() {
+    const el = $('#share')
+    const rows = campaignsWithInsights()
+      .map(x => ({ name: x.c.name, spend: toKRW(+x.ins.spend || 0), clicks: +x.ins.inline_link_clicks || 0 }))
+      .sort((a, b) => b.spend - a.spend)
+    if (!rows.length) { el.innerHTML = '<p class="hint">표시할 데이터가 없어요.</p>'; return }
+    const top = rows.slice(0, 6)
+    const rest = rows.slice(6)
+    if (rest.length) top.push({ name: '기타 ' + rest.length + '개', spend: rest.reduce((s, x) => s + x.spend, 0), clicks: rest.reduce((s, x) => s + x.clicks, 0), other: true })
+    const totS = top.reduce((s, x) => s + x.spend, 0) || 1
+    const totC = top.reduce((s, x) => s + x.clicks, 0) || 1
+    top.forEach((x, i) => { x.color = x.other ? 'var(--other)' : SLOTS[i]; x.ps = x.spend / totS * 100; x.pc = x.clicks / totC * 100 })
+
+    const bar = key => '<div class="share-bar">' + top.map(x =>
+      '<div class="share-seg" style="flex:' + Math.max(x[key], 0.5).toFixed(2) + ';background:' + x.color + '" title="' + esc(x.name) + ' · ' + x[key].toFixed(1) + '%"></div>'
+    ).join('') + '</div>'
+
+    el.innerHTML =
+      '<div class="share-lb">지출 비중</div>' + bar('ps') +
+      '<div class="share-lb">링크 클릭 비중</div>' + bar('pc') +
+      '<table class="share-legend"><thead><tr><th>캠페인</th><th>지출</th><th>지출 비중</th><th>클릭 비중</th></tr></thead><tbody>' +
+      top.map(x =>
+        '<tr><td title="' + esc(x.name) + '"><span class="sw" style="background:' + x.color + '"></span>' + esc(x.name) + '</td>' +
+        '<td>' + moneyC(x.spend) + '</td><td>' + x.ps.toFixed(1) + '%</td>' +
+        '<td>' + x.pc.toFixed(1) + '%' + (x.pc - x.ps > 3 ? ' <span style="color:var(--good);font-weight:700">↑</span>' : '') + '</td></tr>'
+      ).join('') + '</tbody></table>'
+  }
+
+  // 게재 위치 — 릴스/피드/스토리
+  const PLAT_LB = { instagram: '인스타', facebook: '페북', audience_network: 'AN', messenger: '메신저' }
+  const POS_LB = {
+    feed: '피드', instagram_stories: '스토리', instagram_reels: '릴스', instagram_explore: '탐색',
+    instagram_explore_home: '탐색 홈', instagram_search: '검색', instagram_profile_feed: '프로필 피드',
+    instagram_profile_reels: '프로필 릴스', facebook_reels: '릴스', facebook_stories: '스토리',
+    video_feeds: '동영상 피드', instream_video: '인스트림', marketplace: '마켓', right_hand_column: '우측 칼럼',
+    search: '검색', an_classic: '클래식', rewarded_video: '리워드', unknown: '기타',
+  }
+  function renderPlacement() {
+    const raw = state.d.placement || []
+    const agg = {}
+    raw.forEach(r => {
+      const lb = ((PLAT_LB[r.publisher_platform] || r.publisher_platform || '') + ' ' + (POS_LB[r.platform_position] || r.platform_position || '')).trim() || '기타'
+      const a = agg[lb] || (agg[lb] = { spend: 0, impr: 0, link: 0 })
+      a.spend += toKRW(+r.spend || 0); a.impr += +r.impressions || 0; a.link += +r.inline_link_clicks || 0
+    })
+    let rows = Object.keys(agg).map(lb => ({ label: lb, ...agg[lb] })).sort((a, b) => b.spend - a.spend)
+    if (rows.length > 6) {
+      const rest = rows.slice(5)
+      rows = rows.slice(0, 5)
+      rows.push({ label: '기타 ' + rest.length + '곳', spend: rest.reduce((s, x) => s + x.spend, 0), impr: rest.reduce((s, x) => s + x.impr, 0), link: rest.reduce((s, x) => s + x.link, 0) })
+    }
+    hbars($('#pl-spend'), rows.map(x => ({ label: x.label, value: x.spend })), moneyC, 'var(--s1)')
+    const ctrRows = rows.filter(x => x.impr >= 100)
+      .map(x => ({ label: x.label, value: x.impr ? x.link / x.impr * 100 : 0 }))
+      .sort((a, b) => b.value - a.value)
+    hbars($('#pl-ctr'), ctrRows, v => pct(v), 'var(--s3)')
+  }
+
+  function renderTable() {
+    const el = $('#tbl')
+    const adsBy = {}
+    ;(state.d.ads || []).forEach(a => {
+      const cr = a.creative || {}
+      if (a.campaign_id && !adsBy[a.campaign_id] && cr.thumbnail_url) adsBy[a.campaign_id] = cr
+    })
+    const rows = campaignsWithInsights()
+      .map(x => ({ ...x, spend: toKRW(+x.ins.spend || 0) }))
+      .sort((a, b) => b.spend - a.spend)
+    if (!rows.length) { el.innerHTML = '<p class="hint">기간 내 성과가 있는 캠페인이 없어요. 광고 관리자에서 보던 계정과 다르다면 META_AD_ACCOUNT_ID를 확인해 주세요.</p>'; return }
+    el.innerHTML = '<table class="tbl"><thead><tr>' +
+      '<th>소재</th><th>캠페인</th><th>상태</th><th>지출</th><th>도달</th><th>링크 클릭</th><th>CTR</th><th>클릭 비용</th>' +
+      '</tr></thead><tbody>' +
+      rows.map(x => {
+        const cr = adsBy[x.c.id] || {}
+        const on = x.c.effective_status === 'ACTIVE'
+        const thumb = cr.thumbnail_url
+          ? (cr.instagram_permalink_url
+              ? '<a href="' + esc(cr.instagram_permalink_url) + '" target="_blank" rel="noopener"><img class="thumb" src="' + esc(cr.thumbnail_url) + '" alt=""/></a>'
+              : '<img class="thumb" src="' + esc(cr.thumbnail_url) + '" alt=""/>')
+          : '<div class="thumb" style="background:var(--panel2)"></div>'
+        return '<tr>' +
+          '<td>' + thumb + '</td>' +
+          '<td class="cname" title="' + esc(x.c.name) + '">' + esc(x.c.name) + '</td>' +
+          '<td class="st"><span class="dot" style="background:' + (on ? 'var(--active)' : 'var(--other)') + '"></span>' + (on ? '집행 중' : '중지') + '</td>' +
+          '<td>' + money(x.spend) + '</td>' +
+          '<td>' + compact(+x.ins.reach || 0) + '</td>' +
+          '<td>' + comma(+x.ins.inline_link_clicks || 0) + '</td>' +
+          '<td>' + pct(x.ins.ctr) + '</td>' +
+          '<td>' + (+x.ins.inline_link_clicks > 0 ? money(toKRW(x.ins.cost_per_inline_link_click)) : '—') + '</td>' +
+          '</tr>'
+      }).join('') + '</tbody></table>'
+  }
+
+  // ── 필터 & 리사이즈 ────────────────────────────────────
+  $('#filters').addEventListener('click', ev => {
+    const b = ev.target.closest('.chip')
+    if (!b || b.dataset.p === state.preset) return
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === b))
+    state.preset = b.dataset.p
+    load()
+  })
+  let rT
+  window.addEventListener('resize', () => { clearTimeout(rT); rT = setTimeout(() => { if (state.d) renderDaily() }, 150) })
+
+  load()
+})()
+</script>
+</body>
+</html>

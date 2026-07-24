@@ -24,6 +24,9 @@ export default async function handler(req, res) {
   }
 
   const q = (req.query && req.query.q) || 'overview'
+  // 기간 선택 — 광고 효율 페이지의 7/30/90일 필터용 (화이트리스트 외 값은 30일로)
+  const PRESETS = ['last_7d', 'last_30d', 'last_90d']
+  const preset = PRESETS.includes(req.query && req.query.preset) ? req.query.preset : 'last_30d'
   try {
     if (q === 'overview') {
       const a = await graph(act(), {
@@ -34,7 +37,7 @@ export default async function handler(req, res) {
 
     if (q === 'campaigns') {
       const c = await graph(`${act()}/campaigns`, {
-        fields: 'name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,insights.date_preset(last_30d){spend,impressions,reach,frequency,clicks,ctr,cpc,inline_link_clicks,cost_per_inline_link_click,actions}',
+        fields: `name,status,effective_status,objective,daily_budget,lifetime_budget,created_time,insights.date_preset(${preset}){spend,impressions,reach,frequency,clicks,ctr,cpc,inline_link_clicks,cost_per_inline_link_click,actions}`,
         limit: '100',
       })
       return res.status(200).json({ connected: true, campaigns: c.data || [] })
@@ -42,11 +45,21 @@ export default async function handler(req, res) {
 
     if (q === 'daily') {
       const d = await graph(`${act()}/insights`, {
-        date_preset: 'last_30d',
+        date_preset: preset,
         time_increment: '1',
         fields: 'spend,impressions,reach,clicks,inline_link_clicks,actions',
       })
       return res.status(200).json({ connected: true, daily: d.data || [] })
+    }
+
+    // 게재 위치별 성과 — 릴스/피드/스토리 중 어디서 효율이 나오는지
+    if (q === 'placement') {
+      const p = await graph(`${act()}/insights`, {
+        date_preset: preset,
+        breakdowns: 'publisher_platform,platform_position',
+        fields: 'spend,impressions,clicks,inline_link_clicks',
+      })
+      return res.status(200).json({ connected: true, placement: p.data || [] })
     }
 
     // 광고 소재 — 캠페인별 썸네일·인스타 링크 (릴스/게시글 구분용)
@@ -69,7 +82,7 @@ export default async function handler(req, res) {
     // 최근 30일 전체 합계 — 도달(reach)은 일별 합산 시 중복이라 별도 조회가 정확함
     if (q === 'summary') {
       const s = await graph(`${act()}/insights`, {
-        date_preset: 'last_30d',
+        date_preset: preset,
         fields: 'spend,impressions,reach,frequency,clicks,ctr,cpc,inline_link_clicks,cost_per_inline_link_click,actions',
       })
       return res.status(200).json({ connected: true, summary: (s.data && s.data[0]) || null })
