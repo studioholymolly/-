@@ -3,7 +3,14 @@
 인쇄용(PDF 저장) HTML 회사소개서를 생성한다. 16:9 페이지, 모노크롬 시스템.
 대표(케이스) 페이지 뒤에 같은 카테고리 갤러리(10컷/페이지, 원본 비율 유지)가 이어지는 구성."""
 import json, os
+from urllib.parse import quote
 LITE = os.environ.get('LITE') == '1'
+HOSTED = os.environ.get('HOSTED') == '1'
+
+def opt(u, w):
+    if not HOSTED or not u.startswith('https://pub-'):
+        return u
+    return '/_vercel/image?url=' + quote(u, safe='') + '&w=' + str(w) + '&q=75'
 
 d = json.load(open('profile_data.json'))
 sections, logos, cover, strip = d['sections'], d['logos'], d['cover'], d['strip']
@@ -29,7 +36,7 @@ n()
 pages.append(f'''
 <section class="pg cover">
   <div class="cover-imgs">
-    <img src="{cover[0]}" alt=""><img src="{cover[1]}" alt=""><img src="{cover[2]}" alt="">
+    <img src="{opt(cover[0],1600)}" alt=""><img src="{opt(cover[1],1600)}" alt=""><img src="{opt(cover[2],1600)}" alt="">
   </div>
   <div class="cover-shade"></div>
   <div class="cover-top">
@@ -93,7 +100,7 @@ pages.append(f'''
 </section>''')
 
 # ---------- 05 WORKS 디바이더 + 필름 스트립 ----------
-strip_imgs = ''.join(f'<img src="{u}" alt="">' for u in strip)
+strip_imgs = ''.join(f'<img src="{opt(u,828)}" alt="">' for u in strip)
 pages.append(f'''
 <section class="pg dark">
   {meta_bar('SELECTED WORKS', n(), True)}
@@ -109,11 +116,11 @@ ci = 0
 for sec in sections:
     cs = sec['case']
     ci += 1
-    subs = ''.join(f'<img src="{u}" alt="">' for u in cs['subs'])
+    subs = ''.join(f'<img src="{opt(u,828)}" alt="">' for u in cs['subs'])
     subs_style = ' style="grid-template-columns:1fr"' if len(cs['subs']) == 1 else ''
     pages.append(f'''
 <section class="pg case">
-  <div class="case-main"><img src="{cs['main']}" alt="{esc(cs['name'])}"></div>
+  <div class="case-main"><img src="{opt(cs['main'],1600)}" alt="{esc(cs['name'])}"></div>
   <div class="case-side">
     <div class="case-subs"{subs_style}>{subs}</div>
     <div class="case-cap">
@@ -126,7 +133,7 @@ for sec in sections:
 </section>''')
     gn_total = len(sec['galleries'])
     for gi, items in enumerate(sec['galleries'] if not LITE else [], 1):
-        cells = ''.join(f'<div class="gph"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
+        cells = ''.join(f'<div class="gph"><img src="{opt(g["img"],828)}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
         pages.append(f'''
 <section class="pg gal">
   {meta_bar(f"{sec.get('gal_label') or (cs['cat'] + ' — ' + str(sec['brand_count']) + ' BRANDS')} ({gi}/{gn_total})", n())}
@@ -134,7 +141,7 @@ for sec in sections:
 </section>''')
 
 # ---------- 클라이언트 로고 월 ----------
-logo_cells = ''.join(f'<div class="clogo"><img src="{l["image"]}" alt="{esc(l["name"])}" title="{esc(l["name"])}" loading="lazy"></div>' for l in logos[:24])
+logo_cells = ''.join(f'<div class="clogo"><img src="{opt(l["image"],384)}" alt="{esc(l["name"])}" title="{esc(l["name"])}" loading="lazy"></div>' for l in logos[:24])
 big_names = '바세린 · 딥디크 · 애경산업 · 빙그레 · 풀무원 · 오리온 · 동서식품 · 서울우유 · 동원F&B · 케라시스 · 멜릭서 · DOLE 외 120+ 브랜드'
 pages.append(f'''
 <section class="pg">
@@ -380,5 +387,7 @@ html = f'''<!DOCTYPE html>
 </html>'''
 
 out = 'STUDIO-HOLYMOLLY_Profile_2026_PDF.html' if LITE else 'STUDIO-HOLYMOLLY_Profile_2026.html'
+if HOSTED:
+    out = 'hosted-' + out
 open(out, 'w').write(html)
 print('saved', out, ', pages:', html.count('class="pg'))
