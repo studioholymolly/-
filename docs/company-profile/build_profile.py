@@ -8,7 +8,7 @@ LITE = os.environ.get('LITE') == '1'
 d = json.load(open('profile_data.json'))
 sections, logos, cover, strip = d['sections'], d['logos'], d['cover'], d['strip']
 
-CAT_KO = {'BEAUTY': 'Beauty', 'F&B': 'F&B', 'PRODUCT': 'Product', 'MODEL': 'Model', 'LIFESTYLE': 'Lifestyle'}
+CAT_KO = {'BEAUTY': 'Beauty', 'F&B': 'F&B', 'PRODUCT': 'Product', 'MODEL': 'Model', 'LIFESTYLE': 'Lifestyle', 'VIDEO': 'Video'}
 
 def esc(s):
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
@@ -77,11 +77,10 @@ pages.append(f'''
 # ---------- 04 What We Do ----------
 svc = [
     ('01', 'Beauty', '102 WORKS', '제형과 컬러, 클로즈업에서 무너지지 않는 디테일. 뷰티는 홀리몰리의 출발점입니다.'),
-    ('02', 'F&B', '65 WORKS', '시즐과 온도, 먹는 순간. 음식을 가장 맛있는 장면으로 기록합니다.'),
-    ('03', 'Product', '33 WORKS', '형태와 소재를 정교하게. 커머스 컷부터 캠페인까지, 제품이 팔리게 하는 컷.'),
-    ('04', 'Lifestyle', '25 WORKS', '제품이 놓일 실제 삶의 장면을 만들어 브랜드에 생활의 온도를 더합니다.'),
-    ('05', 'Model', '16 WORKS', '모델 화보와 캠페인. 브랜드의 결을 인물로 옮깁니다.'),
-    ('06', 'Video', 'MOTION', '숏폼 · 커머스 영상 · 브랜드 필름. 사진과 같은 무드를 무빙으로 확장합니다.'),
+    ('02', 'Product', '33 WORKS', '형태와 소재를 정교하게. 커머스 컷부터 캠페인까지, 제품이 팔리게 하는 컷.'),
+    ('03', 'F&B', '65 WORKS', '시즐과 온도, 먹는 순간. 음식을 가장 맛있는 장면으로 기록합니다.'),
+    ('04', 'Model', '16 WORKS', '모델 화보와 캠페인. 브랜드의 결을 인물로 옮깁니다.'),
+    ('05', 'Video', 'MOTION', '숏폼 · 커머스 영상 · 브랜드 필름. 사진과 같은 무드를 무빙으로 확장합니다.'),
 ]
 rows = ''.join(f'''
     <div class="row">
@@ -111,11 +110,12 @@ for sec in sections:
     cs = sec['case']
     ci += 1
     subs = ''.join(f'<img src="{u}" alt="">' for u in cs['subs'])
+    subs_style = ' style="grid-template-columns:1fr"' if len(cs['subs']) == 1 else ''
     pages.append(f'''
 <section class="pg case">
   <div class="case-main"><img src="{cs['main']}" alt="{esc(cs['name'])}"></div>
   <div class="case-side">
-    <div class="case-subs">{subs}</div>
+    <div class="case-subs"{subs_style}>{subs}</div>
     <div class="case-cap">
       <span class="cc">{CAT_KO.get(cs['cat'], cs['cat']).upper()} — CASE {ci:02d}</span>
       <h3>{esc(cs['name'])}</h3>
@@ -129,7 +129,7 @@ for sec in sections:
         cells = ''.join(f'<div class="gph"><img src="{g["img"]}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
         pages.append(f'''
 <section class="pg gal">
-  {meta_bar(f"{cs['cat']} — {sec['brand_count']} BRANDS ({gi}/{gn_total})", n())}
+  {meta_bar(f"{sec.get('gal_label') or (cs['cat'] + ' — ' + str(sec['brand_count']) + ' BRANDS')} ({gi}/{gn_total})", n())}
   <div class="galgrid">{cells}</div>
 </section>''')
 
