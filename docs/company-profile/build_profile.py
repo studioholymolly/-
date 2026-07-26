@@ -12,6 +12,8 @@ def opt(u, w):
         return u
     return '/_vercel/image?url=' + quote(u, safe='') + '&w=' + str(w) + '&q=75'
 
+LAZY = ' loading="lazy" decoding="async"'
+
 d = json.load(open('profile_data.json'))
 sections, logos, cover, strip = d['sections'], d['logos'], d['cover'], d['strip']
 
@@ -36,7 +38,7 @@ n()
 pages.append(f'''
 <section class="pg cover">
   <div class="cover-imgs">
-    <img src="{opt(cover[0],1600)}" alt=""><img src="{opt(cover[1],1600)}" alt=""><img src="{opt(cover[2],1600)}" alt="">
+    <img src="{opt(cover[0],1280)}" alt="" fetchpriority="high"><img src="{opt(cover[1],1280)}" alt="" fetchpriority="high"><img src="{opt(cover[2],1280)}" alt="" fetchpriority="high">
   </div>
   <div class="cover-shade"></div>
   <div class="cover-top">
@@ -100,7 +102,7 @@ pages.append(f'''
 </section>''')
 
 # ---------- 05 WORKS 디바이더 + 필름 스트립 ----------
-strip_imgs = ''.join(f'<img src="{opt(u,828)}" alt="">' for u in strip)
+strip_imgs = ''.join(f'<img src="{opt(u,640)}" alt=""{LAZY}>' for u in strip)
 pages.append(f'''
 <section class="pg dark">
   {meta_bar('SELECTED WORKS', n(), True)}
@@ -116,11 +118,11 @@ ci = 0
 for sec in sections:
     cs = sec['case']
     ci += 1
-    subs = ''.join(f'<img src="{opt(u,828)}" alt="">' for u in cs['subs'])
+    subs = ''.join(f'<img src="{opt(u,640)}" alt=""{LAZY}>' for u in cs['subs'])
     subs_style = ' style="grid-template-columns:1fr"' if len(cs['subs']) == 1 else ''
     pages.append(f'''
 <section class="pg case">
-  <div class="case-main"><img src="{opt(cs['main'],1600)}" alt="{esc(cs['name'])}"></div>
+  <div class="case-main"><img src="{opt(cs['main'],1280)}" alt="{esc(cs['name'])}"{'' if ci == 1 else LAZY}></div>
   <div class="case-side">
     <div class="case-subs"{subs_style}>{subs}</div>
     <div class="case-cap">
@@ -133,7 +135,7 @@ for sec in sections:
 </section>''')
     gn_total = len(sec['galleries'])
     for gi, items in enumerate(sec['galleries'] if not LITE else [], 1):
-        cells = ''.join(f'<div class="gph"><img src="{opt(g["img"],828)}" alt="{esc(g["name"])}" title="{esc(g["name"])}" loading="lazy"></div>' for g in items)
+        cells = ''.join(f'<div class="gph"><img src="{opt(g["img"],640)}" alt="{esc(g["name"])}" title="{esc(g["name"])}"{LAZY}></div>' for g in items)
         pages.append(f'''
 <section class="pg gal">
   {meta_bar(f"{sec.get('gal_label') or (cs['cat'] + ' — ' + str(sec['brand_count']) + ' BRANDS')} ({gi}/{gn_total})", n())}
@@ -141,7 +143,7 @@ for sec in sections:
 </section>''')
 
 # ---------- 클라이언트 로고 월 ----------
-logo_cells = ''.join(f'<div class="clogo"><img src="{opt(l["image"],384)}" alt="{esc(l["name"])}" title="{esc(l["name"])}" loading="lazy"></div>' for l in logos[:24])
+logo_cells = ''.join(f'<div class="clogo"><img src="{opt(l["image"],384)}" alt="{esc(l["name"])}" title="{esc(l["name"])}"{LAZY}></div>' for l in logos[:24])
 big_names = '바세린 · 딥디크 · 애경산업 · 빙그레 · 풀무원 · 오리온 · 동서식품 · 서울우유 · 동원F&B · 케라시스 · 멜릭서 · DOLE 외 120+ 브랜드'
 pages.append(f'''
 <section class="pg">
@@ -335,6 +337,26 @@ font-size:13px;display:flex;gap:18px;align-items:center}
 }
 '''
 
+PRINT_JS = '''<script>
+async function printAll() {
+  const st = document.getElementById('pbStatus');
+  const imgs = [...document.querySelectorAll('.pg img[loading="lazy"]')];
+  imgs.forEach(im => { im.loading = 'eager'; });
+  let done = 0;
+  await Promise.all(imgs.map(im => new Promise(res => {
+    if (im.complete && im.naturalWidth) { done++; return res(); }
+    im.onload = im.onerror = () => { done++;
+      st.textContent = '사진 불러오는 중 ' + done + '/' + imgs.length + ' — 완료되면 저장 창이 열립니다';
+      res(); };
+  })));
+  st.textContent = '대상 "PDF로 저장" · 여백 "없음" · "배경 그래픽" 체크';
+  setTimeout(() => window.print(), 300);
+}
+addEventListener('beforeprint', () => {
+  document.querySelectorAll('.pg img[loading="lazy"]').forEach(im => { im.loading = 'eager'; });
+});
+</script>'''
+
 LITE_JS = '''<script>
 async function litePrint() {
   const st = document.getElementById('pbStatus');
@@ -379,8 +401,9 @@ html = f'''<!DOCTYPE html>
   <b>STUDIO HOLYMOLLY 회사소개서{' (요약본)' if LITE else ''}</b>
   <span id="pbStatus">PDF로 저장: 사진이 모두 뜬 뒤 버튼 클릭 → 대상 "PDF로 저장" → 여백 "없음" · "배경 그래픽" 체크</span>
   {'<button onclick="litePrint()">경량 PDF 저장 (4MB 이하)</button>' if LITE else ''}
-  <button onclick="window.print()">PDF로 저장</button>
+  <button onclick="printAll()">PDF로 저장</button>
 </div>
+{PRINT_JS}
 {LITE_JS if LITE else ''}
 {''.join(pages)}
 </body>
