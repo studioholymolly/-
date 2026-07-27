@@ -150,6 +150,7 @@ export default function HomeLanding() {
             <span className="hm-wordmark hm-display hm-hide-sm">STUDIO. HOLYMOLLY</span>
           </Link>
           <div className="hm-nav-links">
+            <Link href="/about" className="hm-hide-sm">About</Link>
             <a href="#services" className="hm-hide-sm">Services</a>
             <a href="#process" className="hm-hide-sm">Process</a>
             <Link href="/inquiry" className="hm-btn hm-btn-primary hm-nav-cta">
@@ -288,6 +289,7 @@ export default function HomeLanding() {
             </div>
           </div>
           <div className="hm-footer-links">
+            <Link href="/about">회사소개</Link>
             <Link href="/inquiry">프로젝트 문의</Link>
             <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
             <Link href="/login" className="dim">
