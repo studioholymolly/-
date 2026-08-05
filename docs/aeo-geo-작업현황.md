@@ -57,17 +57,53 @@ inquiry.studioholymolly.com   ← 실제 고객이 보는 주소
 
 ---
 
-## 사장님께 필요한 결정
+## ⛔ 정정 — 위 진단은 절반만 맞았습니다 (2026-08-05 추가 조사)
 
-**"고객이 보는 홈페이지"를 어느 앱으로 할지**를 정해주셔야 합니다. 이건 제가 임의로 정할 일이 아닙니다.
+처음에 저는 "이 저장소에 앱이 둘 있고 그중 배포된 건 `dashboard/`"라고 정리한 뒤, **루트 Next.js 앱에 `studioholymolly.com` 을 연결하자**고 제안했습니다. **이 제안은 틀렸습니다.**
 
-| 안 | 내용 | 장점 | 단점 |
+`studioholymolly.com` 은 **이미 운영 중인 진짜 홈페이지**입니다. 실행했다면 기존 사이트를 덮어썼을 것입니다.
+
+### 실제 구조 — 웹 자산이 셋입니다
+
+| # | 주소 | 정체 | 소스 위치 |
 |---|---|---|---|
-| **가 (권장)** | 루트 Next.js 앱을 새 Vercel 프로젝트로 배포하고 `studioholymolly.com` 을 연결. `dashboard/` 는 내부 운영 도구로 유지 | 이번에 만든 FAQ·비용·소개 페이지가 바로 살아납니다. 서버 렌더링이라 AI 크롤러가 전부 읽습니다 | Vercel 프로젝트 하나 새로 만들고 도메인 연결 필요 (30분) |
-| 나 | `dashboard/` 를 계속 쓰고 거기에 공개 페이지를 추가 | 앱이 하나로 유지됨 | 클라이언트 렌더링이라 AI 노출은 계속 취약. 해결하려면 SSR 도입 = 큰 공사 |
-| 다 | 지금 그대로 | 작업 없음 | AI 검색 노출은 앞으로도 0 |
+| **1** | **`studioholymolly.com`** | **공식 홈페이지.** 히어로 · Selected Work · Photography/Videography 소개 · Clients · Reviews · Stats · `/photo` · `/video` · `/contact` | **이 저장소에 없음** (별도 Vercel 프로젝트 `studioholymolly.vercel.app`) |
+| 2 | `inquiry.studioholymolly.com` | 운영 대시보드 + 공개 문의 폼(`/inquiry` · `/planner` · `/reference`) | 이 저장소 `dashboard/` |
+| 3 | — | Next.js 랜딩·갤러리 앱 | 이 저장소 `src/` · **배포된 곳 없음** |
 
-**가**를 권합니다. 이미 필요한 페이지를 다 만들어 뒀기 때문에, 배포만 붙이면 그날 바로 동작합니다.
+### 공식 홈페이지(1번)의 실제 AEO/GEO 상태 — HTML을 직접 받아 확인
+
+| 항목 | 상태 |
+|---|---|
+| `<title>` | ✅ "STUDIO HOLYMOLLY — 브랜드가 보여지는 모든 장면을 만듭니다" |
+| `<meta description>` | ✅ "서울 역삼 비주얼 디렉션 스튜디오. 사진·영상·BX 디자인까지…" |
+| `<h1>` / `<h2>` | ✅ HTML 안에 존재 (h1은 `sr-only`) |
+| OG 태그 | ✅ 있음 |
+| **구조화 데이터(JSON-LD)** | ❌ **없음** — 사업자 엔티티가 기계에 선언되지 않음 |
+| **robots.txt** | ❌ **404** |
+| **sitemap.xml** | ❌ 없음 |
+| **본문 콘텐츠** | ⚠️ **자바스크립트로 채워짐.** `<p id="introText"></p>`, `<div id="services"></div>` 처럼 빈 껍데기만 HTML에 있고 실제 문장은 `HM.boot()` 이 나중에 채웁니다. 구글은 렌더링하지만 GPTBot·PerplexityBot 등은 대부분 못 읽습니다 |
+| FAQ / 가격 페이지 | ❌ 없음 |
+
+**진짜 문제는 `dashboard/` 가 아니라 여기였습니다.** 브랜드가 사는 사이트에 구조화 데이터도, robots.txt도, sitemap도, 인용될 Q&A도 없습니다.
+
+### 그래서 실제로 해야 할 일
+
+이번에 만든 것을 **`studioholymolly.com` 으로 옮기는 것**입니다. 루트 Next.js 앱에 도메인을 붙이는 게 아닙니다. 옮길 항목은 전부 스택과 무관하게 포팅됩니다.
+
+1. **FAQ 19문항** — 순수 텍스트. 어떤 기술이든 그대로 들어갑니다 (`src/lib/faq.ts`)
+2. **촬영 비용 안내** — 동일 (`src/app/pricing/page.tsx`)
+3. **JSON-LD(ProfessionalService · FAQPage)** — 정적 HTML `<head>` 에 그대로 붙입니다
+4. **robots.txt · sitemap.xml** — 정적 파일로 추가
+5. **본문 정적 노출** — 최소한 서비스 소개 문장과 소재지·연락처만이라도 HTML에 직접 넣기. JS가 채우는 내용과 중복돼도 무방합니다
+
+### 막힌 지점
+
+**`studioholymolly.com` 의 소스 코드가 이 저장소에 없습니다.** 별도 GitHub 저장소인지, Vercel에 직접 올린 파일인지 확인이 필요합니다. 저장소 이름을 알려주시면 세션에 붙여 바로 작업하겠습니다.
+
+### 이 저장소의 `src/` Next.js 앱은?
+
+배포처가 없는 상태 그대로 둡니다. 이번 작업(robots · sitemap · JSON-LD · FAQ · 가격 · 소개)은 **참조 구현**으로 남습니다. 빌드가 깨져 있던 것과 `dashboard/index.html` 의 태그 유실 위험은 실제 버그였으므로 고친 값어치는 그대로입니다.
 
 ---
 
