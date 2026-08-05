@@ -30,5 +30,8 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  // dashboard/ 와 quote-app/ 은 각자 툴체인(Vite)과 런타임(Deno 엣지 함수)을
+  // 쓰는 별도 앱입니다. 루트 Next.js 타입 검사 대상에 들어가면 Deno 전역·npm:
+  // 스펙 임포트를 해석하지 못해 `next build` 가 실패합니다.
+  "exclude": ["node_modules", "dashboard", "quote-app"]
 }

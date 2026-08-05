@@ -4,8 +4,8 @@ import { useEffect } from 'react'
 import Link from 'next/link'
 import { STUDIO_NAME, STUDIO_SHORT_NAME } from '@/lib/brand'
 import LogoSymbol from '@/components/brand/LogoSymbol'
-
-const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
+import SiteFooter from '@/components/site/SiteFooter'
+import { CONTACT_EMAIL } from '@/lib/site'
 
 const MARQUEE_ITEMS = ['Beauty', 'Product', 'F&B', 'Fashion', 'People', 'Film', 'BX Design']
 
@@ -151,7 +151,8 @@ export default function HomeLanding() {
           </Link>
           <div className="hm-nav-links">
             <a href="#services" className="hm-hide-sm">Services</a>
-            <a href="#process" className="hm-hide-sm">Process</a>
+            <Link href="/pricing" className="hm-hide-sm">촬영 비용</Link>
+            <Link href="/faq" className="hm-hide-sm">FAQ</Link>
             <Link href="/inquiry" className="hm-btn hm-btn-primary hm-nav-cta">
               프로젝트 문의
             </Link>
@@ -271,34 +272,7 @@ export default function HomeLanding() {
         </div>
       </section>
 
-      <footer className="hm-footer">
-        <div className="hm-container hm-footer-inner">
-          <div>
-            <div className="hm-footer-brand-row">
-              <LogoSymbol size={34} />
-              <div>
-                <div className="brand hm-wordmark hm-display">STUDIO. HOLYMOLLY</div>
-                <div className="brand-ko">{STUDIO_NAME}</div>
-              </div>
-            </div>
-            <div className="sub">
-              뷰티 · 제품 · F&amp;B · 의류 · 인물 · 영상 · BX 디자인
-              <br />
-              브랜드의 모든 장면을 만드는 크리에이티브 스튜디오.
-            </div>
-          </div>
-          <div className="hm-footer-links">
-            <Link href="/inquiry">프로젝트 문의</Link>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-            <Link href="/login" className="dim">
-              Admin
-            </Link>
-          </div>
-        </div>
-        <div className="hm-footer-mark hm-display" aria-hidden="true">
-          STUDIO. HOLYMOLLY
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   )
 }
