@@ -49,7 +49,7 @@ export default function OpengraphImage() {
               lineHeight: 1.05,
             }}
           >
-            STUDIO.
+            STUDIO
           </div>
           <div
             style={{

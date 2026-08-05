@@ -16,7 +16,7 @@ import {
 const PAGE_URL = `${SITE_URL}/about`
 
 const DESCRIPTION =
-  '스튜디오 홀리몰리(STUDIO. HOLYMOLLY)는 뷰티, 제품, F&B, 의류, 인물 촬영과 영상·BX 디자인을 진행하는 서울의 크리에이티브 스튜디오입니다. 촬영 후에는 전용 온라인 갤러리로 셀렉부터 전달까지 링크 하나로 진행합니다.'
+  '스튜디오 홀리몰리(STUDIO HOLYMOLLY)는 뷰티, 제품, F&B, 의류, 인물 촬영과 영상·BX 디자인을 진행하는 서울의 크리에이티브 스튜디오입니다. 촬영 후에는 전용 온라인 갤러리로 셀렉부터 전달까지 링크 하나로 진행합니다.'
 
 export const metadata: Metadata = {
   title: '스튜디오 소개',
@@ -63,7 +63,7 @@ export default function AboutPage() {
           <section className="hm-doc-section">
             <h2>어떤 스튜디오인가요?</h2>
             <p className="hm-faq-answer">
-              스튜디오 홀리몰리(STUDIO. HOLYMOLLY)는 뷰티, 제품, F&amp;B, 의류, 인물
+              스튜디오 홀리몰리(STUDIO HOLYMOLLY)는 뷰티, 제품, F&amp;B, 의류, 인물
               촬영과 영상 제작, BX 디자인을 진행하는 크리에이티브 스튜디오입니다.
               코스메틱 상세페이지 컷부터 시즌 룩북, 브랜드 필름까지 브랜드가 필요로
               하는 장면을 한 팀에서 만듭니다.

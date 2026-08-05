@@ -120,7 +120,7 @@ inquiry.studioholymolly.com   ← 실제 고객이 보는 주소
 | 공유 이미지 | `src/app/opengraph-image.tsx` | 브랜드 톤 그대로 자동 생성 (1200×630) |
 | 사업자 정보 | `src/lib/site.ts` | 상호·연락처·서비스·공개 라우트 단일 소스 |
 | 구조화 데이터 | `src/lib/jsonld.ts` + `src/components/JsonLd.tsx` | ProfessionalService, FAQPage, WebPage, BreadcrumbList, AggregateOffer |
-| 상호 통일 | `src/lib/site.ts` | `스튜디오 홀리몰리 (STUDIO. HOLYMOLLY)` 를 표준형으로 확정, 푸터·구조화 데이터가 같은 값 참조 |
+| 상호 통일 | `src/lib/site.ts` | `스튜디오 홀리몰리 (STUDIO HOLYMOLLY)` 를 표준형으로 확정, 푸터·구조화 데이터가 같은 값 참조 |
 
 ### 2순위 (콘텐츠) — 앞당겨 완료
 

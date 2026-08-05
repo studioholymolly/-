@@ -34,12 +34,12 @@ export const CONTACT_EMAIL = 'studio.holymolly@gmail.com'
 /**
  * 상호 표준 표기.
  * 한글 정식명을 주(主)로, 영문 워드마크를 별칭으로 둡니다.
- * 지금까지 `스튜디오 홀리몰리 / 홀리몰리 / STUDIO. HOLYMOLLY / studio_holymolly`
+ * 지금까지 `스튜디오 홀리몰리 / 홀리몰리 / STUDIO HOLYMOLLY / studio_holymolly`
  * 네 가지로 흩어져 있어 AI가 서로 다른 사업자로 볼 여지가 있었습니다.
  */
 export const BRAND = {
   name: '스튜디오 홀리몰리',
-  alternateName: 'STUDIO. HOLYMOLLY',
+  alternateName: 'STUDIO HOLYMOLLY',
   short: '홀리몰리',
   tagline: '브랜드의 모든 장면을 만드는 크리에이티브 스튜디오',
   description:

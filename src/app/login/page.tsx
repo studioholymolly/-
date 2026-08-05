@@ -43,7 +43,7 @@ export default function LoginPage() {
             <LogoSymbol size={44} />
           </div>
           <h1 className="hm-wordmark hm-display" style={{ fontSize: 17, color: 'var(--tx)', marginBottom: 4 }}>
-            STUDIO. HOLYMOLLY
+            STUDIO HOLYMOLLY
           </h1>
           <p style={{ fontSize: 13, color: 'var(--mu)' }}>{STUDIO_NAME} — 관리자 로그인</p>
         </div>

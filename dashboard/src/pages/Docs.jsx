@@ -883,7 +883,7 @@ export function VideoPaper({ v, docNo, t, groups }) {
     <div className="paperA4">
       <div className="dp-head">
         <h1>견 적 서</h1>
-        <img className="dp-wordmark" src="/brand/wordmark-line.png" alt="STUDIO. HOLYMOLLY" />
+        <img className="dp-wordmark" src="/brand/wordmark-line.png" alt="STUDIO HOLYMOLLY" />
         <div className="dp-sub">{SUPPLIER.tagline}</div>
         <div className="dp-sub">{SUPPLIER.email} · {SUPPLIER.phone}</div>
       </div>
@@ -941,7 +941,7 @@ export function VideoPaper({ v, docNo, t, groups }) {
 
       <div className="dp-foot">
         <img className="dp-foot-mark" src="/brand/simbol-bk.png" alt="" />
-        STUDIO. HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
+        STUDIO HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
       </div>
     </div>
   )
@@ -1119,7 +1119,7 @@ export function QuotePaper({ q, docNo, t }) {
     <div className="paperA4">
       <div className="dp-head">
         <h1>견 적 서</h1>
-        <img className="dp-wordmark" src="/brand/wordmark-line.png" alt="STUDIO. HOLYMOLLY" />
+        <img className="dp-wordmark" src="/brand/wordmark-line.png" alt="STUDIO HOLYMOLLY" />
         <div className="dp-sub">{SUPPLIER.tagline}</div>
         <div className="dp-sub">{SUPPLIER.email} · {SUPPLIER.phone}</div>
       </div>
@@ -1178,7 +1178,7 @@ export function QuotePaper({ q, docNo, t }) {
 
       <div className="dp-foot">
         <img className="dp-foot-mark" src="/brand/simbol-bk.png" alt="" />
-        STUDIO. HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
+        STUDIO HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
       </div>
     </div>
   )
