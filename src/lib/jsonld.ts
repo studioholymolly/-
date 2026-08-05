@@ -25,13 +25,19 @@ function compact<T extends Record<string, unknown>>(obj: T): T {
   ) as T
 }
 
-/** 사업자 주소. 환경변수가 비어 있으면 통째로 생략합니다. */
+/**
+ * 사업자 주소. 값이 비어 있으면 통째로 생략합니다.
+ *
+ * 한국 주소의 schema.org 매핑: 시/도 → addressRegion, 시/군/구 →
+ * addressLocality, 나머지 → streetAddress.
+ */
 function postalAddress() {
   if (!NAP.street && !NAP.locality) return undefined
   return compact({
     '@type': 'PostalAddress',
     streetAddress: NAP.street,
     addressLocality: NAP.locality,
+    addressRegion: NAP.region,
     postalCode: NAP.postalCode,
     addressCountry: NAP.country,
   })

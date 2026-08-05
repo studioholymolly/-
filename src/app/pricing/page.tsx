@@ -91,8 +91,9 @@ export default function PricingPage() {
               lowPrice: '1500000',
               highPrice: '4200000',
               offerCount: PACKAGES.length,
+              valueAddedTaxIncluded: false,
               description:
-                '하프데이(실촬영 4시간, 7~8컷) 150만~220만 원, 원데이(실촬영 8시간, 12~15컷) 300만~420만 원. 정밀 보정·소품 재료비는 별도.',
+                '하프데이(실촬영 4시간, 7~8컷) 150만~220만 원, 원데이(실촬영 8시간, 12~15컷) 300만~420만 원. 모두 부가세 별도이며 정밀 보정·소품 재료비는 따로 산정합니다.',
             },
           },
         }}
@@ -147,10 +148,10 @@ export default function PricingPage() {
           <section className="hm-doc-section">
             <h2>2. 데이 패키지</h2>
             <p className="hm-faq-answer">
-              하프데이는 150만~220만 원선, 원데이는 300만~420만 원선입니다. 같은
-              패키지 안에서 금액이 달라지는 이유는 스타일리스트 투입 여부입니다.
-              포토그래퍼가 직접 스타일링하면 구간의 아래쪽, 전문 스타일리스트가
-              붙으면 위쪽입니다.
+              하프데이는 150만~220만 원선, 원데이는 300만~420만 원선입니다(부가세
+              별도). 같은 패키지 안에서 금액이 달라지는 이유는 스타일리스트 투입
+              여부입니다. 포토그래퍼가 직접 스타일링하면 구간의 아래쪽, 전문
+              스타일리스트가 붙으면 위쪽입니다.
             </p>
             <div className="hm-rows">
               {PACKAGES.map((p) => (
@@ -291,8 +292,8 @@ export default function PricingPage() {
           </aside>
 
           <p className="hm-doc-footnote">
-            위 금액은 촬영 구성과 일정에 따라 조정될 수 있습니다. 정확한 견적은
-            컷 구성이 정해진 뒤 확정해 드립니다.
+            위 금액은 모두 부가세 별도이며, 촬영 구성과 일정에 따라 조정될 수
+            있습니다. 정확한 견적은 컷 구성이 정해진 뒤 확정해 드립니다.
           </p>
         </div>
       </main>

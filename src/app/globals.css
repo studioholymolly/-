@@ -809,3 +809,13 @@ body {
   color: var(--hm-gray-3);
   max-width: 700px;
 }
+
+/* Secondary (lot-number) address — kept for humans finding the door,
+   deliberately absent from the structured data so machines resolve one
+   location, not two. */
+.hm-addr-alt {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--hm-gray-3);
+}

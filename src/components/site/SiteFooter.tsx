@@ -28,7 +28,7 @@ export default function SiteFooter() {
             {(NAP.street || NAP.phone) && (
               <>
                 <br />
-                {[NAP.locality, NAP.street].filter(Boolean).join(' ')}
+                {[NAP.region, NAP.locality, NAP.street].filter(Boolean).join(' ')}
                 {NAP.street && NAP.phone ? ' · ' : ''}
                 {NAP.phone}
               </>

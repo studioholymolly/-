@@ -53,12 +53,27 @@ export const SOCIAL_PROFILES = [
   process.env.NEXT_PUBLIC_NAVER_PLACE_URL || '',
 ].filter(Boolean)
 
-/** 소재지·연락처. 미설정 값은 구조화 데이터에서 생략됩니다. */
+/**
+ * 소재지·연락처.
+ *
+ * 도로명주소를 표준으로 씁니다. 지번주소(역삼동 783-2)와 병기하면 AI 가
+ * 두 개의 다른 위치로 읽을 수 있어, 기계가 읽는 구조화 데이터에는 도로명만
+ * 내보내고 지번은 사람이 보는 안내에만 둡니다. 네이버 플레이스·구글
+ * 비즈니스 프로필에도 아래 `street` 문자열을 그대로 쓰셔야 합니다.
+ *
+ * 미설정 값은 구조화 데이터와 화면 출력에서 자동으로 생략됩니다.
+ */
 export const NAP = {
-  phone: process.env.NEXT_PUBLIC_STUDIO_PHONE || '',
-  street: process.env.NEXT_PUBLIC_STUDIO_ADDRESS_STREET || '',
-  locality: process.env.NEXT_PUBLIC_STUDIO_ADDRESS_LOCALITY || '',
+  phone: process.env.NEXT_PUBLIC_STUDIO_PHONE || '010-8236-9368',
+  street: process.env.NEXT_PUBLIC_STUDIO_ADDRESS_STREET || '언주로65길 29, 지하 1층',
+  /** 시/군/구 */
+  locality: process.env.NEXT_PUBLIC_STUDIO_ADDRESS_LOCALITY || '강남구',
+  /** 시/도 */
+  region: process.env.NEXT_PUBLIC_STUDIO_ADDRESS_REGION || '서울특별시',
+  /** 우편번호 — 확인되면 채워 주세요. 비어 있으면 구조화 데이터에서 빠집니다. */
   postalCode: process.env.NEXT_PUBLIC_STUDIO_POSTAL_CODE || '',
+  /** 지번주소 — 사람이 찾아올 때의 보조 표기. 구조화 데이터에는 넣지 않습니다. */
+  lotNumberAddress: '서울특별시 강남구 역삼동 783-2, 지하 1층',
   country: 'KR',
 } as const
 

@@ -147,13 +147,27 @@ export default function AboutPage() {
                 {NAP.street && (
                   <tr>
                     <td>소재지</td>
-                    <td>{[NAP.locality, NAP.street].filter(Boolean).join(' ')}</td>
+                    <td>
+                      {[NAP.region, NAP.locality, NAP.street].filter(Boolean).join(' ')}
+                      {NAP.lotNumberAddress && (
+                        <>
+                          <br />
+                          <span className="hm-addr-alt">
+                            지번 · {NAP.lotNumberAddress}
+                          </span>
+                        </>
+                      )}
+                    </td>
                   </tr>
                 )}
                 {NAP.phone && (
                   <tr>
                     <td>전화</td>
-                    <td>{NAP.phone}</td>
+                    <td>
+                      <a className="hm-textlink" href={`tel:${NAP.phone.replace(/-/g, '')}`}>
+                        {NAP.phone}
+                      </a>
+                    </td>
                   </tr>
                 )}
                 <tr>
