@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photo — STUDIO HOLYMOLLY</title>
+<meta name="description" content="스튜디오 홀리몰리 포토 포트폴리오 — Beauty, Product, F&B, Model, Life Style.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<main class="page-main">
+  <div class="page-head reveal">
+    <h1>Photo</h1>
+    <span class="idx">(PORTFOLIO)</span>
+  </div>
+  <div class="filterbar" id="filterBar" hidden></div>
+  <section class="grid" id="work"></section>
+  <p class="empty-page" id="emptyNote" hidden>아직 등록된 작업이 없습니다.</p>
+</main>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+HM.boot("photo", c => {
+  const cat = new URLSearchParams(location.search).get("cat") || "";
+  HM.renderPortfolio(c, {
+    bar: "filterBar", grid: "work", empty: "emptyNote",
+    fixedCats: true, initialCat: cat
+  });
+});
+</script>
+</body>
+</html>

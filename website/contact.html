@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact — STUDIO HOLYMOLLY</title>
+<meta name="description" content="프로젝트 문의 — 24시간 안에 답장합니다. 서울 강남구 역삼동 783-2 B1.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .inq-tabs {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;
+    padding: 0 24px 28px;
+  }
+  .inq-tabs button {
+    font: inherit; font-size: 14px; letter-spacing: -0.02em; cursor: pointer;
+    padding: 10px 22px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--white); color: inherit; transition: all .18s ease;
+  }
+  .inq-tabs button:hover { border-color: currentColor; }
+  .inq-tabs button.on { background: var(--black, #111); border-color: var(--black, #111); color: #fff; }
+  .inq-pane[hidden] { display: none; }
+  @media (max-width: 720px) {
+    .inq-tabs { gap: 8px; padding: 0 14px 20px; }
+    .inq-tabs button { font-size: 13px; padding: 9px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<main class="page-main">
+  <section class="cta" style="border-top:0; padding-top: 60px;">
+    <img class="cta-symbol reveal" src="/assets/symbol-bk.png" alt="">
+    <h2 class="reveal" id="ctaHeading"></h2>
+    <a class="pill reveal" id="ctaButton" href="#"></a>
+  </section>
+  <div class="reveal">
+    <div class="section-head" style="padding-top:40px">
+      <h2 id="tabHeading">Inquiry</h2>
+      <span class="idx" id="tabIdx">(PROJECT FORM)</span>
+    </div>
+
+    <div class="inq-tabs" role="tablist">
+      <button type="button" data-tab="inquiry" class="on">📩 촬영 문의</button>
+      <button type="button" data-tab="planner">🐥 기획안 도우미</button>
+      <button type="button" data-tab="reference">📌 레퍼런스 파인더</button>
+    </div>
+
+    <div class="inq-pane" data-pane="inquiry">
+      <div class="inq-embed">
+        <iframe id="inqFrame" src="https://holymolly-ops.vercel.app/inquiry?view=form&embed=1" title="촬영 문의" loading="lazy"></iframe>
+      </div>
+      <p class="map-addr" style="padding-bottom:80px">폼이 보이지 않으면 <a href="https://holymolly-ops.vercel.app/inquiry" target="_blank" rel="noopener" style="color:inherit">새 창에서 열기</a>, 급하시면 우측 하단 카카오톡 버튼으로 문의해 주세요.<br>자세한 촬영 비용이 궁금하시면 <a href="https://holymolly-ops.vercel.app/inquiry?view=pricing" target="_blank" rel="noopener" style="color:inherit">견적 · 옵션 안내</a>를 확인해 보세요.<br>🐥 기획안이 처음이신가요? <a href="?tab=planner" data-goto="planner" style="color:inherit">기획안 도우미</a>로 3분 만에 만들어 보세요.</p>
+    </div>
+
+    <div class="inq-pane" data-pane="planner" hidden>
+      <div class="inq-embed">
+        <iframe id="plFrame" data-src="https://holymolly-ops.vercel.app/planner?embed=1" title="촬영 기획안 도우미" loading="lazy"></iframe>
+      </div>
+      <p class="map-addr" style="padding-bottom:80px">기획안, 써본 적 없어도 괜찮아요. 5단계 선택만 하면 촬영 기획안이 완성되고, PPT·PDF로 저장하거나 그대로 견적 문의까지 이어집니다. (약 3분)<br>화면이 보이지 않거나 PDF 저장이 잘 안 되면 <a href="https://holymolly-ops.vercel.app/planner" target="_blank" rel="noopener" style="color:inherit">새 창에서 열기</a>를 이용해 주세요.<br>이미 기획안이 있으시다면 <a href="?tab=inquiry" data-goto="inquiry" style="color:inherit">촬영 문의 폼</a>에 바로 첨부하시면 됩니다.</p>
+    </div>
+
+    <div class="inq-pane" data-pane="reference" hidden>
+      <div class="inq-embed">
+        <iframe id="rfFrame" data-src="https://holymolly-ops.vercel.app/reference?embed=1" title="촬영 레퍼런스 파인더" loading="lazy"></iframe>
+      </div>
+      <p class="map-addr" style="padding-bottom:80px">어떤 느낌으로 찍고 싶은지 말로 설명하기 어려울 때, 제품·컨셉·색상 키워드를 눌러 조합하면 핀터레스트 촬영 레퍼런스를 바로 찾아드립니다.<br>화면이 보이지 않으면 <a href="https://holymolly-ops.vercel.app/reference" target="_blank" rel="noopener" style="color:inherit">새 창에서 열기</a>를 이용해 주세요.<br>마음에 드는 레퍼런스를 찾으셨다면 <a href="?tab=planner" data-goto="planner" style="color:inherit">기획안 도우미</a>에 담거나 <a href="?tab=inquiry" data-goto="inquiry" style="color:inherit">촬영 문의 폼</a>에 바로 첨부하시면 됩니다.</p>
+    </div>
+  </div>
+
+  <div id="faqSection" class="reveal" hidden>
+    <div class="section-head" style="padding-top:40px">
+      <h2>FAQ</h2>
+      <span class="idx">(자주 묻는 질문)</span>
+    </div>
+    <div class="faq" id="faqItems"></div>
+  </div>
+
+</main>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+// ---------- 문의 · 기획안 · 레퍼런스 탭 ----------
+// iframe은 탭을 처음 열 때만 로드(data-src → src)하고, 탭을 오가도 내용이 유지되도록 hidden 토글만 한다.
+(function () {
+  const TABS = {
+    inquiry:   { h: "Inquiry",          idx: "(PROJECT FORM)" },
+    planner:   { h: "Shoot Planner",    idx: "(촬영 기획안 도우미)" },
+    reference: { h: "Reference Finder", idx: "(촬영 레퍼런스 파인더)" }
+  };
+  const btns = document.querySelectorAll(".inq-tabs button");
+  function go(key, push) {
+    if (!TABS[key]) key = "inquiry";
+    btns.forEach(b => b.classList.toggle("on", b.dataset.tab === key));
+    document.querySelectorAll(".inq-pane").forEach(p => {
+      const on = p.dataset.pane === key;
+      p.hidden = !on;
+      if (on) {
+        const f = p.querySelector("iframe[data-src]");
+        if (f) { f.src = f.dataset.src; f.removeAttribute("data-src"); }
+      }
+    });
+    document.getElementById("tabHeading").textContent = TABS[key].h;
+    document.getElementById("tabIdx").textContent = TABS[key].idx;
+    if (push) history.replaceState(null, "", key === "inquiry" ? "/contact" : "/contact?tab=" + key);
+  }
+  btns.forEach(b => b.onclick = () => go(b.dataset.tab, true));
+  document.querySelectorAll("[data-goto]").forEach(a => {
+    a.onclick = e => {
+      e.preventDefault();
+      go(a.dataset.goto, true);
+      document.querySelector(".inq-tabs").scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+  });
+  window.HMTabs = { go };
+  const q = new URLSearchParams(location.search).get("tab");
+  if (q && q !== "inquiry") go(q, false);
+})();
+
+HM.boot("contact", c => {
+  const ctaH = document.getElementById("ctaHeading");
+  ctaH.innerHTML = HM.esc(c.cta.heading || "").replace(/\n/g, "<br>");
+  const btn = document.getElementById("ctaButton");
+  btn.textContent = c.cta.buttonText || "문의하기";
+  btn.href = "#tabHeading";
+
+  // FAQ accordion — 관리자에서 등록한 FAQ가 있으면 그것을, 없으면 기본 FAQ를 표시
+  const FAQ_DEFAULT = [
+    {
+      q: "견적은 어떻게 받나요?",
+      a: "위 문의 폼이나 카카오톡 채널로 촬영 종류(제품/모델/영상), 수량, 희망 일정을 알려주시면 24시간 안에 레퍼런스·세팅·견적을 제안드립니다."
+    },
+    {
+      q: "원본 파일도 제공되나요?",
+      a: "네. 원본은 JPG 파일로 기본 무료 제공되며, 촬영 다음 날 바로 전달됩니다.\n모든 파일은 구글 드라이브 링크로 보내드려요. RAW·PSD 파일은 요청 시 추가 비용으로 제공됩니다."
+    },
+    {
+      q: "보정본은 언제 받을 수 있나요?",
+      a: "정밀 보정본은 셀렉하신 날로부터 7일 이내에 전달됩니다.\n더 빠른 납품이 필요하시면 ASAP 긴급 보정 옵션(추가 비용 +300,000원)으로 단축 납품이 가능해요 — 정확한 일정은 문의 시 협의해 확정합니다."
+    },
+    {
+      q: "수정은 몇 회까지 가능한가요?",
+      a: "정밀 보정본 수령 후 추가 수정 1회는 무료입니다.\n2회 이상 재수정은 1컷당 비용이 재산정되며, 제품·인물 정밀 보정(먼지/문안/수평·수직/색감·톤, 잡티/피부톤/헤어 등)은 1컷당 100,000원입니다."
+    },
+    {
+      q: "예약은 어떻게 진행되나요?",
+      a: "계약금 50% 입금 시 예약이 완료되고 촬영 일정이 확정됩니다.\n잔금은 보정본 납품 후 작업이 모두 마무리된 뒤 결제하시면 되고, 촬영 7일 전까지 변경·취소가 가능합니다."
+    },
+    {
+      q: "촬영 가능 시간은 어떻게 되나요?",
+      a: "평일 09:00–20:00에 촬영이 가능합니다.\n공휴일·야간 촬영은 별도 견적으로 진행되니 문의 시 말씀해 주세요."
+    },
+    {
+      q: "촬영 당일 참관할 수 있나요?",
+      a: "네, 스튜디오 방문 참관이 가능합니다.\n방문이 어려우시면 실시간 카카오톡으로 작업 과정을 공유하고 컨펌을 받으실 수 있어요."
+    },
+    {
+      q: "출장 촬영도 하시나요?",
+      a: "가능합니다. 서울 100,000원, 경기권 200,000원의 출장비가 추가되며, 그 외 지역은 문의 시 개별 협의합니다."
+    },
+    {
+      q: "비용에 별도로 추가되는 항목이 있나요?",
+      a: "부가세(VAT 10%)는 최종 결제 시 별도 가산됩니다.\n소품·재료비는 구매 후 영수증을 첨부해 추후 청구되며, 외부 촬영 시 출장비(서울 100,000원 / 경기권 200,000원, 그 외 지역 개별 협의)가 추가됩니다."
+    }
+  ];
+  const savedFaq = (c.faq || []).filter(f => f && (f.q || "").trim());
+  const faq = savedFaq.length ? savedFaq : FAQ_DEFAULT;
+  document.getElementById("faqSection").hidden = faq.length === 0;
+  document.getElementById("faqItems").innerHTML = faq.map(f => `
+    <details class="fq">
+      <summary>${HM.esc(f.q)}</summary>
+      <p>${HM.esc(f.a || "").replace(/\n/g, "<br>")}</p>
+    </details>`).join("");
+
+});
+</script>
+</body>
+</html>

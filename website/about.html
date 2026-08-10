@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>About — STUDIO HOLYMOLLY</title>
+<meta name="description" content="서울 역삼 비주얼 디렉션 스튜디오 — 사진·영상·BX 디자인까지, 하나의 무드로 이어지는 장면을 설계합니다.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<main class="page-main">
+  <div class="page-head reveal">
+    <h1>About</h1>
+    <span class="idx">(STUDIO)</span>
+  </div>
+  <div class="about-text reveal" id="aboutText"></div>
+
+  <div class="brochure reveal" id="brochureWrap" hidden>
+    <a id="brochureBtn" href="#" target="_blank" rel="noopener">회사소개서 다운로드 (PDF) ↓</a>
+    <a id="brochureWebBtn" href="#" target="_blank" rel="noopener" hidden>웹으로 보기 →</a>
+    <span class="bhint">기획부터 촬영, 디자인, 영상까지 — 홀리몰리의 작업 방식을 한 파일로 확인하세요.</span>
+  </div>
+
+  <div id="whySection" hidden>
+    <div class="section-head reveal">
+      <h2>Why HolyMolly</h2>
+      <span class="idx">(WHAT'S DIFFERENT)</span>
+    </div>
+    <div class="why" id="whyGrid"></div>
+  </div>
+
+  <div id="processSection" hidden>
+    <div class="section-head reveal">
+      <h2>Process</h2>
+      <span class="idx">(HOW WE WORK)</span>
+    </div>
+    <div class="process" id="processList"></div>
+  </div>
+
+  <div id="clientsSection" hidden>
+    <div class="section-head reveal">
+      <h2>Clients</h2>
+      <span class="idx">(BRANDS)</span>
+    </div>
+    <div class="clients" id="clientsGrid"></div>
+  </div>
+
+  <section class="stats" id="stats"></section>
+  <section class="cta" style="border-top:0">
+    <img class="cta-symbol reveal" src="/assets/symbol-bk.png" alt="">
+    <h2 class="reveal" id="ctaHeading"></h2>
+    <a class="pill reveal" id="ctaButton" href="#"></a>
+  </section>
+</main>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+HM.boot("about", c => {
+  document.getElementById("aboutText").textContent = (c.about && c.about.text) || c.intro || "";
+
+  // PDF가 등록돼 있으면 버튼은 파일 바로 다운로드(이미지 로딩 대기 없음), 웹 뷰어는 보조 링크로
+  if (c.brochure && (c.brochure.pdf || c.brochure.url)) {
+    document.getElementById("brochureWrap").hidden = false;
+    const btn = document.getElementById("brochureBtn");
+    btn.href = c.brochure.pdf || c.brochure.url;
+    if (c.brochure.pdf) btn.setAttribute("download", "STUDIO-HOLYMOLLY_회사소개서.pdf");
+    if (c.brochure.pdf && c.brochure.url) {
+      const web = document.getElementById("brochureWebBtn");
+      web.hidden = false;
+      web.href = c.brochure.url;
+    }
+  }
+
+  // 항목별 사진: 관리자에서 지정한 image가 있으면 그것을, 필드가 아예 없으면(예전 데이터) 기본 무드 이미지를 사용
+  const WHY_IMGS = [1, 2, 3, 4].map(n => `/assets/about/why-${n}.jpg`);
+  const PROC_IMGS = [1, 2, 3, 4].map(n => `/assets/about/process-${n}.jpg`);
+  const itemImg = (item, i, defaults) => ("image" in item) ? (item.image || "") : (defaults[i] || "");
+
+  const why = (c.why || []).filter(w => w.title);
+  document.getElementById("whySection").hidden = why.length === 0;
+  document.getElementById("whyGrid").innerHTML = why.map((w, i) => {
+    const img = itemImg(w, i, WHY_IMGS);
+    return `
+    <div class="wcard reveal">
+      ${img ? `<div class="wimg"><img src="${HM.esc(img)}" alt="" loading="lazy"></div>` : ""}
+      <div class="wnum">${String(i + 1).padStart(2, "0")}</div>
+      <h3>${HM.esc(w.title)}</h3>
+      ${w.desc ? `<p>${HM.esc(w.desc)}</p>` : ""}
+    </div>`;
+  }).join("");
+
+  const steps = (c.process || []).filter(s => s.title);
+  document.getElementById("processSection").hidden = steps.length === 0;
+  document.getElementById("processList").innerHTML = steps.map((s, i) => {
+    const img = itemImg(s, i, PROC_IMGS);
+    return `
+    <div class="pstep reveal">
+      <span class="pnum">${String(i + 1).padStart(2, "0")}</span>
+      <div class="pbody"><h3>${HM.esc(s.title)}</h3>${s.desc ? `<p>${HM.esc(s.desc)}</p>` : ""}</div>
+      ${img ? `<img class="pimg" src="${HM.esc(img)}" alt="" loading="lazy">` : ""}
+    </div>`;
+  }).join("");
+
+  const clients = (c.clients || []).filter(l => l.image);
+  document.getElementById("clientsSection").hidden = clients.length === 0;
+  document.getElementById("clientsGrid").innerHTML = clients.map(l => `
+    <div class="clogo reveal"><img src="${HM.esc(l.image)}" alt="${HM.esc(l.name || "client logo")}" loading="lazy"></div>`).join("");
+
+  HM.fillStats(c, document.getElementById("stats"));
+  const ctaH = document.getElementById("ctaHeading");
+  ctaH.innerHTML = HM.esc(c.cta.heading || "").replace(/\n/g, "<br>");
+  const btn = document.getElementById("ctaButton");
+  btn.textContent = c.cta.buttonText || "문의하기";
+  btn.href = "/contact";
+});
+</script>
+</body>
+</html>

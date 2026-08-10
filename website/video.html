@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video — STUDIO HOLYMOLLY</title>
+<meta name="description" content="스튜디오 홀리몰리 필름 — 브랜드 필름, 커머스 영상, 소셜 콘텐츠.">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/"><img src="/assets/logo-h.png" alt="STUDIO HOLYMOLLY"></a>
+  <nav id="siteNav"></nav>
+</header>
+
+<main class="page-main">
+  <div class="page-head reveal">
+    <h1>Video</h1>
+    <span class="idx">(MOTION)</span>
+  </div>
+  <section class="video-section" style="padding-top:20px">
+    <div class="video-grid" id="videoList"></div>
+    <div class="video-grid shorts" id="videoShorts"></div>
+  </section>
+  <p class="empty-page" id="emptyNote" hidden>아직 등록된 영상이 없습니다.</p>
+</main>
+
+<footer>
+  <div class="cols">
+    <div>
+      <img class="footer-logo" src="/assets/logo-stack-left.png" alt="STUDIO HOLYMOLLY">
+      <p class="bio" id="footerBio"></p>
+    </div>
+    <div>
+      <h4>Socials</h4>
+      <ul id="footerSocials"></ul>
+    </div>
+    <div>
+      <h4>Contact</h4>
+      <ul id="footerContact"></ul>
+    </div>
+  </div>
+  <div class="bottom">
+    <span>© 2026 Studio Holymolly</span>
+    <img src="/assets/symbol-wh.png" alt="HLML" style="height:26px">
+  </div>
+</footer>
+
+<script src="/assets/site.js"></script>
+<script>
+HM.boot("video", c => {
+  const n = HM.renderVideoList(c, document.getElementById("videoList"), document.getElementById("videoShorts"));
+  document.getElementById("emptyNote").hidden = n > 0;
+});
+</script>
+</body>
+</html>
