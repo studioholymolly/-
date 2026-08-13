@@ -58,5 +58,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api).*)'],
+  // 크롤러가 읽는 정적 메타 파일(robots.txt·sitemap.xml·OG 이미지·아이콘)은
+  // 미들웨어를 태우지 않습니다. 인증 세션을 조회할 이유가 없고, 매 요청마다
+  // Supabase 를 호출하면 크롤링 응답만 느려집니다.
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|robots.txt|sitemap.xml|opengraph-image|api).*)',
+  ],
 }

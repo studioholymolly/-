@@ -19,7 +19,7 @@ function LoginGate() {
   }
   return r.jsx('div', { className: 'login-wrap', children:
     r.jsxs('form', { className: 'login-card', onSubmit: submit, children: [
-      r.jsx('div', { className: 'brand', style: { fontWeight: 800, letterSpacing: '0.04em', marginBottom: 4 }, children: 'STUDIO. HOLYMOLLY' }),
+      r.jsx('div', { className: 'brand', style: { fontWeight: 800, letterSpacing: '0.04em', marginBottom: 4 }, children: 'STUDIO HOLYMOLLY' }),
       r.jsx('div', { className: 'mut3', style: { fontSize: 13, marginBottom: 16 }, children: '견적서 · 계약서' }),
       r.jsx('input', { type: 'email', placeholder: '이메일', value: email, onChange: (e) => setEmail(e.target.value), autoFocus: true }),
       r.jsx('input', { type: 'password', placeholder: '비밀번호', value: pw, onChange: (e) => setPw(e.target.value), style: { marginTop: 8 } }),
@@ -32,7 +32,7 @@ function LoginGate() {
 
 function Header({ user }) {
   return r.jsxs('div', { className: 'topbar', style: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 18px', borderBottom: '1px solid var(--line)' }, children: [
-    r.jsx('div', { style: { fontWeight: 800, letterSpacing: '0.04em' }, children: 'STUDIO. HOLYMOLLY' }),
+    r.jsx('div', { style: { fontWeight: 800, letterSpacing: '0.04em' }, children: 'STUDIO HOLYMOLLY' }),
     r.jsx('div', { className: 'mut3', style: { fontSize: 13 }, children: '견적서 · 계약서' }),
     r.jsx('div', { style: { flex: 1 } }),
     r.jsx('span', { className: 'mut3', style: { fontSize: 12.5 }, children: user.email || '' }),

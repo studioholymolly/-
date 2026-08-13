@@ -7,6 +7,7 @@ import { STUDIO_NAME } from '@/lib/brand'
 export const metadata: Metadata = {
   title: '프로젝트 문의',
   description: '스튜디오 홀리몰리 프로젝트 문의 — 몇 가지만 알려주시면 24시간 안에 답장드립니다.',
+  alternates: { canonical: '/inquiry' },
 }
 
 export default function InquiryPage() {
@@ -16,7 +17,7 @@ export default function InquiryPage() {
         <div className="hm-container hm-nav-inner">
           <Link href="/" className="hm-logo" aria-label={STUDIO_NAME}>
             <LogoSymbol size={30} />
-            <span className="hm-wordmark hm-display hm-hide-sm">STUDIO. HOLYMOLLY</span>
+            <span className="hm-wordmark hm-display hm-hide-sm">STUDIO HOLYMOLLY</span>
           </Link>
           <div className="hm-nav-links">
             <Link href="/">← 홈으로</Link>

@@ -4,9 +4,80 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>스튜디오 홀리몰리 · 운영 대시보드</title>
+
+    <!-- 이 파일 하나가 / (대시보드) · /inquiry · /planner · /reference 를 모두
+         서빙합니다. 그래서 여기 메타는 어느 경로에서 열려도 맞는 내용이어야
+         하고, 경로별로 달라져야 하는 canonical 같은 태그는 넣지 않습니다. -->
+
+    <meta
+      name="description"
+      content="스튜디오 홀리몰리(STUDIO HOLYMOLLY)는 뷰티, 제품, F&amp;B, 의류, 인물 촬영과 영상·BX 디자인을 진행하는 크리에이티브 스튜디오입니다. 촬영 문의, AI 기획안 만들기, 레퍼런스 파인더를 이용하실 수 있습니다."
+    />
+
+    <!-- 공유 미리보기(카톡/슬랙 등)용 — 브라우저 탭 제목과 별개로 og:title이 우선 표시된다 -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="스튜디오 홀리몰리" />
+    <meta property="og:title" content="스튜디오 홀리몰리 · 촬영 스튜디오" />
+    <meta property="og:description" content="문의 남기기 / AI 기획안 만들기 / 레퍼런스 파인더" />
+    <meta name="twitter:card" content="summary" />
+
+    <!-- 구조화 데이터: 이 앱은 클라이언트 렌더링이라 본문 HTML이 비어 있습니다.
+         AI 검색 크롤러(GPTBot·OAI-SearchBot·PerplexityBot 등)는 대부분
+         자바스크립트를 실행하지 않으므로, 사업자 정보를 기계가 읽을 수 있는
+         형태로 여기 직접 실어 보냅니다. -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ProfessionalService",
+        "name": "스튜디오 홀리몰리",
+        "alternateName": "STUDIO HOLYMOLLY",
+        "description": "뷰티, 제품, F&B, 의류, 인물 촬영과 영상 제작, BX 디자인을 진행하는 크리에이티브 스튜디오입니다.",
+        "email": "studio.holymolly@gmail.com",
+        "telephone": "010-8236-9368",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "언주로65길 29, 지하 1층",
+          "addressLocality": "강남구",
+          "addressRegion": "서울특별시",
+          "addressCountry": "KR"
+        },
+        "areaServed": { "@type": "Country", "name": "대한민국" },
+        "knowsLanguage": ["ko", "en"],
+        "sameAs": [
+          "https://www.instagram.com/studio_holymolly/",
+          "https://www.threads.net/@studio_holymolly"
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <!-- 자바스크립트가 꺼져 있거나 실행되지 않는 클라이언트(대다수의 AI 크롤러가
+         여기 해당)를 위한 최소 본문. React 가 마운트되면 화면에는 보이지 않습니다. -->
+    <noscript>
+      <h1>스튜디오 홀리몰리 (STUDIO HOLYMOLLY)</h1>
+      <p>
+        뷰티, 제품, F&amp;B, 의류, 인물 촬영과 영상 제작, BX 디자인을 진행하는
+        크리에이티브 스튜디오입니다. 코스메틱 상세페이지 컷부터 시즌 룩북,
+        브랜드 필름까지 브랜드가 필요로 하는 장면을 만듭니다.
+      </p>
+      <p>
+        촬영 문의는 <a href="/inquiry">프로젝트 문의 페이지</a>에서 남기실 수 있고,
+        문의를 남겨주시면 24시간 안에 답장드립니다. 문의는
+        <a href="mailto:studio.holymolly@gmail.com">studio.holymolly@gmail.com</a>
+        으로도 받습니다.
+      </p>
+      <p>
+        서울특별시 강남구 언주로65길 29, 지하 1층 ·
+        <a href="tel:01082369368">010-8236-9368</a>
+      </p>
+      <p>
+        이 페이지는 자바스크립트가 필요합니다. 브라우저에서 자바스크립트를 켜신 뒤
+        다시 열어 주세요.
+      </p>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -587,3 +587,235 @@ body {
   .hm-row, .hm-step, .hm-btn, .hm-intent, .hm-textlink { transition: none; }
   .hm-success .mark { animation: none; }
 }
+
+/* =========================================================
+   Content pages (FAQ · 촬영 비용 · 소개)
+   Long-form reading surface built from the same monochrome
+   system as the landing: hairline rules, index numbering,
+   generous measure. Answers are set at a size that reads as
+   a statement, not body copy — they are the reason the page
+   exists, and AI answer engines lift them verbatim.
+   ========================================================= */
+
+.hm-doc { padding: clamp(56px, 9vh, 104px) 0 clamp(72px, 12vh, 140px); }
+
+.hm-doc-head {
+  max-width: 780px;
+  padding-bottom: clamp(36px, 6vh, 64px);
+  border-bottom: 1px solid var(--hm-ink);
+  margin-bottom: clamp(40px, 7vh, 80px);
+}
+.hm-doc-head .hm-label-xs { display: block; margin-bottom: 22px; }
+.hm-doc-head h1 {
+  font-size: clamp(30px, 5vw, 60px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 0 0 26px;
+}
+.hm-doc-lead {
+  font-size: clamp(16px, 1.7vw, 19px);
+  line-height: 1.75;
+  color: var(--hm-gray);
+  margin: 0;
+}
+.hm-doc-lead strong { color: var(--hm-ink); font-weight: 700; }
+
+.hm-updated {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--hm-gray-3);
+  margin: 24px 0 0;
+}
+
+/* ---- FAQ: one question per hairline-separated block ---- */
+.hm-faq-list { border-top: 1px solid var(--hm-line); max-width: 820px; }
+.hm-faq-item {
+  padding: clamp(30px, 5vh, 48px) 0;
+  border-bottom: 1px solid var(--hm-line);
+}
+.hm-faq-item h2 {
+  font-size: clamp(19px, 2.2vw, 26px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  margin: 0 0 18px;
+}
+/* The answer capsule — self-contained, quotable, deliberately large. */
+.hm-faq-answer {
+  font-size: clamp(15.5px, 1.6vw, 17px);
+  line-height: 1.85;
+  margin: 0;
+}
+.hm-faq-detail {
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--hm-gray);
+  margin: 16px 0 0;
+  padding-left: 18px;
+  border-left: 1px solid var(--hm-line);
+}
+
+/* ---- long-form sections ---- */
+.hm-doc-section { max-width: 900px; padding: clamp(40px, 7vh, 72px) 0 0; }
+.hm-doc-section h2 {
+  font-size: clamp(21px, 2.6vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 22px;
+}
+.hm-doc-section h3 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0 0 14px;
+}
+.hm-doc-body {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--hm-gray);
+  margin: 18px 0 0;
+}
+.hm-doc-list { margin: 20px 0 0; padding: 0; list-style: none; }
+.hm-doc-list li {
+  position: relative;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--hm-gray);
+  padding: 0 0 12px 20px;
+}
+.hm-doc-list li::before {
+  content: '—';
+  position: absolute;
+  left: 0;
+  color: var(--hm-gray-3);
+}
+.hm-doc-list strong { color: var(--hm-ink); font-weight: 700; }
+
+.hm-doc-steps { margin: 22px 0 0; padding: 0 0 0 0; list-style: none; counter-reset: hm-step; }
+.hm-doc-steps li {
+  counter-increment: hm-step;
+  position: relative;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--hm-gray);
+  padding: 16px 0 16px 52px;
+  border-bottom: 1px solid var(--hm-line);
+}
+.hm-doc-steps li:first-child { border-top: 1px solid var(--hm-line); }
+.hm-doc-steps li::before {
+  content: '0' counter(hm-step);
+  position: absolute;
+  left: 0;
+  top: 16px;
+  font-family: var(--font-display, 'Jost'), sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--hm-gray-3);
+}
+.hm-doc-steps strong { color: var(--hm-ink); font-weight: 700; }
+
+/* ---- price rows: reuse .hm-row grid, swap the arrow for a figure ---- */
+.hm-row-price { grid-template-columns: 88px 1.1fr 1.4fr auto; }
+.hm-row-meta {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--hm-gray);
+  margin-top: 8px;
+}
+.hm-row:hover .hm-row-meta { color: #a8a8a8; }
+.hm-price {
+  font-size: clamp(14px, 1.5vw, 17px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  justify-self: end;
+}
+@media (max-width: 760px) {
+  .hm-row-price { grid-template-columns: 48px 1fr; }
+  .hm-row-price p { grid-column: 2; }
+  .hm-price { grid-column: 2; justify-self: start; margin-top: 10px; }
+}
+
+/* ---- tables ---- */
+.hm-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 22px 0 0;
+  font-size: 14px;
+}
+.hm-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hm-gray);
+  padding: 0 16px 12px 0;
+  border-bottom: 1px solid var(--hm-ink);
+}
+.hm-table td {
+  padding: 16px 16px 16px 0;
+  border-bottom: 1px solid var(--hm-line);
+  line-height: 1.7;
+  vertical-align: top;
+}
+.hm-table td:first-child { font-weight: 700; white-space: nowrap; }
+.hm-table td:last-child { color: var(--hm-gray); }
+.hm-table tbody tr:hover td { background: rgba(0, 0, 0, 0.015); }
+@media (max-width: 640px) {
+  .hm-table, .hm-table tbody, .hm-table tr, .hm-table td { display: block; width: 100%; }
+  .hm-table thead { display: none; }
+  .hm-table tr { padding: 16px 0; border-bottom: 1px solid var(--hm-line); }
+  .hm-table td { border: 0; padding: 2px 0; }
+  .hm-table td:first-child { white-space: normal; }
+}
+
+/* ---- two-column include/exclude ---- */
+.hm-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 64px);
+  margin-top: 24px;
+}
+@media (max-width: 700px) { .hm-split { grid-template-columns: 1fr; } }
+
+/* ---- closing call to action ---- */
+.hm-doc-cta {
+  margin-top: clamp(56px, 9vh, 96px);
+  padding: clamp(36px, 6vh, 56px) 0 0;
+  border-top: 1px solid var(--hm-ink);
+  max-width: 700px;
+}
+.hm-doc-cta h2 {
+  font-size: clamp(21px, 2.6vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+}
+.hm-doc-cta p {
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--hm-gray);
+  margin: 0 0 30px;
+}
+
+.hm-doc-footnote {
+  margin: clamp(40px, 6vh, 64px) 0 0;
+  font-size: 12.5px;
+  line-height: 1.8;
+  color: var(--hm-gray-3);
+  max-width: 700px;
+}
+
+/* Secondary (lot-number) address — kept for humans finding the door,
+   deliberately absent from the structured data so machines resolve one
+   location, not two. */
+.hm-addr-alt {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--hm-gray-3);
+}
