@@ -1,0 +1,5 @@
+holymolly-ops dashboard
+feature: 영수증 내역서 (견적서 · 계약서 탭)
+source: dashboard/ (Vite) · branch main
+note: 이 파일이 보이면 지금 접속한 주소는 이 저장소의 최신 main에서 빌드된 화면입니다.
+      404가 뜨면 그 주소는 다른(예전) 배포를 보고 있는 것입니다.
