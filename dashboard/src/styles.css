@@ -771,6 +771,8 @@ button.prio{cursor:pointer;font-family:inherit}
 
 /* ---------- A4 종이 (화면 미리보기 + 인쇄 공용) ---------- */
 .paperA4{
+  /* 브라우저 인쇄 설정에서 '배경 그래픽'을 꺼도 표 헤더·첨부 사진이 그대로 나오게 */
+  -webkit-print-color-adjust:exact;print-color-adjust:exact;
   width:210mm;min-height:296mm;margin:0 auto;background:#fff;color:#0a0a0a;
   padding:10mm 14mm 8mm;box-shadow:0 2px 6px rgba(10,10,10,.08),0 24px 60px -20px rgba(10,10,10,.25);
   font-size:10.5pt;line-height:1.6;letter-spacing:-.01em;
@@ -885,11 +887,14 @@ button.prio{cursor:pointer;font-family:inherit}
 .dr-cat i{font-style:normal;color:#8a8a90;font-size:8pt}
 .dr-kor{text-align:right;font-size:9.5pt;margin:-2mm 0 4mm;letter-spacing:.02em}
 .dr-kor .num{color:#525257}
+/* 표 안 미니 영수증 — 항목과 같은 줄에서 바로 보이게 (인쇄본 1장만 봐도 첨부가 확인된다) */
+.dp-items .dr-inline{display:block;margin:0 auto;max-width:100%;max-height:16mm;width:auto;border:1px solid #e5e5e7;background:#fff}
 .dr-appendix{border-top:1px solid #0a0a0a;padding-top:3mm;margin-top:5mm}
 .dr-photos{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
 .dr-photos figure{margin:0;page-break-inside:avoid;break-inside:avoid}
-.dr-photos img{width:100%;height:62mm;object-fit:contain;background:#fff;border:1px solid #e5e5e7}
-.dr-photos figcaption{font-size:8pt;color:#525257;padding-top:1.2mm;line-height:1.4}
+/* object-fit은 일부 브라우저 인쇄에서 무시된다 — max-width/height로만 맞춘다 */
+.dr-photos img{display:block;max-width:100%;max-height:62mm;width:auto;height:auto;margin:0 auto;border:1px solid #e5e5e7;background:#fff}
+.dr-photos figcaption{font-size:8pt;color:#525257;padding-top:1.2mm;line-height:1.4;text-align:center}
 
 /* 문서번호 · 서명 */
 .dp-docno{float:right;font-size:8pt;font-weight:700;letter-spacing:.08em;color:#525257}
