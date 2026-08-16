@@ -798,7 +798,10 @@ button.prio{cursor:pointer;font-family:inherit}
 .dp-sums>div{display:flex;justify-content:space-between;padding:1.4mm 3mm;font-size:9.5pt;border-bottom:1px solid #e5e5e7}
 .dp-sums .disc{color:#c0392b}
 .dp-sums .disc span{font-weight:700}
-.dp-sums .grand{background:#0a0a0a;color:#fff;font-weight:800;font-size:10.5pt;border-bottom:0;margin-top:1mm}
+.dp-sums .grand{position:relative;background:#0a0a0a;color:#fff;font-weight:800;font-size:10.5pt;border-bottom:0;margin-top:1mm}
+/* 검은 박스를 배경색 + SVG 사각형 이중으로 깐다 — 인쇄에서 배경이 빠져도 SVG는 남는다 */
+.dp-sums .grand>.grand-fill{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+.dp-sums .grand>span,.dp-sums .grand>b{position:relative}
 .dp-notes{border-top:1px solid #0a0a0a;padding-top:2.4mm;margin-bottom:4mm}
 .dp-notes p{margin:0 0 1mm;font-size:8.6pt;line-height:1.5;color:#333}
 .dp-foot{text-align:center;font-size:7.5pt;letter-spacing:.22em;color:#8a8a90;border-top:1px solid #e5e5e7;padding-top:2.4mm;margin-top:auto}
