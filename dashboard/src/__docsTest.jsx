@@ -28,6 +28,18 @@ getState().quotes.push(
     id: 'mock3', docType: 'contract', docNo: 'HM-C-2026-002', client: '설화수', phone: '010-9876-5432', date: '2026-07-10',
     total: 4620000, depositPct: 50, cDate: '2026-07-10', workStart: '2026-07-20', workEnd: '2026-07-21', delivDate: '2026-08-01',
   },
+  {
+    id: 'mock4', docType: 'receipt', docNo: 'HM-R-2026-001', client: '탬버린즈', manager: '김주희', phone: '010-1234-5678',
+    project: '탬버린즈 25FW 제품컷', date: '2026-07-25', periodFrom: '2026-07-20', periodTo: '2026-07-21',
+    items: [
+      { date: '2026-07-20', cat: '프롭·소품', place: '방산시장 대성유리', name: '유리 트레이 2종', qty: 2, price: 34000, pay: '법인카드', note: '' },
+      { date: '2026-07-20', cat: '원물·식자재', place: '이마트 성수점', name: '촬영용 생화·과일', qty: 1, price: 78600, pay: '법인카드', note: '' },
+      { date: '2026-07-21', cat: '교통·주차', place: '스튜디오 주차장', name: '촬영 당일 주차', qty: 1, price: 18000, pay: '개인카드', note: '스타일리스트 차량' },
+      { date: '2026-07-21', cat: '식대', place: '연남동 소반', name: '스태프 5인 중식', qty: 1, price: 62000, pay: '법인카드', note: '' },
+    ],
+    vatMode: 'included', prepaid: 100000,
+    subtotal: 226600, vat: 0, prepaidAmt: 100000, due: 126600, total: 226600,
+  },
 )
 
 createRoot(document.getElementById('root')).render(<Docs />)
