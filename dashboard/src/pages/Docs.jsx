@@ -121,6 +121,15 @@ const RECEIPT_NOTES = [
 
 const fmt = (n) => (Number(n) || 0).toLocaleString('ko-KR')
 
+// 총 결제금액 줄의 검은 박스 — 배경색(background)은 브라우저 인쇄 옵션 '배경 그래픽'이
+// 꺼져 있으면 통째로 빠진다. SVG 사각형은 배경이 아니라 내용이라 항상 인쇄되므로,
+// 배경색과 함께 깔아 어떤 인쇄 경로에서도 흰 글씨가 사라지지 않게 한다.
+const GrandFill = () => (
+  <svg className="grand-fill" viewBox="0 0 4 1" preserveAspectRatio="none" aria-hidden="true">
+    <rect x="0" y="0" width="4" height="1" fill="#0a0a0a" />
+  </svg>
+)
+
 // 날짜 → "2026년 7월 6일"
 function kdate(d) {
   if (!d) return '____년 __월 __일'
@@ -1087,7 +1096,7 @@ export function VideoPaper({ v, docNo, t, groups }) {
           </>
         )}
         <div><span>부가세 (10%) · VAT</span><b className="num">{fmt(t.vat)} 원</b></div>
-        <div className="grand"><span>합계 · TOTAL (VAT 포함)</span><b className="num">{fmt(t.total)} 원</b></div>
+        <div className="grand"><GrandFill /><span>합계 · TOTAL (VAT 포함)</span><b className="num">{fmt(t.total)} 원</b></div>
       </div>
 
       {v.notes.filter(Boolean).length > 0 && (
@@ -1704,7 +1713,7 @@ export function QuotePaper({ q, docNo, t }) {
           </>
         )}
         <div><span>부가세 (10%) · VAT</span><b className="num">{fmt(t.vat)} 원</b></div>
-        <div className="grand"><span>총 결제금액 · TOTAL (VAT 포함)</span><b className="num">{fmt(t.total)} 원</b></div>
+        <div className="grand"><GrandFill /><span>총 결제금액 · TOTAL (VAT 포함)</span><b className="num">{fmt(t.total)} 원</b></div>
       </div>
 
       {q.notes.filter(Boolean).length > 0 && (
