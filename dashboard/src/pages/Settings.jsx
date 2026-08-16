@@ -3,6 +3,9 @@ import { useAuth } from '../auth.jsx'
 import { useStore } from '../useStore.js'
 import { exportJSON, importJSON, resetAll, today, legacyLocalInfo, migrateLegacyToCloud } from '../data.js'
 
+// vite.config.js에서 빌드 시각을 주입한다 (개발 서버에서는 값이 없어 '개발 중'으로 표시)
+const BUILD_STAMP = typeof __BUILD_STAMP__ === 'string' ? __BUILD_STAMP__ : '개발 중'
+
 export default function Settings() {
   const { user, isAdmin } = useAuth()
   const s = useStore()
@@ -58,7 +61,13 @@ export default function Settings() {
 
   return (
     <>
-      <div className="ph"><h3>설정 · 데이터</h3></div>
+      <div className="ph">
+        <h3>설정 · 데이터</h3>
+        <span className="sp" style={{ flex: 1 }} />
+        <span className="mut3 mono" style={{ fontSize: 11 }} title="이 화면을 만들어 배포한 시각 — 새 기능이 안 보이면 이 값이 갱신됐는지 확인하세요">
+          빌드 {BUILD_STAMP}
+        </span>
+      </div>
 
       <div className="grid">
         <div className="tile col6">
