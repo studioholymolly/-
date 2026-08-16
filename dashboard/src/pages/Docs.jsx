@@ -489,10 +489,11 @@ export default function Docs() {
   }
 
   // 인쇄·PDF 저장 — 브라우저가 document.title을 PDF 기본 파일명으로 쓰므로 인쇄 동안만 바꿔치기
+  // 날짜는 두 자리 연도 (2026-08-17 → 260817)
   function printDoc() {
     const label = tab === 'contract' ? '계약서' : tab === 'receipt' ? '영수증내역서' : '견적서'
     const client = (tab === 'contract' ? contract.client : tab === 'video' ? video.client : tab === 'receipt' ? receipt.client : quote.client) || '고객미입력'
-    const date = ((tab === 'contract' ? contract.cDate : tab === 'video' ? video.date : tab === 'receipt' ? receipt.date : quote.date) || today()).replaceAll('-', '')
+    const date = ((tab === 'contract' ? contract.cDate : tab === 'video' ? video.date : tab === 'receipt' ? receipt.date : quote.date) || today()).replaceAll('-', '').slice(2)
     const prev = document.title
     document.title = `${label}_${date}_${client}`
     window.print()
@@ -1470,7 +1471,7 @@ export function ReceiptPaper({ r, docNo, t }) {
         {t.vat > 0 && <div><span>부가세 (10%) · VAT</span><b className="num">{fmt(t.vat)} 원</b></div>}
         {t.vat > 0 && t.prepaid > 0 && <div><span>총 청구액</span><b className="num">{fmt(t.total)} 원</b></div>}
         {t.prepaid > 0 && <div className="disc"><span>기수령 · 선지급액</span><b className="num">− {fmt(t.prepaid)} 원</b></div>}
-        <div className="grand"><span>최종 청구금액 · TOTAL</span><b className="num">{fmt(t.due)} 원</b></div>
+        <div className="grand"><GrandFill /><span>최종 청구금액 · TOTAL</span><b className="num">{fmt(t.due)} 원</b></div>
       </div>
 
       <div className="dr-kor">일금 <b>{korAmount(t.due)}</b> 원정 <span className="num">(₩{fmt(t.due)})</span></div>
