@@ -105,6 +105,18 @@ const VIDEO_NOTES = [
   '촬영 장비 및 편집 툴 사용료는 포함입니다.',
 ]
 
+/* ---------------- 영수증 내역서 (실비 청구) ---------------- */
+// 계약서 제4조 3항 — 원물·프롭 등 재료비는 "을"이 실제 지출한 금액을 영수증 첨부하여 실비로 청구
+const RECEIPT_CATS = ['원물·식자재', '프롭·소품', '소모품', '대여', '교통·주차', '택배·배송', '식대', '기타']
+const PAY_METHODS = ['법인카드', '개인카드', '계좌이체', '현금']
+
+const RECEIPT_NOTES = [
+  '본 내역서는 촬영 진행 중 발생한 실비 지출 내역이며, 계약서 제4조 3항에 따라 실비로 청구됩니다.',
+  '모든 항목은 실제 지출 영수증을 근거로 작성되었으며, 원본 영수증은 요청 시 제공됩니다.',
+  '기재 금액은 부가가치세가 포함된 실지출 금액입니다.',
+  '본 내역서 금액은 기본 촬영비와 별도이며, 잔금 정산 시 합산하여 청구됩니다.',
+]
+
 const fmt = (n) => (Number(n) || 0).toLocaleString('ko-KR')
 
 // 날짜 → "2026년 7월 6일"
@@ -136,11 +148,13 @@ export function korAmount(n) {
 }
 
 const emptyItem = () => ({ cat: '촬영비', name: '', desc: '', qty: 1, price: 0 })
+const emptyReceiptItem = (cat) => ({ date: today(), cat: cat || '프롭·소품', place: '', name: '', qty: 1, price: 0, pay: '법인카드', note: '', photo: '' })
 
-// 문서번호 자동 부여 — 저장된 발급 내역에서 올해 최대 번호 +1 (견적 HM-2026-001 / 영상 HM-V-2026-001 / 계약 HM-C-2026-001)
+// 문서번호 자동 부여 — 저장된 발급 내역에서 올해 최대 번호 +1
+// (견적 HM-2026-001 / 영상 HM-V-2026-001 / 계약 HM-C-2026-001 / 영수증 내역서 HM-R-2026-001)
 function nextDocNo(docs, type, dateStr) {
   const year = (dateStr || today()).slice(0, 4)
-  const prefix = type === 'contract' ? `HM-C-${year}-` : type === 'video' ? `HM-V-${year}-` : `HM-${year}-`
+  const prefix = type === 'contract' ? `HM-C-${year}-` : type === 'video' ? `HM-V-${year}-` : type === 'receipt' ? `HM-R-${year}-` : `HM-${year}-`
   let max = 0
   docs.forEach((d) => {
     if (d.docNo && d.docNo.startsWith(prefix)) {
@@ -156,6 +170,15 @@ function initQuote() {
 }
 function initVideo() {
   return { docNo: '', client: '', manager: '', phone: '', date: today(), items: [], notes: [...VIDEO_NOTES], discountAmt: 0, discountPct: 0 }
+}
+function initReceipt() {
+  return {
+    docNo: '', client: '', manager: '', phone: '', project: '',
+    date: today(), periodFrom: '', periodTo: '',
+    items: [], notes: [...RECEIPT_NOTES],
+    vatMode: 'included', // included = 영수증 금액에 VAT 포함(별도 부과 없음) | add = 합계에 VAT 10% 별도 부과
+    prepaid: 0, // 기수령·선지급(가지급)액 — 청구액에서 차감
+  }
 }
 function initContract() {
   const t = today()
@@ -181,21 +204,44 @@ function quoteTotals(q) {
   return { subtotal, discPct, discount, net, vat, total: net + vat }
 }
 
+// 영수증 내역서 합계 — 실비 합계 → (선택)VAT → 기수령액 차감 → 최종 청구액, 구분별 소계 포함
+// 사진만 먼저 첨부하고 금액을 나중에 채우는 흐름이라, 사진이 붙은 줄도 실제 항목으로 센다
+const liveReceiptItems = (items) => items.filter((it) => it.name || it.place || it.photo || Number(it.price) > 0)
+
+function receiptTotals(r) {
+  const live = liveReceiptItems(r.items)
+  const subtotal = live.reduce((s, it) => s + (Number(it.qty) || 0) * (Number(it.price) || 0), 0)
+  const vat = r.vatMode === 'add' ? Math.round(subtotal * 0.1) : 0
+  const total = subtotal + vat
+  const prepaid = Math.min(total, Math.max(0, Number(r.prepaid) || 0))
+  const byCat = []
+  live.forEach((it) => {
+    const cat = it.cat || '기타'
+    const amt = (Number(it.qty) || 0) * (Number(it.price) || 0)
+    const hit = byCat.find((c) => c.cat === cat)
+    if (hit) { hit.amount += amt; hit.count += 1 } else byCat.push({ cat, amount: amt, count: 1 })
+  })
+  return { subtotal, vat, total, prepaid, due: total - prepaid, byCat, count: live.length }
+}
+
 export default function Docs() {
   const store = useStore()
   const auth = useAuth() || {}
   const user = auth.user
-  const [tab, setTab] = useState('quote') // quote | video | contract | history
+  const [tab, setTab] = useState('quote') // quote | video | contract | receipt | glance | history
   const [quote, setQuote] = useState(initQuote)
   const [video, setVideo] = useState(initVideo)
   const [contract, setContract] = useState(initContract)
+  const [receipt, setReceipt] = useState(initReceipt)
   const [savedMsg, setSavedMsg] = useState('')
 
   const tq = quoteTotals(quote)
   const tv = quoteTotals(video)
+  const tr = receiptTotals(receipt)
   const uq = (patch) => setQuote((q) => ({ ...q, ...patch }))
   const uv = (patch) => setVideo((v) => ({ ...v, ...patch }))
   const uc = (patch) => setContract((c) => ({ ...c, ...patch }))
+  const ur = (patch) => setReceipt((r) => ({ ...r, ...patch }))
 
   // 단가표 — 편집본이 저장돼 있으면 그걸, 없으면 기본값 (app_config로 모든 기기 동기화)
   const presetGroups = (store.config?.docPresets?.length ? store.config.docPresets : DEFAULT_GROUPS)
@@ -254,6 +300,21 @@ export default function Docs() {
     setVideo((v) => ({ ...v, items: v.items.filter((_, j) => j !== i) }))
   }
 
+  // 영수증 내역서 — 구분 버튼을 누르면 그 구분의 빈 줄이 추가된다 (영수증은 매번 내용이 달라 프리셋이 없음)
+  function addReceiptItem(cat) {
+    setReceipt((r) => ({ ...r, items: [...r.items, emptyReceiptItem(cat)] }))
+  }
+  function setReceiptItem(i, patch) {
+    setReceipt((r) => ({ ...r, items: r.items.map((it, j) => (j === i ? { ...it, ...patch } : it)) }))
+  }
+  function delReceiptItem(i) {
+    setReceipt((r) => ({ ...r, items: r.items.filter((_, j) => j !== i) }))
+  }
+  // 영수증 사진 여러 장 → 사진 1장당 한 줄씩 생성 (금액·사용처는 보고 채워 넣기)
+  function addReceiptPhotos(photos, cat) {
+    setReceipt((r) => ({ ...r, items: [...r.items, ...photos.map((photo) => ({ ...emptyReceiptItem(cat), photo }))] }))
+  }
+
   // 견적 → 계약서로 이관 (사진·영상 공통)
   function toContract() {
     const src = tab === 'video'
@@ -261,6 +322,19 @@ export default function Docs() {
       : { client: quote.client, phone: quote.phone, total: tq.total }
     setContract((c) => ({ ...c, client: src.client || c.client, phone: src.phone || c.phone, total: src.total, cDate: today() }))
     setTab('contract')
+  }
+
+  // 견적·계약 → 영수증 내역서로 수신 정보 이관 (실비는 촬영 후에 채운다)
+  function toReceipt() {
+    const src = tab === 'video' ? video : tab === 'contract' ? contract : quote
+    setReceipt((r) => ({
+      ...r,
+      client: src.client || r.client,
+      manager: src.manager || r.manager,
+      phone: src.phone || r.phone,
+      date: today(),
+    }))
+    setTab('receipt')
   }
 
   // 고객사 DB에서 선택 — 이름·담당자·연락처는 DB에서, 주소·대표자는 이전 발급 문서에서 재사용
@@ -274,6 +348,8 @@ export default function Docs() {
       uq({ client: c.name, manager: c.contact || '', phone })
     } else if (tab === 'video') {
       uv({ client: c.name, manager: c.contact || '', phone })
+    } else if (tab === 'receipt') {
+      ur({ client: c.name, manager: c.contact || '', phone })
     } else {
       uc({ client: c.name, phone, addr: (prev && prev.addr) || '', ceo: (prev && prev.ceo) || '' })
     }
@@ -285,6 +361,7 @@ export default function Docs() {
   const quoteNo = quote.docNo || nextDocNo(store.quotes || [], 'quote', quote.date)
   const videoNo = video.docNo || nextDocNo(store.quotes || [], 'video', video.date)
   const contractNo = contract.docNo || nextDocNo(store.quotes || [], 'contract', contract.cDate)
+  const receiptNo = receipt.docNo || nextDocNo(store.quotes || [], 'receipt', receipt.date)
 
   function saveQuote() {
     if (!user) return alert('로그인 후 저장할 수 있습니다.')
@@ -314,8 +391,29 @@ export default function Docs() {
     addItem('quotes', { docType: 'contract', ...contract, docNo: contractNo, date: contract.cDate }, user.id)
     flash(`${contractNo} 저장했습니다 ✓`)
   }
+  function saveReceipt() {
+    if (!user) return alert('로그인 후 저장할 수 있습니다.')
+    setReceipt((r) => ({ ...r, docNo: receiptNo }))
+    addItem('quotes', {
+      docType: 'receipt', docNo: receiptNo, client: receipt.client, manager: receipt.manager, phone: receipt.phone,
+      project: receipt.project, date: receipt.date, periodFrom: receipt.periodFrom, periodTo: receipt.periodTo,
+      items: liveReceiptItems(receipt.items), notes: receipt.notes,
+      vatMode: receipt.vatMode, prepaid: Number(receipt.prepaid) || 0,
+      subtotal: tr.subtotal, vat: tr.vat, prepaidAmt: tr.prepaid, due: tr.due, total: tr.total,
+    }, user.id)
+    flash(`${receiptNo} 저장했습니다 ✓`)
+  }
   function loadDoc(d) {
-    if (d.docType === 'contract') {
+    if (d.docType === 'receipt') {
+      setReceipt({
+        ...initReceipt(),
+        docNo: d.docNo || '', client: d.client || '', manager: d.manager || '', phone: d.phone || '',
+        project: d.project || '', date: d.date || today(), periodFrom: d.periodFrom || '', periodTo: d.periodTo || '',
+        items: d.items || [], notes: d.notes && d.notes.length ? d.notes : [...RECEIPT_NOTES],
+        vatMode: d.vatMode || 'included', prepaid: d.prepaid || 0,
+      })
+      setTab('receipt')
+    } else if (d.docType === 'contract') {
       const { id, docType, createdBy, date, ...rest } = d
       setContract({ ...initContract(), ...rest })
       setTab('contract')
@@ -340,9 +438,9 @@ export default function Docs() {
 
   // 인쇄·PDF 저장 — 브라우저가 document.title을 PDF 기본 파일명으로 쓰므로 인쇄 동안만 바꿔치기
   function printDoc() {
-    const label = tab === 'contract' ? '계약서' : '견적서'
-    const client = (tab === 'contract' ? contract.client : tab === 'video' ? video.client : quote.client) || '고객미입력'
-    const date = ((tab === 'contract' ? contract.cDate : tab === 'video' ? video.date : quote.date) || today()).replaceAll('-', '')
+    const label = tab === 'contract' ? '계약서' : tab === 'receipt' ? '영수증내역서' : '견적서'
+    const client = (tab === 'contract' ? contract.client : tab === 'video' ? video.client : tab === 'receipt' ? receipt.client : quote.client) || '고객미입력'
+    const date = ((tab === 'contract' ? contract.cDate : tab === 'video' ? video.date : tab === 'receipt' ? receipt.date : quote.date) || today()).replaceAll('-', '')
     const prev = document.title
     document.title = `${label}_${date}_${client}`
     window.print()
@@ -359,7 +457,9 @@ export default function Docs() {
     ? <ContractPaper c={contract} docNo={contractNo} deposit={deposit} balance={balance} reviseEnd={reviseEnd} payDeadline={payDeadline} termEnd={termEnd} />
     : tab === 'video'
       ? <VideoPaper v={video} docNo={videoNo} t={tv} groups={videoGroups} />
-      : <QuotePaper q={quote} docNo={quoteNo} t={tq} />
+      : tab === 'receipt'
+        ? <ReceiptPaper r={receipt} docNo={receiptNo} t={tr} />
+        : <QuotePaper q={quote} docNo={quoteNo} t={tq} />
 
   return (
     <div className="docs-wrap">
@@ -367,6 +467,7 @@ export default function Docs() {
         <button className={'btn sm' + (tab === 'quote' ? ' primary' : '')} onClick={() => setTab('quote')}>사진 견적서</button>
         <button className={'btn sm' + (tab === 'video' ? ' primary' : '')} onClick={() => setTab('video')}>영상 견적서</button>
         <button className={'btn sm' + (tab === 'contract' ? ' primary' : '')} onClick={() => setTab('contract')}>계약서</button>
+        <button className={'btn sm' + (tab === 'receipt' ? ' primary' : '')} onClick={() => setTab('receipt')}>영수증 내역서</button>
         <button className={'btn sm' + (tab === 'glance' ? ' primary' : '')} onClick={() => setTab('glance')}>한눈에 보기</button>
         <button className={'btn sm' + (tab === 'history' ? ' primary' : '')} onClick={() => setTab('history')}>발급 내역 <span className="num">{(store.quotes || []).length}</span></button>
         <div className="sp" />
@@ -374,7 +475,8 @@ export default function Docs() {
         {tab !== 'history' && tab !== 'glance' && (
           <>
             {(tab === 'quote' || tab === 'video') && <button className="btn sm" onClick={toContract}>이 견적으로 계약서 만들기 →</button>}
-            <button className="btn sm" onClick={tab === 'quote' ? saveQuote : tab === 'video' ? saveVideo : saveContract}>저장</button>
+            {tab !== 'receipt' && <button className="btn sm" onClick={toReceipt}>영수증 내역서 만들기 →</button>}
+            <button className="btn sm" onClick={tab === 'quote' ? saveQuote : tab === 'video' ? saveVideo : tab === 'receipt' ? saveReceipt : saveContract}>저장</button>
             <button className="btn sm primary" onClick={printDoc}>⎙ 인쇄 · PDF 저장</button>
           </>
         )}
@@ -403,6 +505,18 @@ export default function Docs() {
           </div>
           <div className="docs-form card">
             <VideoCart v={video} uv={uv} setItem={setVideoItem} delItem={delVideoItem} t={tv} groups={videoGroups} />
+          </div>
+          <div className="docs-preview">
+            <FitZoom>{paper}</FitZoom>
+          </div>
+        </div>
+      ) : tab === 'receipt' ? (
+        <div className="docs-grid docs-grid3">
+          <div className="docs-form card">
+            <ReceiptForm r={receipt} ur={ur} addReceiptItem={addReceiptItem} addReceiptPhotos={addReceiptPhotos} clients={store.clients || []} onPick={pickClient} />
+          </div>
+          <div className="docs-form card">
+            <ReceiptCart r={receipt} ur={ur} setItem={setReceiptItem} delItem={delReceiptItem} t={tr} />
           </div>
           <div className="docs-preview">
             <FitZoom>{paper}</FitZoom>
@@ -960,6 +1074,355 @@ function VideoSection({ no, label, rows, cells }) {
   )
 }
 
+/* ============================================================
+   영수증 내역서 — 실비(재료비·소품·식대 등) 청구 내역서
+============================================================ */
+
+// 첨부 영수증 사진 → 리사이즈된 JPEG dataURL (원본 그대로 저장하면 문서 한 건이 수 MB가 된다)
+function readReceiptPhoto(file, max = 1100) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const scale = Math.min(1, max / Math.max(img.width, img.height))
+      const cv = document.createElement('canvas')
+      cv.width = Math.round(img.width * scale)
+      cv.height = Math.round(img.height * scale)
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height)
+      URL.revokeObjectURL(url)
+      resolve(cv.toDataURL('image/jpeg', 0.72))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('이미지를 읽지 못했어요')) }
+    img.src = url
+  })
+}
+
+// 표에 쓰는 짧은 날짜 (2026-07-21 → 07.21)
+function mdate(d) {
+  if (!d) return ''
+  const [, m, dd] = d.split('-')
+  return m && dd ? `${m}.${dd}` : d
+}
+
+/* ---------------- 영수증 내역서 입력 폼 ---------------- */
+function ReceiptForm({ r, ur, addReceiptItem, addReceiptPhotos, clients, onPick }) {
+  const fileRef = useRef(null)
+  const [busy, setBusy] = useState(false)
+
+  async function onFiles(e) {
+    const files = [...(e.target.files || [])]
+    e.target.value = '' // 같은 파일을 다시 골라도 onChange가 뜨도록
+    if (!files.length) return
+    setBusy(true)
+    try {
+      const photos = []
+      for (const f of files) {
+        try { photos.push(await readReceiptPhoto(f)) } catch { /* 못 읽는 파일은 건너뛴다 */ }
+      }
+      if (photos.length) addReceiptPhotos(photos)
+      if (photos.length < files.length) alert(`${files.length - photos.length}장은 이미지로 읽지 못해 건너뛰었습니다.`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="docs-form-in">
+      <div className="docs-sec">수신 정보</div>
+      <ClientPicker clients={clients} onPick={onPick} />
+      <div className="ed-row2">
+        <div className="ed-field"><label>Client (회사·브랜드)</label><input value={r.client} onChange={(e) => ur({ client: e.target.value })} placeholder="예: 클랑" /></div>
+        <div className="ed-field"><label>담당자</label><input value={r.manager} onChange={(e) => ur({ manager: e.target.value })} placeholder="예: 김주희 님" /></div>
+      </div>
+      <div className="ed-row2">
+        <div className="ed-field"><label>연락처</label><input value={r.phone} onChange={(e) => ur({ phone: e.target.value })} placeholder="010-0000-0000" /></div>
+        <div className="ed-field"><label>발행일자</label><input type="date" value={r.date} onChange={(e) => ur({ date: e.target.value })} /></div>
+      </div>
+      <div className="ed-field"><label>프로젝트 · 촬영 건</label><input value={r.project} onChange={(e) => ur({ project: e.target.value })} placeholder="예: 클랑 25FW 제품컷" /></div>
+      <div className="ed-row2">
+        <div className="ed-field"><label>지출 기간 시작</label><input type="date" value={r.periodFrom} onChange={(e) => ur({ periodFrom: e.target.value })} /></div>
+        <div className="ed-field"><label>지출 기간 종료</label><input type="date" value={r.periodTo} onChange={(e) => ur({ periodTo: e.target.value })} /></div>
+      </div>
+
+      <div className="docs-sec">
+        지출 항목 추가{' '}
+        <span className="mut3" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(구분을 누르면 빈 줄이 추가됩니다)</span>
+      </div>
+      <div className="docs-chips">
+        {RECEIPT_CATS.map((cat) => {
+          const n = r.items.filter((it) => it.cat === cat).length
+          return (
+            <div key={cat} className={'docs-chip' + (n ? ' on' : '')} role="button" tabIndex={0}
+              onClick={() => addReceiptItem(cat)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); addReceiptItem(cat) } }}>
+              <b>{cat}</b>
+              <small className="num">{n ? `${n}건` : '+ 추가'}</small>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="docs-sec">영수증 사진 일괄 첨부 <span className="mut3" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(사진 1장 = 항목 1줄)</span></div>
+      <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
+      <div className="docs-preset-row">
+        <button className="btn sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+          {busy ? '불러오는 중…' : '📷 영수증 사진 고르기'}
+        </button>
+        <button className="btn sm ghost" onClick={() => addReceiptItem('기타')}>+ 직접 입력</button>
+      </div>
+      <p className="mut3" style={{ fontSize: 12, lineHeight: 1.6, marginTop: 0 }}>
+        첨부한 사진은 내역서 마지막 장에 번호와 함께 인쇄됩니다. 저장 용량을 위해 긴 변 1100px JPEG으로 줄여 보관합니다.
+      </p>
+
+      <div className="docs-sec">정산 조건</div>
+      <div className="ed-field">
+        <label>부가세 처리</label>
+        <select value={r.vatMode} onChange={(e) => ur({ vatMode: e.target.value })}>
+          <option value="included">영수증 금액에 VAT 포함 — 별도 부과 없음 (실비 청구 기본)</option>
+          <option value="add">공급가액 기준 — 합계에 VAT 10% 별도 부과</option>
+        </select>
+      </div>
+      <div className="ed-field">
+        <label>기수령 · 선지급(가지급)액 — 청구액에서 차감</label>
+        <input className="num" type="number" min="0" step="10000" value={r.prepaid} onChange={(e) => ur({ prepaid: e.target.value })} placeholder="예: 300000" />
+      </div>
+    </div>
+  )
+}
+
+/* ---------------- 영수증 내역서 — 담긴 항목 ---------------- */
+function ReceiptCart({ r, ur, setItem, delItem, t }) {
+  const [zoom, setZoom] = useState('')
+  const fileRefs = useRef({})
+
+  async function pickPhoto(i, e) {
+    const f = (e.target.files || [])[0]
+    e.target.value = ''
+    if (!f) return
+    try { setItem(i, { photo: await readReceiptPhoto(f) }) } catch { alert('이미지를 읽지 못했어요.') }
+  }
+  const sortByDate = () => ur({ items: [...r.items].sort((a, b) => (a.date || '').localeCompare(b.date || '')) })
+
+  return (
+    <div className="docs-form-in">
+      <div className="docs-sec docs-sec-row">
+        <span>담긴 지출 <span className="mut3" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>— 총 {t.count}건</span></span>
+        {r.items.length > 1 && <button className="btn sm ghost" style={{ flex: 'none' }} onClick={sortByDate}>일자순 정렬</button>}
+      </div>
+      {r.items.length === 0 && (
+        <p className="mut3" style={{ fontSize: 12.5, lineHeight: 1.7, padding: '8px 0' }}>
+          아직 담긴 지출이 없습니다 — 왼쪽 구분 버튼을 누르거나 영수증 사진을 첨부해 보세요.
+        </p>
+      )}
+      {r.items.map((it, i) => (
+        <div className="docs-item" key={i}>
+          <div className="docs-item-row1 docs-rcpt-r1">
+            <input type="date" value={it.date || ''} onChange={(e) => setItem(i, { date: e.target.value })} style={{ width: 132, flex: 'none' }} title="지출 일자" />
+            <select value={it.cat} onChange={(e) => setItem(i, { cat: e.target.value })} style={{ width: 104, flex: 'none' }}>
+              {RECEIPT_CATS.map((c) => <option key={c}>{c}</option>)}
+            </select>
+            <span className="sp" style={{ flex: 1 }} />
+            <button className="btn sm ghost" onClick={() => delItem(i)} title="삭제">✕</button>
+            <input className="docs-rcpt-place" value={it.place || ''} onChange={(e) => setItem(i, { place: e.target.value })} placeholder="사용처 (예: 이마트 성수점)" />
+          </div>
+          <div className="docs-item-row2">
+            <input value={it.name || ''} onChange={(e) => setItem(i, { name: e.target.value })} placeholder="내용 (예: 촬영용 생화 · 유리볼)" />
+            <button className="btn sm ghost docs-qty-btn" onClick={() => setItem(i, { qty: Math.max(0, (Number(it.qty) || 0) - 1) })} title="수량 −1">−</button>
+            <input className="num" type="number" min="0" value={it.qty} onChange={(e) => setItem(i, { qty: e.target.value })} title="수량" style={{ width: 56, flex: 'none' }} />
+            <button className="btn sm ghost docs-qty-btn" onClick={() => setItem(i, { qty: (Number(it.qty) || 0) + 1 })} title="수량 +1">＋</button>
+            <span className="docs-price-in">
+              <input className="num" inputMode="numeric" value={Number(it.price) ? fmt(it.price) : ''} placeholder="0"
+                onChange={(e) => setItem(i, { price: Number(e.target.value.replace(/[^\d]/g, '')) || 0 })} title="단가 (영수증 금액)" />
+              <span className="docs-price-won">원</span>
+            </span>
+            <span className="docs-item-sum num">{fmt((Number(it.qty) || 0) * (Number(it.price) || 0))}원</span>
+          </div>
+          <div className="docs-item-row3">
+            <select value={it.pay || '법인카드'} onChange={(e) => setItem(i, { pay: e.target.value })} style={{ width: 104, flex: 'none' }} title="결제 수단">
+              {PAY_METHODS.map((p) => <option key={p}>{p}</option>)}
+            </select>
+            <input value={it.note || ''} onChange={(e) => setItem(i, { note: e.target.value })} placeholder="비고 (선택)" />
+            <input ref={(el) => { fileRefs.current[i] = el }} type="file" accept="image/*" hidden onChange={(e) => pickPhoto(i, e)} />
+            {it.photo
+              ? <>
+                <img className="docs-rcpt-thumb" src={it.photo} alt="영수증" onClick={() => setZoom(it.photo)} title="크게 보기" />
+                <button className="btn sm ghost" onClick={() => setItem(i, { photo: '' })} title="사진 삭제">✕ 사진</button>
+              </>
+              : <button className="btn sm ghost" onClick={() => fileRefs.current[i]?.click()}>📎 영수증</button>}
+          </div>
+        </div>
+      ))}
+      <button className="btn sm ghost" onClick={() => ur({ items: [...r.items, emptyReceiptItem('기타')] })}>+ 항목 추가</button>
+
+      {t.byCat.length > 0 && (
+        <>
+          <div className="docs-sec">구분별 소계</div>
+          <div className="docs-totals">
+            {t.byCat.map((c) => (
+              <div key={c.cat}><span>{c.cat} <span className="mut3 num">· {c.count}건</span></span><b className="num">{fmt(c.amount)} 원</b></div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div className="docs-sec">청구 합계</div>
+      <div className="docs-totals">
+        <div><span>실비 합계</span><b className="num">{fmt(t.subtotal)} 원</b></div>
+        {t.vat > 0 && <div><span>부가세 10%</span><b className="num">{fmt(t.vat)} 원</b></div>}
+        {t.vat > 0 && t.prepaid > 0 && <div><span>총 청구액</span><b className="num">{fmt(t.total)} 원</b></div>}
+        {t.prepaid > 0 && <div className="docs-disc"><span>기수령 · 선지급액</span><b className="num">− {fmt(t.prepaid)} 원</b></div>}
+        <div className="grand"><span>최종 청구금액</span><b className="num">{fmt(t.due)} 원</b></div>
+      </div>
+
+      <div className="docs-sec">안내사항</div>
+      {r.notes.map((n, i) => (
+        <div className="docs-note-row" key={i}>
+          <input value={n} onChange={(e) => ur({ notes: r.notes.map((x, j) => (j === i ? e.target.value : x)) })} />
+          <button className="btn sm ghost" onClick={() => ur({ notes: r.notes.filter((_, j) => j !== i) })}>✕</button>
+        </div>
+      ))}
+      <button className="btn sm ghost" onClick={() => ur({ notes: [...r.notes, ''] })}>+ 안내 추가</button>
+
+      {zoom && (
+        <Modal title="첨부 영수증" onClose={() => setZoom('')} footer={<button className="btn sm" onClick={() => setZoom('')}>닫기</button>}>
+          <img src={zoom} alt="영수증" style={{ maxWidth: '100%', maxHeight: '70vh', display: 'block', margin: '0 auto' }} />
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+/* ---------------- 영수증 내역서 A4 ---------------- */
+export function ReceiptPaper({ r, docNo, t }) {
+  const live = liveReceiptItems(r.items)
+  const rows = [...live]
+  while (rows.length < 8) rows.push(null) // 빈 내역서도 표 형태를 유지
+  const photos = live.map((it, i) => ({ ...it, no: i + 1 })).filter((it) => it.photo)
+  const period = r.periodFrom || r.periodTo ? `${r.periodFrom ? kdate(r.periodFrom) : '—'} ~ ${r.periodTo ? kdate(r.periodTo) : '—'}` : ''
+  return (
+    <div className="paperA4 flow">
+      <div className="dp-head">
+        <h1>영수증 내역서</h1>
+        <img className="dp-wordmark" src="/brand/wordmark-line.png" alt="STUDIO. HOLYMOLLY" />
+        <div className="dp-sub">{SUPPLIER.tagline}</div>
+        <div className="dp-sub">{SUPPLIER.email} · {SUPPLIER.phone}</div>
+      </div>
+
+      <div className="dp-parties">
+        <div>
+          <div className="dp-plabel">FROM · 공급자</div>
+          <table className="dp-ptable"><tbody>
+            <tr><th>상호</th><td>{SUPPLIER.studio}</td></tr>
+            <tr><th>대표자</th><td>{SUPPLIER.ceo}</td></tr>
+            <tr><th>사업자</th><td className="num">{SUPPLIER.biz}</td></tr>
+            <tr><th>계좌</th><td>{SUPPLIER.account}</td></tr>
+          </tbody></table>
+        </div>
+        <div>
+          <div className="dp-plabel">TO · 수신 <span className="dp-docno num">NO. {docNo}</span></div>
+          <table className="dp-ptable"><tbody>
+            <tr><th>Client</th><td>{r.client || '—'}</td></tr>
+            <tr><th>담당자</th><td>{r.manager || '—'}</td></tr>
+            <tr><th>프로젝트</th><td>{r.project || '—'}</td></tr>
+            <tr><th>발행일자</th><td className="num">{kdate(r.date)}</td></tr>
+          </tbody></table>
+        </div>
+      </div>
+
+      {period && <div className="dr-period">지출 기간 · PERIOD <b className="num">{period}</b></div>}
+
+      <table className="dp-items">
+        <thead>
+          <tr>
+            <th style={{ width: '5%' }}>NO</th>
+            <th style={{ width: '7%' }}>일자</th>
+            <th style={{ width: '12%' }}>구분</th>
+            <th style={{ width: '14%' }}>사용처</th>
+            <th>내용</th>
+            <th style={{ width: '7%' }}>수량</th>
+            <th style={{ width: '10%' }}>단가</th>
+            <th style={{ width: '11%' }}>금액</th>
+            <th style={{ width: '10%' }}>결제</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((it, k) => (
+            <tr key={k}>
+              <td className="c num">{it ? k + 1 : ''}</td>
+              {it ? (
+                <>
+                  <td className="c num">{mdate(it.date)}</td>
+                  <td className="c dr-tight">{it.cat || ''}</td>
+                  <td>{it.place || ''}</td>
+                  <td>
+                    {it.name || ''}
+                    {it.note ? <span className="dp-desc"> · {it.note}</span> : null}
+                    {it.photo ? <span className="dr-clip" title="영수증 첨부">📎</span> : null}
+                  </td>
+                  <td className="c num">{Number(it.qty) || ''}</td>
+                  <td className="r num">{Number(it.price) ? fmt(it.price) : ''}</td>
+                  <td className="r num">{(Number(it.qty) || 0) * (Number(it.price) || 0) ? fmt((Number(it.qty) || 0) * (Number(it.price) || 0)) : '-'}</td>
+                  <td className="c dr-tight">{it.pay || ''}</td>
+                </>
+              ) : (
+                <><td /><td /><td /><td /><td /><td /><td /><td /></>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {t.byCat.length > 0 && (
+        <div className="dr-cats">
+          <span className="dr-cats-lbl">구분별 소계</span>
+          {t.byCat.map((c) => (
+            <span className="dr-cat" key={c.cat}>{c.cat} <b className="num">{fmt(c.amount)}원</b> <i className="num">({c.count}건)</i></span>
+          ))}
+        </div>
+      )}
+
+      <div className="dp-sums">
+        <div><span>실비 합계 · Subtotal</span><b className="num">{fmt(t.subtotal)} 원</b></div>
+        {t.vat > 0 && <div><span>부가세 (10%) · VAT</span><b className="num">{fmt(t.vat)} 원</b></div>}
+        {t.vat > 0 && t.prepaid > 0 && <div><span>총 청구액</span><b className="num">{fmt(t.total)} 원</b></div>}
+        {t.prepaid > 0 && <div className="disc"><span>기수령 · 선지급액</span><b className="num">− {fmt(t.prepaid)} 원</b></div>}
+        <div className="grand"><span>최종 청구금액 · TOTAL</span><b className="num">{fmt(t.due)} 원</b></div>
+      </div>
+
+      <div className="dr-kor">일금 <b>{korAmount(t.due)}</b> 원정 <span className="num">(₩{fmt(t.due)})</span></div>
+
+      {r.notes.filter(Boolean).length > 0 && (
+        <div className="dp-notes">
+          <div className="dp-plabel">안내사항 · NOTES</div>
+          {r.notes.filter(Boolean).map((n, i) => <p key={i}>{i + 1}. {n}</p>)}
+        </div>
+      )}
+
+      <div className="dp-foot">
+        <img className="dp-foot-mark" src="/brand/simbol-bk.png" alt="" />
+        STUDIO. HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
+      </div>
+
+      {photos.length > 0 && (
+        <div className="dr-appendix">
+          <div className="dp-plabel">첨부 영수증 · ATTACHED RECEIPTS</div>
+          <div className="dr-photos">
+            {photos.map((it) => (
+              <figure key={it.no}>
+                <img src={it.photo} alt={`영수증 ${it.no}`} />
+                <figcaption>
+                  <b className="num">{it.no}.</b> {mdate(it.date)} · {it.place || '사용처 미기재'}
+                  <span className="num"> — {fmt((Number(it.qty) || 0) * (Number(it.price) || 0))}원</span>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 /* ---------------- 계약서 입력 폼 ---------------- */
 function ContractForm({ c, uc, deposit, balance, clients, onPick }) {
   const [signing, setSigning] = useState(null) // 'G' | 'E' | null
@@ -1284,23 +1747,26 @@ export function ContractPaper({ c, docNo, deposit, balance, reviseEnd, payDeadli
 
 /* ---------------- 발급 내역 ---------------- */
 /* ---------------- 한눈에 보기 — 발급 문서 내용을 클릭 없이 펼쳐서 조회 ---------------- */
-const DOC_LABEL = { quote: '사진 견적서', video: '영상 견적서', contract: '계약서' }
+const DOC_LABEL = { quote: '사진 견적서', video: '영상 견적서', contract: '계약서', receipt: '영수증 내역서' }
+
+// 문서 카드·목록에 쓰는 대표 금액 — 영수증 내역서는 기수령액을 뺀 실제 청구금액
+const docAmount = (d) => Number(d.docType === 'receipt' && d.due != null ? d.due : d.total) || 0
 
 function Glance({ docs, onLoad }) {
   const [filter, setFilter] = useState('all')
   if (!docs.length) {
-    return <div className="card gate"><div className="lk">👁</div><h3>발급 내역이 없습니다</h3><p>견적서·계약서를 작성하고 저장하면 여기서 내용을 한눈에 볼 수 있습니다.</p></div>
+    return <div className="card gate"><div className="lk">👁</div><h3>발급 내역이 없습니다</h3><p>견적서·계약서·영수증 내역서를 작성하고 저장하면 여기서 내용을 한눈에 볼 수 있습니다.</p></div>
   }
-  const typeOf = (d) => d.docType === 'contract' ? 'contract' : d.docType === 'video' ? 'video' : 'quote'
-  const counts = { all: docs.length, quote: 0, video: 0, contract: 0 }
+  const typeOf = (d) => DOC_LABEL[d.docType] ? d.docType : 'quote'
+  const counts = { all: docs.length, quote: 0, video: 0, contract: 0, receipt: 0 }
   let sumAll = 0
-  docs.forEach((d) => { counts[typeOf(d)]++; sumAll += Number(d.total) || 0 })
+  docs.forEach((d) => { counts[typeOf(d)]++; sumAll += docAmount(d) })
   const shown = filter === 'all' ? docs : docs.filter((d) => typeOf(d) === filter)
-  const sumShown = shown.reduce((s, d) => s + (Number(d.total) || 0), 0)
+  const sumShown = shown.reduce((s, d) => s + docAmount(d), 0)
   return (
     <div className="docs-glance-wrap">
       <div className="docs-glance-sum card">
-        {['all', 'quote', 'video', 'contract'].map((k) => (
+        {['all', 'quote', 'video', 'contract', 'receipt'].map((k) => (
           <button key={k} className={'btn sm' + (filter === k ? ' primary' : '')} onClick={() => setFilter(k)}>
             {k === 'all' ? '전체' : DOC_LABEL[k]} <span className="num">{counts[k]}</span>
           </button>
@@ -1329,9 +1795,20 @@ function GlanceCard({ d, type, onLoad }) {
       </div>
       <div className="dg-client">
         <b>{d.client || '(고객 미입력)'}</b>
-        {(d.manager || d.phone) && <span className="mut3"> · {[d.manager, d.phone].filter(Boolean).join(' · ')}</span>}
+        {(d.project || d.manager || d.phone) && <span className="mut3"> · {[d.project, d.manager, d.phone].filter(Boolean).join(' · ')}</span>}
       </div>
-      {type === 'contract' ? (
+      {type === 'receipt' ? (
+        <div className="dg-items">
+          {items.length ? items.map((it, i) => (
+            <div className="dg-row" key={i}>
+              <span className="dg-name">{it.cat ? `[${it.cat}] ` : ''}{it.name || it.place}{it.photo ? ' 📎' : ''}</span>
+              <span className="num">₩{fmt((Number(it.qty) || 0) * (Number(it.price) || 0))}</span>
+            </div>
+          )) : <div className="dg-row mut3">항목 없음</div>}
+          {Number(d.vat) > 0 && <div className="dg-row"><span className="mut3">VAT 10%</span><span className="num mut3">₩{fmt(d.vat)}</span></div>}
+          {Number(d.prepaidAmt) > 0 && <div className="dg-row dg-disc"><span>기수령·선지급</span><span className="num">−₩{fmt(d.prepaidAmt)}</span></div>}
+        </div>
+      ) : type === 'contract' ? (
         <div className="dg-items">
           <div className="dg-row"><span>계약금 ({d.depositPct || 0}%)</span><span className="num">₩{fmt(deposit)}</span></div>
           <div className="dg-row"><span>잔금</span><span className="num">₩{fmt((Number(d.total) || 0) - deposit)}</span></div>
@@ -1351,8 +1828,8 @@ function GlanceCard({ d, type, onLoad }) {
         </div>
       )}
       <div className="dg-total">
-        <span>{type === 'contract' ? '계약 총액' : '합계 (VAT 포함)'}</span>
-        <b className="num">₩{fmt(d.total)}</b>
+        <span>{type === 'contract' ? '계약 총액' : type === 'receipt' ? '청구 실비' : '합계 (VAT 포함)'}</span>
+        <b className="num">₩{fmt(docAmount(d))}</b>
       </div>
       <div className="dg-foot">
         <button className="btn sm" onClick={() => onLoad(d)}>불러오기</button>
@@ -1363,18 +1840,18 @@ function GlanceCard({ d, type, onLoad }) {
 
 function History({ docs, onLoad }) {
   if (!docs.length) {
-    return <div className="card gate"><div className="lk">🗂</div><h3>발급 내역이 없습니다</h3><p>견적서·계약서를 작성하고 저장하면 여기에 쌓입니다.</p></div>
+    return <div className="card gate"><div className="lk">🗂</div><h3>발급 내역이 없습니다</h3><p>견적서·계약서·영수증 내역서를 작성하고 저장하면 여기에 쌓입니다.</p></div>
   }
   return (
     <div className="card" style={{ padding: 14 }}>
       {docs.map((d) => (
         <div className="docs-hrow" key={d.id}>
-          <span className={'pill ' + (d.docType === 'contract' ? 'solid' : 'mid')}>{d.docType === 'contract' ? '계약서' : d.docType === 'video' ? '영상 견적서' : '사진 견적서'}</span>
+          <span className={'pill ' + (d.docType === 'contract' ? 'solid' : 'mid')}>{DOC_LABEL[d.docType] || DOC_LABEL.quote}</span>
           {d.docNo && <span className="mono mut" style={{ fontSize: 12 }}>{d.docNo}</span>}
           <b>{d.client || '(고객 미입력)'}</b>
           <span className="mut3 num">{d.date}</span>
           <span className="sp" />
-          <span className="num" style={{ fontWeight: 700 }}>₩{fmt(d.total)}</span>
+          <span className="num" style={{ fontWeight: 700 }}>₩{fmt(docAmount(d))}</span>
           <button className="btn sm" onClick={() => onLoad(d)}>불러오기</button>
           <button className="btn sm ghost" onClick={() => { if (confirm('이 문서를 삭제할까요?')) removeItem('quotes', d.id) }}>삭제</button>
         </div>

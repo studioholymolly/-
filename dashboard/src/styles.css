@@ -731,8 +731,10 @@ button.prio{cursor:pointer;font-family:inherit}
 .docs-preset-row{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .docs-preset-row select{flex:1;min-width:200px}
 .docs-item{border:1px solid var(--line);border-radius:var(--r-s);padding:9px;margin-bottom:8px;background:var(--panel-2)}
-.docs-item-row1,.docs-item-row2{display:flex;gap:6px;align-items:center}
+.docs-item-row1,.docs-item-row2,.docs-item-row3{display:flex;gap:6px;align-items:center}
 .docs-item-row1{margin-bottom:6px}
+.docs-item-row3{margin-top:6px;flex-wrap:wrap}
+.docs-item-row3>input{flex:1;min-width:90px}
 /* 좁은 칸에서 잘리지 않게 — 내용 입력은 한 줄 전체, 수량·단가·합계는 다음 줄 */
 .docs-item-row2{flex-wrap:wrap}
 .docs-item-row2>input:first-of-type{flex:1 1 100%;min-width:0}
@@ -773,8 +775,9 @@ button.prio{cursor:pointer;font-family:inherit}
   padding:10mm 14mm 8mm;box-shadow:0 2px 6px rgba(10,10,10,.08),0 24px 60px -20px rgba(10,10,10,.25);
   font-size:10.5pt;line-height:1.6;letter-spacing:-.01em;
 }
-/* 견적서는 A4 1장 고정 — 푸터를 바닥에 붙이는 세로 플렉스 */
-.paperA4:not(.contract){display:flex;flex-direction:column}
+/* 견적서는 A4 1장 고정 — 푸터를 바닥에 붙이는 세로 플렉스
+   (.flow = 영수증 내역서처럼 항목·첨부에 따라 여러 장으로 흐르는 문서) */
+.paperA4:not(.contract):not(.flow){display:flex;flex-direction:column}
 @media screen{ .doc-zoom .paperA4{ zoom:var(--doczoom,.68) } }
 .dp-head{text-align:center;margin-bottom:3.5mm}
 .dp-tag{display:inline-block;border:1.5px solid #0a0a0a;padding:2px 14px;font-size:8.5pt;font-weight:800;letter-spacing:.35em;margin-bottom:5mm}
@@ -829,7 +832,10 @@ button.prio{cursor:pointer;font-family:inherit}
   .print-mount{display:block !important}
   .print-mount .paperA4{box-shadow:none;margin:0;width:210mm;min-height:auto}
   /* 견적서는 정확히 A4 1장 — 렌더링 반올림으로 2쪽 넘어가지 않게 297mm보다 살짝 작게 잡는다 */
-  .print-mount .paperA4:not(.contract){height:296mm;overflow:hidden;page-break-after:avoid;break-after:avoid-page;page-break-inside:avoid;break-inside:avoid}
+  .print-mount .paperA4:not(.contract):not(.flow){height:296mm;overflow:hidden;page-break-after:avoid;break-after:avoid-page;page-break-inside:avoid;break-inside:avoid}
+  /* 흐르는 문서(영수증 내역서)는 쪽이 넘어갈 때 위아래 여백을 준다 */
+  .print-mount .paperA4.flow{padding:14mm 14mm 12mm}
+  .print-mount .dr-appendix{page-break-before:always;break-before:page}
 }
 
 /* 견적 옵션 버튼 (단가표 칩) */
@@ -863,6 +869,27 @@ button.prio{cursor:pointer;font-family:inherit}
 .docs-pe-ghead{display:flex;gap:6px;align-items:center;margin-bottom:8px}
 .docs-pe-ghead input{flex:1;font-weight:700}
 .docs-totals .docs-disc b{color:#c0392b}
+
+/* ---------- 영수증 내역서 ---------- */
+.docs-rcpt-thumb{height:34px;width:40px;object-fit:cover;border:1px solid var(--line);border-radius:5px;background:#fff;cursor:zoom-in;flex:none}
+/* 일자·구분은 한 줄, 사용처는 그 아래 한 줄 전체 (좁은 칸에서 사용처가 찌그러지지 않게) */
+.docs-rcpt-r1{flex-wrap:wrap}
+.docs-rcpt-r1 .docs-rcpt-place{flex:1 1 100%;min-width:0;margin-top:6px}
+.paperA4.flow .dp-head h1{letter-spacing:.18em}
+.dr-period{font-size:9pt;color:#525257;border:1px solid #e5e5e7;border-radius:2mm;padding:1.6mm 3mm;margin-bottom:3.5mm}
+.dr-period b{margin-left:2mm;color:#0a0a0a}
+.dr-clip{font-size:7.5pt;margin-left:1mm;color:#8a8a90}
+.dp-items .dr-tight{font-size:8.2pt;white-space:nowrap}
+.dr-cats{display:flex;flex-wrap:wrap;align-items:baseline;gap:2mm 4mm;border:1px solid #e5e5e7;padding:2mm 3mm;margin-bottom:3.5mm;font-size:8.6pt}
+.dr-cats-lbl{font-weight:800;letter-spacing:.14em;font-size:7.8pt;color:#525257}
+.dr-cat i{font-style:normal;color:#8a8a90;font-size:8pt}
+.dr-kor{text-align:right;font-size:9.5pt;margin:-2mm 0 4mm;letter-spacing:.02em}
+.dr-kor .num{color:#525257}
+.dr-appendix{border-top:1px solid #0a0a0a;padding-top:3mm;margin-top:5mm}
+.dr-photos{display:grid;grid-template-columns:1fr 1fr;gap:4mm}
+.dr-photos figure{margin:0;page-break-inside:avoid;break-inside:avoid}
+.dr-photos img{width:100%;height:62mm;object-fit:contain;background:#fff;border:1px solid #e5e5e7}
+.dr-photos figcaption{font-size:8pt;color:#525257;padding-top:1.2mm;line-height:1.4}
 
 /* 문서번호 · 서명 */
 .dp-docno{float:right;font-size:8pt;font-weight:700;letter-spacing:.08em;color:#525257}
