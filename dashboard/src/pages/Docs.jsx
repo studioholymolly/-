@@ -4,6 +4,8 @@ import { Modal } from '../ui.jsx'
 import { useStore } from '../useStore.js'
 import { useAuth } from '../auth.jsx'
 import { addItem, removeItem, addDays, today, updateConfig } from '../data.js'
+import { aiEnabled } from '../mollyAI.js'
+import { readReceiptPhoto as aiReadReceipt } from '../receiptAI.js'
 
 /* ============================================================
    견적서 · 계약서 발급기
@@ -178,8 +180,13 @@ function initReceipt() {
     items: [], notes: [...RECEIPT_NOTES],
     vatMode: 'included', // included = 영수증 금액에 VAT 포함(별도 부과 없음) | add = 합계에 VAT 10% 별도 부과
     prepaid: 0, // 기수령·선지급(가지급)액 — 청구액에서 차감
+    photoMode: 'both', // 첨부 사진 인쇄 방식: both | inline(표 안 작게) | appendix(마지막 장 크게) | none
   }
 }
+
+// 첨부 사진이 표 안에 들어가는지 / 마지막 장에 들어가는지
+const showsInline = (m) => m === 'both' || m === 'inline'
+const showsAppendix = (m) => m === 'both' || m === 'appendix' || !m // 예전 문서(값 없음)는 마지막 장
 function initContract() {
   const t = today()
   return {
@@ -315,6 +322,36 @@ export default function Docs() {
     setReceipt((r) => ({ ...r, items: [...r.items, ...photos.map((photo) => ({ ...emptyReceiptItem(cat), photo }))] }))
   }
 
+  // 사진이 붙었는데 아직 안 채워진 줄을 AI(몰리와 같은 키)로 읽어 채운다 — 금액은 사람이 꼭 확인
+  const [aiBusy, setAiBusy] = useState(null) // { done, total } | null
+  async function autofillReceiptPhotos() {
+    if (!aiEnabled()) {
+      return alert('AI 키가 없습니다 — 사이드바 [커스텀] > 연동에서 몰리 AI 키를 먼저 넣어주세요.\n키를 넣으면 영수증 사진을 읽어 자동으로 채워드립니다.')
+    }
+    const targets = receipt.items.map((it, i) => [it, i]).filter(([it]) => it.photo && !it.name && !Number(it.price))
+    if (!targets.length) return alert('자동으로 채울 줄이 없습니다.\n(사진이 붙어 있고 내용·금액이 비어 있는 줄만 읽습니다.)')
+    setAiBusy({ done: 0, total: targets.length })
+    let ok = 0, unsure = 0
+    for (const [it, i] of targets) {
+      try {
+        const d = await aiReadReceipt(it.photo, { cats: RECEIPT_CATS, pays: PAY_METHODS })
+        setReceiptItem(i, {
+          date: d.date || it.date, place: d.place, name: d.name, qty: d.qty, price: d.price,
+          cat: d.cat, pay: d.pay, note: d.confident ? d.note : [d.note, '⚠︎ 확인 필요'].filter(Boolean).join(' · '),
+        })
+        ok += 1
+        if (!d.confident) unsure += 1
+      } catch (e) {
+        console.error('영수증 자동 인식 실패', e)
+      }
+      setAiBusy((b) => (b ? { ...b, done: b.done + 1 } : b))
+    }
+    setAiBusy(null)
+    const fail = targets.length - ok
+    flash(`${ok}건 자동 입력했습니다 ✓${unsure ? ` · ${unsure}건 확인 필요` : ''}${fail ? ` · ${fail}건 실패` : ''}`)
+    if (ok) alert('AI가 읽은 값입니다 — 금액과 사용처는 영수증과 꼭 대조해주세요.')
+  }
+
   // 견적 → 계약서로 이관 (사진·영상 공통)
   function toContract() {
     const src = tab === 'video'
@@ -393,12 +430,17 @@ export default function Docs() {
   }
   function saveReceipt() {
     if (!user) return alert('로그인 후 저장할 수 있습니다.')
+    // 첨부 사진은 문서 안에 통째로 저장된다 — 너무 크면 서버가 통째로 거절해 사진이 조용히 사라진다
+    const bytes = liveReceiptItems(receipt.items).reduce((s, it) => s + (it.photo ? it.photo.length : 0), 0)
+    if (bytes > 4_000_000) {
+      return alert(`첨부 사진 용량이 너무 큽니다 (약 ${Math.round(bytes / 1e6)}MB).\n사진을 몇 장 덜어내고 저장해주세요. 인쇄·PDF 저장은 지금 그대로 가능합니다.`)
+    }
     setReceipt((r) => ({ ...r, docNo: receiptNo }))
     addItem('quotes', {
       docType: 'receipt', docNo: receiptNo, client: receipt.client, manager: receipt.manager, phone: receipt.phone,
       project: receipt.project, date: receipt.date, periodFrom: receipt.periodFrom, periodTo: receipt.periodTo,
       items: liveReceiptItems(receipt.items), notes: receipt.notes,
-      vatMode: receipt.vatMode, prepaid: Number(receipt.prepaid) || 0,
+      vatMode: receipt.vatMode, prepaid: Number(receipt.prepaid) || 0, photoMode: receipt.photoMode,
       subtotal: tr.subtotal, vat: tr.vat, prepaidAmt: tr.prepaid, due: tr.due, total: tr.total,
     }, user.id)
     flash(`${receiptNo} 저장했습니다 ✓`)
@@ -411,6 +453,7 @@ export default function Docs() {
         project: d.project || '', date: d.date || today(), periodFrom: d.periodFrom || '', periodTo: d.periodTo || '',
         items: d.items || [], notes: d.notes && d.notes.length ? d.notes : [...RECEIPT_NOTES],
         vatMode: d.vatMode || 'included', prepaid: d.prepaid || 0,
+        photoMode: d.photoMode || 'appendix', // 이 옵션이 없던 시절 문서는 원래대로 마지막 장
       })
       setTab('receipt')
     } else if (d.docType === 'contract') {
@@ -513,7 +556,8 @@ export default function Docs() {
       ) : tab === 'receipt' ? (
         <div className="docs-grid docs-grid3">
           <div className="docs-form card">
-            <ReceiptForm r={receipt} ur={ur} addReceiptItem={addReceiptItem} addReceiptPhotos={addReceiptPhotos} clients={store.clients || []} onPick={pickClient} />
+            <ReceiptForm r={receipt} ur={ur} addReceiptItem={addReceiptItem} addReceiptPhotos={addReceiptPhotos}
+              clients={store.clients || []} onPick={pickClient} onAutofill={autofillReceiptPhotos} aiBusy={aiBusy} />
           </div>
           <div className="docs-form card">
             <ReceiptCart r={receipt} ur={ur} setItem={setReceiptItem} delItem={delReceiptItem} t={tr} />
@@ -1105,9 +1149,12 @@ function mdate(d) {
 }
 
 /* ---------------- 영수증 내역서 입력 폼 ---------------- */
-function ReceiptForm({ r, ur, addReceiptItem, addReceiptPhotos, clients, onPick }) {
+function ReceiptForm({ r, ur, addReceiptItem, addReceiptPhotos, clients, onPick, onAutofill, aiBusy }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
+  const photos = r.items.filter((it) => it.photo)
+  const photoKB = Math.round(photos.reduce((s, it) => s + it.photo.length, 0) * 0.75 / 1024) // base64 → 실제 바이트
+  const toFill = r.items.filter((it) => it.photo && !it.name && !Number(it.price)).length
 
   async function onFiles(e) {
     const files = [...(e.target.files || [])]
@@ -1165,13 +1212,37 @@ function ReceiptForm({ r, ur, addReceiptItem, addReceiptPhotos, clients, onPick 
       <div className="docs-sec">영수증 사진 일괄 첨부 <span className="mut3" style={{ fontWeight: 500, textTransform: 'none', letterSpacing: 0 }}>(사진 1장 = 항목 1줄)</span></div>
       <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={onFiles} />
       <div className="docs-preset-row">
-        <button className="btn sm" disabled={busy} onClick={() => fileRef.current?.click()}>
+        <button className="btn sm" disabled={busy || !!aiBusy} onClick={() => fileRef.current?.click()}>
           {busy ? '불러오는 중…' : '📷 영수증 사진 고르기'}
         </button>
-        <button className="btn sm ghost" onClick={() => addReceiptItem('기타')}>+ 직접 입력</button>
+        <button className="btn sm ghost" disabled={!!aiBusy} onClick={() => addReceiptItem('기타')}>+ 직접 입력</button>
+      </div>
+      {photos.length > 0 && (
+        <>
+          <div className="docs-preset-row">
+            <button className="btn sm primary" disabled={!!aiBusy || !toFill} onClick={onAutofill}
+              title="사진이 붙어 있고 내용·금액이 비어 있는 줄을 AI가 읽어서 채웁니다">
+              {aiBusy ? `🤖 읽는 중… ${aiBusy.done}/${aiBusy.total}` : `🤖 사진에서 자동 입력${toFill ? ` (${toFill}줄)` : ''}`}
+            </button>
+          </div>
+          <p className="mut3" style={{ fontSize: 12, lineHeight: 1.6, marginTop: 0 }}>
+            사진 {photos.length}장 · 약 {photoKB}KB. AI 자동 입력은 <b>커스텀 &gt; 연동</b>의 몰리 AI 키를 사용하며, 사진이 Claude API로 전송됩니다.
+            읽은 금액·사용처는 영수증과 꼭 대조해주세요.
+          </p>
+        </>
+      )}
+
+      <div className="docs-sec">첨부 사진 인쇄 방식</div>
+      <div className="ed-field">
+        <select value={r.photoMode || 'both'} onChange={(e) => ur({ photoMode: e.target.value })}>
+          <option value="both">표 안에 작게 + 마지막 장에 크게 (권장)</option>
+          <option value="inline">표 안에 작게만 — 항목 옆에 바로 보임</option>
+          <option value="appendix">마지막 장에 크게만</option>
+          <option value="none">인쇄하지 않음 — 내역만</option>
+        </select>
       </div>
       <p className="mut3" style={{ fontSize: 12, lineHeight: 1.6, marginTop: 0 }}>
-        첨부한 사진은 내역서 마지막 장에 번호와 함께 인쇄됩니다. 저장 용량을 위해 긴 변 1100px JPEG으로 줄여 보관합니다.
+        저장 용량을 위해 사진은 긴 변 1100px JPEG으로 줄여 보관합니다.
       </p>
 
       <div className="docs-sec">정산 조건</div>
@@ -1299,6 +1370,8 @@ export function ReceiptPaper({ r, docNo, t }) {
   while (rows.length < 8) rows.push(null) // 빈 내역서도 표 형태를 유지
   const photos = live.map((it, i) => ({ ...it, no: i + 1 })).filter((it) => it.photo)
   const period = r.periodFrom || r.periodTo ? `${r.periodFrom ? kdate(r.periodFrom) : '—'} ~ ${r.periodTo ? kdate(r.periodTo) : '—'}` : ''
+  const inline = showsInline(r.photoMode) && photos.length > 0
+  const appendix = showsAppendix(r.photoMode) && photos.length > 0
   return (
     <div className="paperA4 flow">
       <div className="dp-head">
@@ -1336,13 +1409,14 @@ export function ReceiptPaper({ r, docNo, t }) {
           <tr>
             <th style={{ width: '5%' }}>NO</th>
             <th style={{ width: '7%' }}>일자</th>
-            <th style={{ width: '12%' }}>구분</th>
-            <th style={{ width: '14%' }}>사용처</th>
+            <th style={{ width: inline ? '11%' : '12%' }}>구분</th>
+            <th style={{ width: inline ? '13%' : '14%' }}>사용처</th>
             <th>내용</th>
-            <th style={{ width: '7%' }}>수량</th>
-            <th style={{ width: '10%' }}>단가</th>
-            <th style={{ width: '11%' }}>금액</th>
-            <th style={{ width: '10%' }}>결제</th>
+            <th style={{ width: inline ? '6%' : '7%' }}>수량</th>
+            <th style={{ width: inline ? '9%' : '10%' }}>단가</th>
+            <th style={{ width: inline ? '10%' : '11%' }}>금액</th>
+            <th style={{ width: inline ? '8%' : '10%' }}>결제</th>
+            {inline && <th style={{ width: '11%' }}>영수증</th>}
           </tr>
         </thead>
         <tbody>
@@ -1357,15 +1431,16 @@ export function ReceiptPaper({ r, docNo, t }) {
                   <td>
                     {it.name || ''}
                     {it.note ? <span className="dp-desc"> · {it.note}</span> : null}
-                    {it.photo ? <span className="dr-clip" title="영수증 첨부">📎</span> : null}
+                    {it.photo && !inline ? <span className="dr-clip" title="영수증 첨부">📎</span> : null}
                   </td>
                   <td className="c num">{Number(it.qty) || ''}</td>
                   <td className="r num">{Number(it.price) ? fmt(it.price) : ''}</td>
                   <td className="r num">{(Number(it.qty) || 0) * (Number(it.price) || 0) ? fmt((Number(it.qty) || 0) * (Number(it.price) || 0)) : '-'}</td>
                   <td className="c dr-tight">{it.pay || ''}</td>
+                  {inline && <td className="c">{it.photo ? <img className="dr-inline" src={it.photo} alt="" /> : ''}</td>}
                 </>
               ) : (
-                <><td /><td /><td /><td /><td /><td /><td /><td /></>
+                <><td /><td /><td /><td /><td /><td /><td /><td />{inline && <td />}</>
               )}
             </tr>
           ))}
@@ -1403,7 +1478,7 @@ export function ReceiptPaper({ r, docNo, t }) {
         STUDIO. HOLYMOLLY · COMMERCIAL VISUAL STUDIO · EST. 2024
       </div>
 
-      {photos.length > 0 && (
+      {appendix && (
         <div className="dr-appendix">
           <div className="dp-plabel">첨부 영수증 · ATTACHED RECEIPTS</div>
           <div className="dr-photos">
