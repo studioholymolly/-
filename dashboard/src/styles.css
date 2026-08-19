@@ -801,8 +801,19 @@ button.prio{cursor:pointer;font-family:inherit}
 .dp-sums .disc{color:#c0392b}
 .dp-sums .disc span{font-weight:700}
 .dp-sums .grand{position:relative;background:#0a0a0a;color:#fff;font-weight:800;font-size:10.5pt;border-bottom:0;margin-top:1mm}
-/* 검은 박스를 배경색 + SVG 사각형 이중으로 깐다 — 인쇄에서 배경이 빠져도 SVG는 남는다 */
-.dp-sums .grand>.grand-fill{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+/* 총액 검은 박스가 인쇄·PDF에서 사라지지 않게 검은 칠을 한 겹 더 깐다.
+   배경색은 인쇄 대화상자의 '배경 그래픽'이 꺼지면 통째로 빠지지만, 테두리는 그 설정과
+   무관하게 항상 인쇄된다 — 줄 높이만큼 두꺼운 위쪽 테두리를 검은 막대로 쓴다.
+   ::before라 DOM에는 없다: Word(.docx) 내보내기가 보는 자식 구성·display·여백이 그대로라
+   총액 줄은 지금까지처럼 좌우로 벌린 1행 표로 나간다 (docx.js의 flexBlock).
+   높이는 calc로 못 박는다 — 퍼센트 높이는 인쇄 재배치 때 0으로 잡는 브라우저가 있다.
+   z-index:0으로 .grand를 쌓임 맥락으로 만들어, z-index:-1인 막대가 배경 위·글자 아래에
+   정확히 끼게 한다(안 그러면 종이 흰 배경 뒤로 빠진다). */
+.paperA4 .dp-sums .grand{position:relative;z-index:0}
+.paperA4 .dp-sums .grand::before{content:"";position:absolute;left:0;right:0;top:0;z-index:-1;
+  border-top:calc(2.8mm + 1.6em) solid #0a0a0a}
+/* 이 사본에는 SVG 사각형(GrandFill)도 한 겹 더 깔려 있다 — 높이는 퍼센트가 아니라 calc로 */
+.dp-sums .grand>.grand-fill{position:absolute;left:0;top:0;width:100%;height:calc(2.8mm + 1.6em);display:block}
 .dp-sums .grand>span,.dp-sums .grand>b{position:relative}
 .dp-notes{border-top:1px solid #0a0a0a;padding-top:2.4mm;margin-bottom:4mm}
 .dp-notes p{margin:0 0 1mm;font-size:8.6pt;line-height:1.5;color:#333}
