@@ -9,11 +9,16 @@ This version has breaking changes — APIs, conventions, and file structure may 
 작업이 끝나면 **매번 확인받지 말고** 브랜치 push → PR 생성 → `main` 머지까지 알아서 진행한다.
 Vercel이 `main`을 보고 자동 배포하므로 머지가 곧 운영 반영이다. 끝나면 "배포 완료"를 알린다.
 
-단, 이 저장소 세션에서 Vercel API는 접근이 막혀 있다 (팀은 조회되나 프로젝트·배포는 404).
+운영 주소는 **`inquiry.studioholymolly.com`** (Vercel 프로젝트 `holymolly-dashboard`,
+Root Directory=`dashboard`, Production Branch=`main`).
+`holymolly-ops.vercel.app`은 **존재하지 않는 주소다** — 2026-08-19에 확인. 쓰지 말 것.
+
+단, 이 저장소 세션에서 Vercel API는 접근이 막혀 있다 (팀은 조회되나 프로젝트·배포는 404/403).
+운영 도메인도 프록시가 CONNECT 403으로 막아 직접 열어볼 수 없다.
 그래서 **확인할 수 있는 것과 없는 것을 구분해서 보고한다.**
 
 - 확인 가능: `main` 머지 여부, PR에 달리는 Vercel 프리뷰 빌드 Ready 코멘트(= 빌드는 통과)
-- 확인 불가: 운영 도메인(`holymolly-ops.vercel.app`)의 최종 배포 성공 여부
+- 확인 불가: 운영 도메인의 최종 배포 성공 여부
 - 사용자가 배포를 직접 확인해야 할 때 안내할 것 — 주소 뒤 `/version.txt`,
   그리고 대시보드 **설정 · 데이터** 화면 우측 상단의 빌드 시각
 

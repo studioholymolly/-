@@ -1,6 +1,7 @@
 # 홀리몰리 운영 대시보드 — 원본 소스
 
-`holymolly-ops.vercel.app`(Vercel 프로젝트 `holymolly-dashboard`, Root Directory=`dashboard`)로 배포되는
+`inquiry.studioholymolly.com`(Vercel 프로젝트 `holymolly-dashboard`, Root Directory=`dashboard`,
+Production Branch=`main`)로 배포되는
 Vite + React 앱의 **원본 소스**입니다. 이전에는 빌드 결과물(번들)만 이 저장소에 있었지만,
 이제 소스가 정식으로 여기 있으므로 **번들 패치 없이 소스를 고치고 push하면 Vercel이 빌드**합니다.
 
